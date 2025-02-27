@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Art-Net configurator</title>
+</head>
+<style>
+    /* Resets all the style rules applied by browser 
+
+   http://meyerweb.com/eric/tools/css/reset/ 
+   v2.0 | 20110126
+   License: none (public domain)
+    */
+
+    html, body, div, span, applet, object, iframe,
+    h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+    a, abbr, acronym, address, big, cite, code,
+    del, dfn, em, img, ins, kbd, q, s, samp,
+    small, strike, strong, sub, sup, tt, var,
+    b, u, i, center,
+    dl, dt, dd, ol, ul, li,
+    fieldset, form, label, legend,
+    table, caption, tbody, tfoot, thead, tr, th, td,
+    article, aside, canvas, details, embed, 
+    figure, figcaption, footer, header, hgroup, 
+    menu, nav, output, ruby, section, summary,
+    time, mark, audio, video {
+    	margin: 0;
+    	padding: 0;
+    	border: 0;
+    	font-size: 100%;
+    	/* font: inherit; */
+    	vertical-align: baseline;
+    }
+    /* HTML5 display-role reset for older browsers */
+    article, aside, details, figcaption, figure, 
+    footer, header, hgroup, menu, nav, section {
+    	display: block;
+    }
+    body {
+    	line-height: 1;
+    }
+    ol, ul {
+    	list-style: none;
+    }
+    blockquote, q {
+    	quotes: none;
+    }
+    blockquote:before, blockquote:after,
+    q:before, q:after {
+    	content: '';
+    	content: none;
+    }
+    table {
+    	border-collapse: collapse;
+    	border-spacing: 0;
+    }
+    
+    /* ============= Style rules defined by us ============== */
+    /* ======= starting with some custom properties ========= */
+
+    :root {
+        /* colors */
+        --ll-yellow: #FFF200;
+        --ll-mustard: #B9AF00;
+        --bg-coal: #363633;
+        --bg-dmx-box: #2F2F2F;
+        --bg-grey: #82827B;
+        --bg-card-grey: #4d4d4d;
+        --bg-error-red: #8a3838;
+        --bg-status-green: #2Aff00;
+
+        /* font */
+        --font-nav-title: 'Reddit', sans-serif;
+        --font-regular: 'Roboto', sans-serif;
+
+        /* font sizes */
+        --font-size-xxl: 4rem;
+        --font-size-xl: 2.5rem;
+        --font-size-large: 2rem;
+        --font-size-medium: 1.4rem;
+        --font-size-small: 0.9rem;
+        --font-size-xs: 0.7rem;
+
+        /* spacing */
+        --grid-nav-width: 200px;
+        --banner-height: 85px;
+        --padding-small: 15px;
+        --padding-medium: 20px;
+        --padding-large: 40px;
+    }   
+
+    body {
+        background-color: var(--bg-coal);
+        display: grid;
+        grid-template-columns: var(--grid-nav-width) 1fr;
+        grid-template-rows: var(--banner-height) calc(100vh - var(--banner-height) - var(--padding-small));
+    }
+
+    nav, #info, #banner span {
+        font-family: var(--font-regular);
+    }
+
+    /*==================================== Banner ==================================== */
+    
+    header {
+        display: grid;
+        grid-row: 1/2;
+        grid-column: 1/3;
+        grid-template-columns: subgrid;
+        margin: var(--padding-small) var(--padding-small) 0 var(--padding-small);
+        min-width: 620px;
+        background-color: var(--ll-mustard); 
+        border-radius: 20px;
+        box-shadow: 0px 10px 15px 2px rgba(0,0,0,0.5);
+        z-index: -3;
+    }
+
+    #banner {
+        display: grid;
+        column-gap: var(--padding-small);
+        grid-column: 2/3;
+        grid-template-columns: 45px repeat(2, 40px) auto 50px var(--padding-small);
+        align-items: center;
+    }
+
+    #eth1 {
+        position: relative;
+        grid-column: 2/3;
+    }
+
+    #eth2 {
+        position: relative;
+        grid-column: 3/4;
+    }
+
+    h1 {
+        grid-column: 4/5;
+        justify-self: center;
+        position: relative;
+        bottom: 2px;
+        font-size: var(--font-size-xxl);
+        font-family: Brush Script MT;
+        font-weight: lighter;    
+    }
+
+    /* ============= Dark mode switch ============== */
+
+    #dark-mode-switch {
+        grid-column: 5/6;
+    }
+
+    #dark-mode-switch label {
+        width: 60px;
+        height: 30px;
+        position: relative;
+        bottom: 10px;
+        display: block;
+        background-color: var(--bg-coal);
+        border-radius: 200px;
+        box-shadow: inset 0px 5px 15px rgba(0,0,0,0.4), inset 0px -5px 15px rgba(255,255,255,0.4);
+        cursor: pointer;
+        transition: 0.3s;
+    }
+
+    #dark-mode-switch label:after{
+        content: "";
+        width: 25px;
+        height: 25px;
+        position: absolute;
+        top: 2.5px;
+        left :2.5px;
+        background: linear-gradient(180deg, #777, #3a3a3a);
+        border-radius: 40px;
+        box-shadow: 0px 5px 10px rgba(0,0,0,0.2);
+        transition: 0.3s;
+    }
+
+    #dark-mode-switch input {
+        width: 0;
+        height: 0;
+        visibility: hidden;
+    }
+
+    #dark-mode-switch input:checked + label {
+        background-color: #ebebeb;
+    }
+
+    #dark-mode-switch input:checked + label:after {
+        left: calc(100% - 2.5px);
+        transform: translateX(-100%);
+        background: linear-gradient(180deg, var(--ll-mustard), var(--ll-yellow));
+    }
+
+    #dark-mode-switch label:active:after {
+        width: 40px;
+    }
+
+    #dark-mode-switch label svg {
+        position: absolute;
+        width: 20px;
+        top: 5px;
+        z-index: 100;
+    }
+
+    #dark-mode-switch label svg.sun {
+        left: 35px;
+        fill: #7e7e7e;
+        transition: 0.3s;
+    }
+
+    #dark-mode-switch label svg.moon {
+        left: 5px;
+        fill: #fff;
+        transition: 0.3s;
+    }
+
+    #dark-mode-switch input:checked + label svg.sun {
+        fill: #fff;
+        transition: 0.3s;
+
+    }
+
+    #dark-mode-switch input:checked + label svg.moon {
+        fill: #7e7e7e;
+        transition: 0.3s;
+    }
+
+    /*==================================== Navbar ==================================== */
+
+    #sidebar {
+        display: grid;
+        grid-template-rows: 150px 10fr 1fr;
+        grid-row: 1/2;
+        grid-column: 1/2;
+        margin: var(--padding-small) 0 var(--padding-small) var(--padding-small);
+        height: calc(100vh - 2*var(--padding-small));
+        min-height: calc(768px - 2*var(--padding-small));
+        min-width: 120px;
+        background-color: var(--bg-grey);
+        border-radius: 20px;
+        z-index: 11;
+
+    }
+
+    nav {      
+        grid-row:2/3;
+        font-size: 2rem;
+    }
+
+    #title h2 {
+        font-size: var(--font-size-large);
+        text-align: right;
+        margin-right: 10px;
+    }
+
+    /* Lux-Lumen */
+    #title h2:nth-child(1) {
+        color: var(--ll-yellow);
+    }
+
+    /* Art-Net node */
+    #title h2:nth-child(2) {
+        color: var(--bg-coal);
+    }
+
+    #node-list {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .node {
+        font-size: var(--font-size-medium);
+        padding: var(--padding-small) 0 var(--padding-small) var(--padding-small);
+    }
+
+    .node-info {
+        display: none;
+        font-size: var(--font-size-small);
+        padding-top: 0.5rem;
+    }
+
+    .node-list #status {
+        display: none;
+    }
+
+    .node-info li {
+        margin-top: 0.5rem;
+    }
+
+    .node-info p {
+        display: inline;
+    }
+
+    #info {
+        font-size: var(--font-size-xs);
+        flex-direction: column;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        grid-row: 3/4;
+        color: var(--ll-yellow);
+    }
+
+    /* ============= Selected node ============== */
+
+    .node.selected {
+        margin-left: var(--padding-small);
+        margin-right: -1px;
+        border-radius: 10px 0px 0px 10px;
+        background-color: #363633;
+        color: var(--ll-yellow);
+        z-index: -3;
+    }
+
+    .node.selected .node-info {
+        display: block;
+    }
+
+    .node.selected span{
+        margin-left: var(--padding-small);
+        position: relative;
+    }
+
+    .node.selected span:before{
+        content: "";
+        position: absolute;
+        left: calc(var(--grid-nav-width) - 90px);
+        bottom: 38px;
+        width: 30px;
+        height: 30px;
+        background-color: #363633;
+        z-index: -2;
+    }
+
+    .node.selected span:after {
+        content: "";
+        position: absolute;
+        left: calc(var(--grid-nav-width) - 120px);
+        bottom: 38.8px;
+        width: 60px;
+        height: 60px;
+        background-color: var(--bg-grey);
+        border-radius: 100%;
+        z-index:-1;
+    }
+    .node #bottom-curve {
+        position: relative;
+        height: 0px;
+    }
+
+    .node.selected #bottom-curve span:before {
+        content:"";
+        position: absolute;
+        left: calc(var(--grid-nav-width) - 90px);
+        top: 16px;
+        width: 30px;
+        height: 30px;
+        background-color: #363633;
+        z-index: -2;
+    }
+
+    .node.selected #bottom-curve span:after {
+        content:"";
+        position: absolute;
+        left: calc(var(--grid-nav-width) - 120px);
+        top: 16.5px;
+        width: 60px;
+        height: 60px;
+        background-color: var(--bg-grey);
+        border-radius: 100%;
+        z-index: -1;
+    }
+
+    .node.selected #status{
+        position: absolute;
+        left: -15px;
+        bottom: 10px;
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background-color: var(--bg-status-green);
+    }
+
+    /* ============= Center configuration ============== */
+
+    #main-config {
+        display: grid;
+        grid-column: 2/3;
+        grid-row: 2/3;
+        grid-template-columns: calc(40px - var(--padding-medium)) calc(2*var(--padding-medium) + 50px)  calc(3*var(--padding-medium)) repeat(6,2fr);
+        grid-template-rows: repeat(9,1fr) 150px;
+        margin: var(--padding-large) var(--padding-small) 0;
+        min-width: 570px;
+    }
+
+    #universe-card {
+        position: relative;
+        display: grid;
+        grid-column: 2/3;
+        grid-row: 1/10;
+        grid-template-rows: subgrid;
+        grid-template-columns: subgrid;
+        border-radius: 0px 12px 12px 12px;
+        background-color: var(--bg-card-grey);
+        color: var(--ll-yellow);
+        box-shadow: 0px 10px 15px 2px rgba(0,0,0,0.5);
+    }
+    
+    #universe-card:before {
+        top: -15px;
+        left: 10px;
+        position: absolute;
+        content: "";
+        display: inline-block;
+        width: 70px;
+        height: 20px;
+        background-color: var(--bg-dmx-box);
+        border-radius: 5px;
+        z-index: -1;
+    }
+
+    #universe-card:after {
+        top: -50px;
+        left: 25px;
+        position: absolute;
+        content: "";
+        display: inline-block;
+        width: 40px;
+        height: 50px;
+        background-color: var(--ll-mustard);
+        border-radius: 5px;
+        z-index: -4;
+        box-shadow: 5px 0px 15px 2px rgba(0,0,0,0.5) inset;
+    }
+
+    #universes {
+        display: grid;
+        grid-column: 2/3;
+        grid-row: 1/10;
+        grid-template-rows: subgrid;
+        grid-template-columns: subgrid;
+        position: relative;
+    }
+
+    #universes:before {
+        display: inline-block;
+        position: absolute;
+        right: 60px;
+        top: 24.7px;
+        font-family: var(--font-regular);
+        content: "Universes";
+        transform: rotate(-90deg);
+        font-size: var(--font-size-small);
+        padding: 7px;
+        background-color: var(--bg-card-grey);
+        border-radius: 12px 12px 0px 0px;
+    }
+
+    #universes li {
+        align-self: center;
+        position: relative;
+        margin: 5px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 40px;
+        width: 80px;
+        justify-self: center;
+        font-size: var(--font-size-medium);
+        position: relative;
+        background: var(--bg-grey);
+        border-radius: 10px;
+        z-index: 0;
+        box-shadow: 0px 5px 15px 2px rgba(0,0,0,0.5);
+    }
+
+    #universes li span {
+        font-size: var(--font-size-small);
+        position: absolute;
+        background: var(--bg-grey);
+        padding: 5px;
+        top: 25px;
+        left: 50px;
+        border-radius: 10px;
+        z-index: -1;
+    }
+
+    #accolades {
+        display: grid;
+        grid-column: 3/10;
+        grid-row: 1/10;
+        grid-template-columns: subgrid;
+        grid-template-rows: subgrid;
+    }
+
+    #accolades div {
+        display: grid;
+        grid-template-columns: subgrid;
+        margin-bottom: -2.65px;
+        overflow: hidden;
+    }
+    #accolade-1 {position: relative;grid-row:1; grid-column: 1/8;overflow: hidden;}
+    #accolade-2 {position: relative;grid-row:2; grid-column: 1/8;overflow: hidden;}
+    #accolade-3 {position: relative;grid-row:3; grid-column: 1/8;overflow: hidden;}
+    #accolade-4 {position: relative;grid-row:4; grid-column: 1/8;overflow: hidden;}
+    #accolade-5 {position: relative;grid-row:5; grid-column: 1/8;overflow: hidden;}
+    #accolade-6 {position: relative;grid-row:6; grid-column: 1/8;overflow: hidden;}
+    #accolade-7 {position: relative;grid-row:7; grid-column: 1/8;overflow: hidden;}
+    #accolade-8 {position: relative;grid-row:8; grid-column: 1/8;overflow: hidden;}
+    #accolade-9 {position: relative;grid-row:9; grid-column: 1/8;overflow: hidden;}
+
+    #accolade-1 h3 {
+        grid-column: 1;
+        position: absolute;
+        top: 10px;
+        left: 30px;
+        display: flex;
+        align-items: flex-start;
+        color: var(--ll-yellow);
+        height: 100%;
+    }
+    
+    .fieldbusses{
+        position: relative;
+        display: grid;
+        grid-row: 1/11;
+        grid-template-rows: subgrid;
+        justify-self: end;
+        width: 70%;
+        max-width: 125px;
+        min-width: 50px;
+        border-radius: 25px;
+        background-color: var(--bg-card-grey);
+        box-shadow: 0px 10px 15px 2px rgba(0,0,0,0.5);
+    }
+
+    .fieldbus{
+        position: relative;
+        justify-self: center;
+        grid-row: 1/10;
+        width:90%;
+        border-radius: 25px;
+        background-color: var(--bg-grey);
+    }
+
+    .fieldbus h1 {
+        position: absolute;
+        left: 50%;
+        width: 0;
+        transform: rotate(-90deg);
+        color: var(--bg-card-grey);
+        font-family: var(--font-nav-title);
+        font-size: 3rem;
+        white-space: nowrap;
+        opacity: 50%;
+    }
+
+    #fb-1 {grid-column: 4/5; grid-row: 1/11;}
+    #fb-2 {grid-column: 5/6; grid-row: 1/11;}
+    #fb-3 {grid-column: 6/7; grid-row: 1/11;}
+    #fb-4 {grid-column: 7/8; grid-row: 1/11;}
+    #fb-5 {grid-column: 8/9; grid-row: 1/11;}
+    #fb-6 {grid-column: 9/10; grid-row: 1/11;}
+
+    #fb-1 div #address-block-1 {
+        position: relative;
+        height: 22.22%;
+        background-color: var(--bg-coal);
+        border-radius: 25px;
+        outline: 4px solid var(--ll-yellow);
+        outline-offset: -4px;
+    }
+
+    #address-block-1 h2 {
+        font-family: var(--font-regular);
+        font-size: clamp(var(--font-size-small), 2vw, var(--font-size-large));
+        font-weight: lighter;
+        color: var(--ll-yellow);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 90%;
+    }
+
+    #address-block-1 h3 {
+        position: absolute;
+        width: 70%;
+        left: 20%;
+        top: 5%;
+        font-family: var(--font-regular);
+        font-size: clamp(var(--font-size-xs), 1.5vw, var(--font-size-small));
+        font-weight: lighter;
+        color: var(--ll-yellow);
+    }
+
+    .fb-protocol {
+        text-align: center;
+        display: flex;
+        grid-row: 10/11;
+        flex-direction: column;
+        justify-content: space-evenly;
+        align-items: center;
+        font-family: var(--font-regular);
+        font-size: clamp(var(--font-size-xs), 1.5vw, var(--font-size-small));
+        color: var(--ll-yellow);
+    }
+
+    .fb-protocol select {
+        margin-top: 5px;
+        text-align: center;
+        width: 90%;
+    }
+
+    .fb-protocol #ethernet {
+        display: flex;
+        justify-content: center;
+        max-width: 75%;
+    }
+
+    /* ============= Dynamic resizing ============== */
+    
+    @media screen and (max-width: 950px) {
+        :root {
+            --grid-nav-width: 21vw;
+        }
+    }
+
+    @media screen and (min-height: 1158px) {
+        #accolades h3 {
+            left: 0px;
+            top: 33%;
+        }
+    }
+
+    @media screen and (max-width: 780px) {
+        #title {
+            margin-top: 20px;
+        } 
+
+        #sidebar h2{
+            font-size: 1.5rem;
+        }
+
+        nav h2:nth-child(1) {
+            margin-top: 15px;
+        }
+        
+        .node{
+            font-size: var(--font-size-small);
+            padding: calc(var(--padding-small) / 2);
+        } 
+
+        .node.selected .node-info {
+            display: none;
+        } 
+
+        .node.selected #status{
+            left: -10px;
+            bottom: 6px;
+            width: 5px;
+            height: 5px;
+        }
+
+        .node.selected span{
+            margin-left: 11px;
+        }
+
+        .node.selected span:before{
+            left: calc(var(--grid-nav-width) - 78px);
+            bottom: 22px;
+        }
+
+        .node.selected span:after {
+            left: calc(var(--grid-nav-width) - 108.5px);
+            bottom: 23px;
+        }
+
+        .node.selected #bottom-curve span:before {
+            left: calc(var(--grid-nav-width) - 78px);
+            top: 8px;
+        }
+
+        .node.selected #bottom-curve span:after {
+            left: calc(var(--grid-nav-width) - 108.5px);
+            top: 8.7px;
+        }
+    }
+
+    @media screen and (max-width: 641px) {
+        body {
+            grid-template-columns: 135px 1fr;
+        }
+        
+        .node.selected span:before, .node.selected #bottom-curve span:before {
+            left: 57px;
+        }
+
+        .node.selected span:after, .node.selected #bottom-curve span:after {
+            left: 26px;
+        }
+    }
+
+    @media screen and (max-height: 768px) {
+        body {
+            grid-template-rows: var(--banner-height) calc(768px - var(--banner-height) - var(--padding-small));
+        }
+    }
+</style>
+<script>
+    let nodeIp = "http://2.121.17.247"
+
+    class Configuration {
+        #xmlConfig;
+
+        constructor(node){
+            return( async () => {
+                this.#xmlConfig = await this.fetchXmlConfig(node.ip);
+                return this;
+            })();
+        }
+
+        async fetchXmlConfig(ip){
+            return new Promise( resolve => {
+                let xmlReq = new XMLHttpRequest();
+                xmlReq.open("GET", `http://${ip}/xml`, true);
+                xmlReq.send();
+                xmlReq.onreadystatechange = function() {
+                    if (xmlReq.readyState == 4 && xmlReq.status == 200) {
+                        let xmlDoc = xmlReq.responseXML;
+                        resolve(xmlDoc);
+                    }
+                    else if (this.readyState == 2 && this.status == 200){
+                        let headers = this.getResponseHeader("Content-Type");
+                        if (headers !== "text/xml" & headers !=="text/plain; charset=UTF-8"){
+                            console.log("header is not correct. expected xml file. got this instead: "+headers);
+                            this.abort();
+                        }
+                    }
+                }
+            });            
+        }
+    }
+
+    class Installation {
+        #customer;
+        #nodes = [];
+
+        constructor(customer){
+            return (async () => {
+                this.#nodes = await this.fetchNodes();
+                this.#customer = customer;
+                return this;
+            })();
+        }
+
+        fetchNodes(){
+            return new Promise(resolve => {
+                let xmlReq = new XMLHttpRequest();
+                xmlReq.open("GET", `${nodeIp}/xdev`, true);
+                xmlReq.overrideMimeType("text/xml");
+                xmlReq.send();
+                xmlReq.onreadystatechange = function() {
+                    if (xmlReq.readyState == 4 && xmlReq.status == 200) {
+                        let foundNodes = [];
+                        let xmlDoc = xmlReq.responseXML;
+                        let devices = xmlDoc.getElementsByTagName("dev")[0].innerHTML.split(" ");
+                        devices.forEach(async (device) => {
+                            let node = new Node(hexToIP(device));
+                            await node.fetchConfiguration();
+                            foundNodes.push(node);
+                        });
+                        resolve(foundNodes);
+                    }
+                    if (this.readyState == 2 && this.status == 200){
+                        let headers = this.getResponseHeader("Content-Type");
+                        if (headers !== "text/xml" & headers !=="text/plain; charset=UTF-8"){
+                            console.log("header is not correct. expected xml file. got this instead: "+headers);
+                            this.abort();
+                        }
+                    }
+                }
+            });
+        }
+
+        get nodes(){
+            return this.#nodes;
+        }
+    }
+
+    class Node {
+        #ip;
+        #name;
+        #mac;
+        #netmask;
+        #configuration;
+        #fieldbusses;
+
+        constructor(ip){
+            this.#ip = ip;
+        }
+
+        get ip() {
+            return this.#ip;
+        }
+
+        get configuration(){
+            return this.#configuration;
+        }
+
+        async fetchConfiguration(){
+            this.#configuration = await new Configuration(this);
+        }
+
+        
+    }
+
+    document.addEventListener("DOMContentLoaded", async () => {
+        let installation = await new Installation("Lux-Lumen");
+        console.log(installation);
+    });
+
+    function hexToIP(hex){
+        let ip = "";
+        for(let i = 0; i < hex.length; i+=2){
+            ip += parseInt(hex.substring(i, i+2), 16);
+            if(i < hex.length - 2){
+                ip += ".";
+            }
+        }
+        return ip;
+    }
+
+</script>
+<body>
+    <header>
+        <div id="banner">
+            <!-- svg definition of the ethernet ports -->
+            <svg xmlns="http://www.w3.org/2000/svg" shape-rendering="geometricPrecision" text-rendering="geometricPrecision" image-rendering="optimizeQuality" fill-rule="evenodd" clip-rule="evenodd" viewBox="0 0 512 490.43">
+                <defs>
+                    <symbol id="ethernet-port">
+                        <path fill-rule="nonzero" d="M29.08 0h453.85c8.04 0 15.28 3.33 20.5 8.55 5.26 5.27 8.57 12.64 8.57 20.53v432.27c0 7.94-3.33 15.23-8.59 20.49-5.25 5.25-12.54 8.59-20.48 8.59H29.08c-7.89 0-15.26-3.31-20.53-8.58C3.33 476.63 0 469.4 0 461.35V29.08c0-8.05 3.3-15.3 8.54-20.54l2.18-1.91A28.741 28.741 0 0 1 29.08 0z"/>
+                        <path fill="#CCC" d="M29.08 21.98h453.85c3.9 0 7.09 3.35 7.09 7.1v432.27c0 3.75-3.34 7.1-7.09 7.1H29.08c-3.75 0-7.1-3.19-7.1-7.1V29.08c0-3.91 3.19-7.1 7.1-7.1z"/>
+                        <path fill-rule="nonzero" d="M82.08 65.09h348.08c6.53 0 12.4 2.71 16.62 6.93 4.27 4.27 6.95 10.25 6.95 16.65v239.14h-70.87v48.58h-40.95v46.95H171.27v-46.95h-40.94v-48.58H58.5V88.67c0-6.54 2.67-12.42 6.92-16.66 4.3-4.28 10.23-6.92 16.66-6.92z"/>
+                        <path fill="#fff" d="M82.08 81.57h348.08c3.9 0 7.1 3.35 7.1 7.1v222.66h-70.88v48.59h-40.95v46.94H187.75v-46.94H146.8v-48.59H74.98V88.67c0-3.91 3.19-7.1 7.1-7.1z"/>
+                        <path fill-rule="nonzero" d="M365.43 297.06h71.83c9.09 0 16.47 7.38 16.47 16.48v46.38c0 9.09-7.38 16.47-16.47 16.47h-71.83c-9.09 0-16.48-7.38-16.48-16.47v-46.38c0-9.1 7.39-16.48 16.48-16.48z"/>
+                        <path fill="#fff" d="M437.26 313.54h-71.83v46.38h71.83z"/>
+                        <path fill-rule="nonzero" d="M74.98 297.06h71.82c9.1 0 16.48 7.38 16.48 16.48v46.38c0 9.09-7.38 16.47-16.48 16.47H74.98c-9.1 0-16.48-7.38-16.48-16.47v-46.38c0-9.1 7.38-16.48 16.48-16.48z"/>
+                        <path fill="#fff" d="M74.98 313.54h71.82v46.38H74.98z"/>
+                        <rect x="109.2" y="110.21" width="25.59" height="46.75" rx="3.44" ry="3.44"/>
+                        <rect x="153.91" y="110.21" width="25.59" height="46.75" rx="3.44" ry="3.44"/>
+                        <rect x="198.62" y="110.21" width="25.59" height="46.75" rx="3.44" ry="3.44"/>
+                        <rect x="243.33" y="110.21" width="25.59" height="46.75" rx="3.44" ry="3.44"/>
+                        <rect x="288.03" y="110.21" width="25.59" height="46.75" rx="3.44" ry="3.44"/>
+                        <rect x="332.74" y="110.21" width="25.59" height="46.75" rx="3.44" ry="3.44"/>
+                        <rect x="377.45" y="110.21" width="25.59" height="46.75" rx="3.44" ry="3.44"/>
+                    </symbol>
+                </defs>
+            </svg>
+            <!-- end of ehternet port definition -->
+            <div id="eth1">
+                <span>ETH1</span>
+                <svg viewBox="0 0 512 490.43">  
+                    <use href="#ethernet-port"/>
+                </svg>
+            </div>
+            <div id="eth2">
+                <span>ETH2</span>
+                <svg viewBox="0 0 512 490.43">  
+                    <use href="#ethernet-port"/>
+                </svg>
+            </div>
+            <h1>Configurator</h1>
+            <div id="dark-mode-switch">
+                <input type="checkbox" id="switch">
+                <label for="switch">
+                <svg class="moon" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 122.88 122.89" style="enable-background:new 0 0 122.88 122.89" xml:space="preserve"><g><path d="M49.06,1.27c2.17-0.45,4.34-0.77,6.48-0.98c2.2-0.21,4.38-0.31,6.53-0.29c1.21,0.01,2.18,1,2.17,2.21 c-0.01,0.93-0.6,1.72-1.42,2.03c-9.15,3.6-16.47,10.31-20.96,18.62c-4.42,8.17-6.1,17.88-4.09,27.68l0.01,0.07 c2.29,11.06,8.83,20.15,17.58,25.91c8.74,5.76,19.67,8.18,30.73,5.92l0.07-0.01c7.96-1.65,14.89-5.49,20.3-10.78 c5.6-5.47,9.56-12.48,11.33-20.16c0.27-1.18,1.45-1.91,2.62-1.64c0.89,0.21,1.53,0.93,1.67,1.78c2.64,16.2-1.35,32.07-10.06,44.71 c-8.67,12.58-22.03,21.97-38.18,25.29c-16.62,3.42-33.05-0.22-46.18-8.86C14.52,104.1,4.69,90.45,1.27,73.83 C-2.07,57.6,1.32,41.55,9.53,28.58C17.78,15.57,30.88,5.64,46.91,1.75c0.31-0.08,0.67-0.16,1.06-0.25l0.01,0l0,0L49.06,1.27 L49.06,1.27z M51.86,5.2c-0.64,0.11-1.28,0.23-1.91,0.36l-1.01,0.22l0,0c-0.29,0.07-0.63,0.14-1,0.23 c-14.88,3.61-27.05,12.83-34.7,24.92C5.61,42.98,2.46,57.88,5.56,72.94c3.18,15.43,12.31,28.11,24.51,36.15 c12.19,8.03,27.45,11.41,42.88,8.23c15-3.09,27.41-11.81,35.46-23.49c6.27-9.09,9.9-19.98,10.09-31.41 c-2.27,4.58-5.3,8.76-8.96,12.34c-6,5.86-13.69,10.13-22.51,11.95l-0.01,0c-12.26,2.52-24.38-0.16-34.07-6.54 c-9.68-6.38-16.93-16.45-19.45-28.7l0-0.01C31.25,40.58,33.1,29.82,38,20.77C41.32,14.63,46.05,9.27,51.86,5.2L51.86,5.2z"/></g></svg>
+                <svg class="sun" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 240 240" style="enable-background:new 0 0 240 240" xml:space="preserve"><g><path d="M58.57,25.81c-2.13-3.67-0.87-8.38,2.8-10.51c3.67-2.13,8.38-0.88,10.51,2.8l9.88,17.1c2.13,3.67,0.87,8.38-2.8,10.51 c-3.67,2.13-8.38,0.88-10.51-2.8L58.57,25.81L58.57,25.81z M120,51.17c19.01,0,36.21,7.7,48.67,20.16 C181.12,83.79,188.83,101,188.83,120c0,19.01-7.7,36.21-20.16,48.67c-12.46,12.46-29.66,20.16-48.67,20.16 c-19.01,0-36.21-7.7-48.67-20.16C58.88,156.21,51.17,139.01,51.17,120c0-19.01,7.7-36.21,20.16-48.67 C83.79,58.88,101,51.17,120,51.17L120,51.17z M158.27,81.73c-9.79-9.79-23.32-15.85-38.27-15.85c-14.95,0-28.48,6.06-38.27,15.85 c-9.79,9.79-15.85,23.32-15.85,38.27c0,14.95,6.06,28.48,15.85,38.27c9.79,9.79,23.32,15.85,38.27,15.85 c14.95,0,28.48-6.06,38.27-15.85c9.79-9.79,15.85-23.32,15.85-38.27C174.12,105.05,168.06,91.52,158.27,81.73L158.27,81.73z M113.88,7.71c0-4.26,3.45-7.71,7.71-7.71c4.26,0,7.71,3.45,7.71,7.71v19.75c0,4.26-3.45,7.71-7.71,7.71 c-4.26,0-7.71-3.45-7.71-7.71V7.71L113.88,7.71z M170.87,19.72c2.11-3.67,6.8-4.94,10.48-2.83c3.67,2.11,4.94,6.8,2.83,10.48 l-9.88,17.1c-2.11,3.67-6.8,4.94-10.48,2.83c-3.67-2.11-4.94-6.8-2.83-10.48L170.87,19.72L170.87,19.72z M214.19,58.57 c3.67-2.13,8.38-0.87,10.51,2.8c2.13,3.67,0.88,8.38-2.8,10.51l-17.1,9.88c-3.67,2.13-8.38,0.87-10.51-2.8 c-2.13-3.67-0.88-8.38,2.8-10.51L214.19,58.57L214.19,58.57z M232.29,113.88c4.26,0,7.71,3.45,7.71,7.71 c0,4.26-3.45,7.71-7.71,7.71h-19.75c-4.26,0-7.71-3.45-7.71-7.71c0-4.26,3.45-7.71,7.71-7.71H232.29L232.29,113.88z M220.28,170.87 c3.67,2.11,4.94,6.8,2.83,10.48c-2.11,3.67-6.8,4.94-10.48,2.83l-17.1-9.88c-3.67-2.11-4.94-6.8-2.83-10.48 c2.11-3.67,6.8-4.94,10.48-2.83L220.28,170.87L220.28,170.87z M181.43,214.19c2.13,3.67,0.87,8.38-2.8,10.51 c-3.67,2.13-8.38,0.88-10.51-2.8l-9.88-17.1c-2.13-3.67-0.87-8.38,2.8-10.51c3.67-2.13,8.38-0.88,10.51,2.8L181.43,214.19 L181.43,214.19z M126.12,232.29c0,4.26-3.45,7.71-7.71,7.71c-4.26,0-7.71-3.45-7.71-7.71v-19.75c0-4.26,3.45-7.71,7.71-7.71 c4.26,0,7.71,3.45,7.71,7.71V232.29L126.12,232.29z M69.13,220.28c-2.11,3.67-6.8,4.94-10.48,2.83c-3.67-2.11-4.94-6.8-2.83-10.48 l9.88-17.1c2.11-3.67,6.8-4.94,10.48-2.83c3.67,2.11,4.94,6.8,2.83,10.48L69.13,220.28L69.13,220.28z M25.81,181.43 c-3.67,2.13-8.38,0.87-10.51-2.8c-2.13-3.67-0.88-8.38,2.8-10.51l17.1-9.88c3.67-2.13,8.38-0.87,10.51,2.8 c2.13,3.67,0.88,8.38-2.8,10.51L25.81,181.43L25.81,181.43z M7.71,126.12c-4.26,0-7.71-3.45-7.71-7.71c0-4.26,3.45-7.71,7.71-7.71 h19.75c4.26,0,7.71,3.45,7.71,7.71c0,4.26-3.45,7.71-7.71,7.71H7.71L7.71,126.12z M19.72,69.13c-3.67-2.11-4.94-6.8-2.83-10.48 c2.11-3.67,6.8-4.94,10.48-2.83l17.1,9.88c3.67,2.11,4.94,6.8,2.83,10.48c-2.11,3.67-6.8,4.94-10.48,2.83L19.72,69.13L19.72,69.13z"/></g></svg>
+            </label>
+            </div>
+        </div>
+    </header>
+    <div id="sidebar">
+        <div id="title">
+            <h2>Lux<br>Lumen</h2>
+            <h2>Art-Net<br>node</h2>
+        </div>
+        <nav>
+            <ul id="node-list">
+                <li class="node">
+                    <span><div id="status"></div>Demo node</span>
+                    <ul class="node-info">
+                        <li class="IP">IP: <p>192.168.1.1</p></li>
+                        <li class="netMask">Netmask: <p>255.255</p></li>
+                        <li class="mac">MAC: <p>mac placeholder</p></li>
+                    </ul>
+                    <div id="bottom-curve"><span></span></div>
+                </li>
+                <li class="node selected">
+                    <span><div id="status"></div>veel te lange node naam</span>
+                    <ul class="node-info">
+                        <li class="IP">IP: <p>192.168.1.1</p></li>
+                        <li class="netMask">Netmask: <p>255.255.255.255</p></li>
+                        <li class="mac">MAC: <p>mac placeholder</p></li>
+                    </ul>
+                    <div id="bottom-curve"><span></span></div>
+                </li>
+                <li class="node">
+                    <span><div id="status"></div>Node 2</span>
+                    <ul class="node-info">
+                        <li class="IP">IP: <p>192.168.1.1</p></li>
+                        <li class="netMask">Netmask: <p>255.255.255.0</p></li>
+                        <li class="mac">MAC: <p>mac placeholder</p></li>
+                    </ul>
+                    <div id="bottom-curve"><span></span></div>
+                </li>
+            </ul>
+        </nav>
+        <div id="info">
+            <h3>firmware: <span>v03.3</span></h3>
+            <h3>config: <span>2</span></h3>
+        </div>
+    </div>
+    <div id="main-config">
+        <div id="universe-card">
+            <ol id="universes">
+                <li>32768<span>512</span></li>
+                <li>1<span>512</span></li>
+                <li>2<span>512</span></li>
+                <li>3<span>512</span></li>
+                <li>4<span>512</span></li>
+                <li>5<span>512</span></li>
+                <li>6<span>512</span></li>
+                <li>7<span>512</span></li>
+                <li>8<span>512</span></li>
+            </ol>
+        </div>
+        <!-- svg definition of the accolades -->
+        <svg viewBox="0 0 1024 72" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <symbol id="accolade">
+                    <path d="M28.4318 1.72424H10130" stroke="#FFF200" stroke-width="2"/>
+                    <path d="M28.4318 70.7244L10130.81 70.7245" stroke="#FFF200" stroke-width="2"/>
+                    <path d="M28.4318 1.70703C21.2604 1.70703 17.0489 5.19076 17.0489 12.588C17.0489 20.8949 22.0324 23.627 23.7341 28.1793C26.3582 35.1994 18.7241 36.2934 13.4779 36.2116H0.493549L13.4779 36.2198C18.7241 36.138 26.3582 37.232 23.7341 44.2521C22.0324 48.8044 17.0489 51.5365 17.0489 59.8434C17.0489 67.2406 21.2604 70.7244 28.4318 70.7244" fill="none" stroke="#FFF200" stroke-width="2"/>
+                </symbol>
+            </defs>
+        </svg>
+        <!-- end of accolade definition -->
+        <div id="accolades">
+            <div id="accolade-1">
+                <h3>10fps</h3>
+                <svg height="100%" viewBox="0 0 2000 72">  
+                    <use xlink:href="#accolade"/>
+                </svg>
+            </div>
+            <div id="accolade-2">
+                <svg height="100%" viewBox="0 0 2000 72">  
+                    <use xlink:href="#accolade"/>
+                </svg>
+            </div>
+            <div id="accolade-3">
+                <svg height="100%" viewBox="0 0 2000 72">  
+                    <use xlink:href="#accolade"/>
+                </svg>
+            </div>
+            <div id="accolade-4">
+                <svg height="100%" viewBox="0 0 2000 72">  
+                    <use xlink:href="#accolade"/>
+                </svg>
+            </div>
+            <div id="accolade-5">
+                <svg height="100%" viewBox="0 0 2000 72">  
+                    <use xlink:href="#accolade"/>
+                </svg>
+            </div>
+            <div id="accolade-6">
+                <svg height="100%" viewBox="0 0 2000 72">  
+                    <use xlink:href="#accolade"/>
+                </svg>
+            </div>
+            <div id="accolade-7">
+                <svg height="100%" viewBox="0 0 2000 72">  
+                    <use xlink:href="#accolade"/>
+                </svg>
+            </div>
+            <div id="accolade-8">
+                <svg height="100%" viewBox="0 0 2000 72">  
+                    <use xlink:href="#accolade"/>
+                </svg>
+            </div>
+            <div id="accolade-9">
+                <svg height="100%" viewBox="0 0 2000 72">  
+                    <use xlink:href="#accolade"/>
+                </svg>
+            </div>
+        </div>
+        <div class="fieldbusses" id="fb-1">
+            <div class="fieldbus">
+                <h1>FIELDBUS 1</h1>
+                <div id="address-block-1">
+                    <h3>start: <span>5121</span></h3>
+                    <h2>1024</h2>
+                </div>
+            </div>
+            <div class="fb-protocol">
+                <div class="protocol-dd">
+                    <label for="protocol-1">protocol: </label>
+                    <select id="protocol-1">
+                        <option value="dmx512">DMX-512</option>
+                        <option value="dmxrdm">DMX-RDM</option>
+                        <option value="ybleads">YB-LEDs</option>
+                        <option value="disabled" disabled>Disabled</option>
+                </select>
+                </div>
+                <div id="ethernet">
+                    <svg width="75%" viewBox="0 0 512 490.43">  
+                        <use href="#ethernet-port"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+        <div class="fieldbusses" id="fb-2">
+            <div class="fieldbus">
+                <h1>FIELDBUS 2</h1>
+            </div>
+        </div>
+        <div class="fieldbusses" id="fb-3">
+            <div class="fieldbus">
+                <h1>FIELDBUS 3</h1>
+            </div>
+        </div>
+        <div class="fieldbusses" id="fb-4">
+            <div class="fieldbus">
+                <h1>FIELDBUS 4</h1>
+            </div>
+        </div>
+        <div class="fieldbusses" id="fb-5">
+            <div class="fieldbus">
+                <h1>FIELDBUS 5</h1>
+            </div>
+        </div>
+        <div class="fieldbusses" id="fb-6">
+            <div class="fieldbus">
+                <h1>FIELDBUS 6</h1>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
