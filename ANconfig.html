@@ -1,3 +1,8 @@
+HTTP/1.1 200 OK
+Connection: close
+Content-Type: text/html
+Acces-Control-Allow-Origin: *
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -709,7 +714,81 @@
     }
 </style>
 <script>
-    let nodeIp = "http://2.121.17.247"
+    let nodeIp = "http://10.20.24.124"
+
+    class Installation {
+        #customer;
+        #nodes = [];
+
+        // Immediately Invoked Async Function Expression zorgt ervoor dat we de nodes kunnen ophalen en nieuwe
+        // object instanties kunnen aanmaken zonder then-chaining of extra async functies te gebruiken 
+        // https://itnext.io/1-minute-to-become-a-better-developer-4-aeabd6586396
+        constructor(customer){
+            return (async () => {
+                this.#nodes = await this.fetchNodes();
+                this.#customer = customer;
+                return this;
+            })();
+        }
+
+        async fetchNodes(){
+            return new Promise(resolve => {
+                let xmlReq = new XMLHttpRequest();
+                xmlReq.open("GET", `${nodeIp}/xdev`, true);
+                xmlReq.overrideMimeType("text/xml");
+                xmlReq.send();
+                xmlReq.onreadystatechange = async function() {
+                    if (xmlReq.readyState == 4 && xmlReq.status == 200) {
+                        let foundNodes = [];
+                        let xmlDoc = xmlReq.responseXML;
+                        let devices = xmlDoc.getElementsByTagName("dev")[0].innerHTML.split(" ");
+                        for (let device of devices) {
+                            let node = new Node(hexToIP(device));
+                            await node.fetchConfiguration();
+                            foundNodes.push(node);
+                        };
+                        resolve(foundNodes);
+                    }
+                    if (this.readyState == 2 && this.status == 200){
+                        let headers = this.getResponseHeader("Content-Type");
+                        if (headers !== "text/xml" & headers !=="text/plain; charset=UTF-8"){
+                            console.log("header is not correct. expected xml file. got this instead: "+headers);
+                            this.abort();
+                        }
+                    }
+                }
+            });
+        }
+
+        get nodes(){
+            return this.#nodes;
+        }
+    }
+
+    class Node {
+        #ip;
+        #name = "";
+        #mac;
+        #netmask;
+        #configuration;
+        #fieldbusses;
+
+        constructor(ip){
+            this.#ip = ip;
+        }
+
+        get ip() {
+            return this.#ip;
+        }
+
+        get configuration(){
+            return this.#configuration;
+        }
+
+        async fetchConfiguration(){
+            this.#configuration = await new Configuration(this);
+        }
+    }
 
     class Configuration {
         #xmlConfig;
@@ -717,6 +796,10 @@
         constructor(node){
             return( async () => {
                 this.#xmlConfig = await this.fetchXmlConfig(node.ip);
+                for (const value of this.parseConfig(this.#xmlConfig)){
+                    // console.log(value);
+                    this[value.tagName] = value.textContent
+                };
                 return this;
             })();
         }
@@ -741,85 +824,34 @@
                 }
             });            
         }
-    }
 
-    class Installation {
-        #customer;
-        #nodes = [];
-
-        constructor(customer){
-            return (async () => {
-                this.#nodes = await this.fetchNodes();
-                this.#customer = customer;
-                return this;
-            })();
+        get xmlConfig(){
+            return this.#xmlConfig;
         }
 
-        fetchNodes(){
-            return new Promise(resolve => {
-                let xmlReq = new XMLHttpRequest();
-                xmlReq.open("GET", `${nodeIp}/xdev`, true);
-                xmlReq.overrideMimeType("text/xml");
-                xmlReq.send();
-                xmlReq.onreadystatechange = function() {
-                    if (xmlReq.readyState == 4 && xmlReq.status == 200) {
-                        let foundNodes = [];
-                        let xmlDoc = xmlReq.responseXML;
-                        let devices = xmlDoc.getElementsByTagName("dev")[0].innerHTML.split(" ");
-                        devices.forEach(async (device) => {
-                            let node = new Node(hexToIP(device));
-                            await node.fetchConfiguration();
-                            foundNodes.push(node);
-                        });
-                        resolve(foundNodes);
+        *parseConfig(xmlObj){
+            function* traverseConfig(xmlObj, lvl) {
+                if (xmlObj !== null && typeof xmlObj == 'object') {
+                    const foundNode = xmlObj.childNodes.item(lvl);
+                    if (foundNode.childElementCount == '0') {
+                        yield foundNode;
                     }
-                    if (this.readyState == 2 && this.status == 200){
-                        let headers = this.getResponseHeader("Content-Type");
-                        if (headers !== "text/xml" & headers !=="text/plain; charset=UTF-8"){
-                            console.log("header is not correct. expected xml file. got this instead: "+headers);
-                            this.abort();
-                        }
+                    for (let i = 0; i < foundNode.childElementCount; i++) {
+                        yield* traverseConfig(foundNode, i);
                     }
                 }
-            });
+            };
+
+            let lvl = 0;
+            yield* traverseConfig(xmlObj, lvl);
         }
 
-        get nodes(){
-            return this.#nodes;
+        logChildNodes() {
+            if (this.#xmlConfig){
+                console.log(this.#xmlConfig.childNodes);
+            }
         }
     }
-
-    class Node {
-        #ip;
-        #name;
-        #mac;
-        #netmask;
-        #configuration;
-        #fieldbusses;
-
-        constructor(ip){
-            this.#ip = ip;
-        }
-
-        get ip() {
-            return this.#ip;
-        }
-
-        get configuration(){
-            return this.#configuration;
-        }
-
-        async fetchConfiguration(){
-            this.#configuration = await new Configuration(this);
-        }
-
-        
-    }
-
-    document.addEventListener("DOMContentLoaded", async () => {
-        let installation = await new Installation("Lux-Lumen");
-        console.log(installation);
-    });
 
     function hexToIP(hex){
         let ip = "";
@@ -831,6 +863,12 @@
         }
         return ip;
     }
+
+    document.addEventListener("DOMContentLoaded", async () => {
+        let installation = await new Installation("Lux-Lumen");
+        // console.log(installation.nodes[0].configuration)
+        console.log(installation.nodes[0].configuration["eth2"]);
+    });
 
 </script>
 <body>
