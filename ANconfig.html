@@ -789,7 +789,6 @@ Acces-Control-Allow-Origin: *
         initialiseNode() {
             if (this.#configuration !== null) {
                 console.log("initialising node "+ this.ip+" with ");
-                console.log(this.#configuration);
                 this.#name = this.#configuration.name;
                 this.#mac = this.#configuration.getMac();
                 console.log(this.#mac)
@@ -804,13 +803,12 @@ Acces-Control-Allow-Origin: *
 
     class Configuration {
         #xmlConfig;
+        #configObject = {};
 
         constructor(node){
             return( async () => {
                 this.#xmlConfig = await this.fetchXmlConfig(node.ip);
-                for (const value of this.parseConfig(this.#xmlConfig)){
-                    this[value.tagName] = value.textContent;
-                };
+                console.log(this.parseConfig(this.#xmlConfig));
                 return this;
             })();
         }
@@ -845,22 +843,29 @@ Acces-Control-Allow-Origin: *
             return hexToMac(this.mac);
         }
 
-        *parseConfig(xmlObj){
-            function* traverseConfig(xmlObj, lvl) {
-                if (xmlObj !== null && typeof xmlObj == 'object') {
-                    const foundNode = xmlObj.childNodes.item(lvl);
-                    if (foundNode.childElementCount == '0') {
-                        yield foundNode;
-                    }
-                    for (let i = 0; i < foundNode.childElementCount; i++) {
-                        yield* traverseConfig(foundNode, i);
+        parseConfig(xmlObj) {
+        let config = {};
+        
+        // Recursieve functie die over all nodes gaat en het config object vult
+        function traverseConfig(xmlNode, config) {
+            if (xmlNode !== null && typeof xmlNode === 'object') {
+                for (let i = 0; i < xmlNode.childNodes.length; i++) {
+                    const childNode = xmlNode.childNodes.item(i);
+                    if (childNode.nodeType === 1) {
+                        if (childNode.childElementCount > 0) {
+                            config[childNode.nodeName] = {};
+                            traverseConfig(childNode, config[childNode.nodeName]);
+                        } else {
+                            config[childNode.nodeName] = childNode.textContent.trim();
+                        }
                     }
                 }
-            };
-
-            let lvl = 0;
-            yield* traverseConfig(xmlObj, lvl);
+            }
         }
+
+        traverseConfig(xmlObj.documentElement, config);
+        return config;
+    }
 
 
     }
