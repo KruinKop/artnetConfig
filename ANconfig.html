@@ -766,9 +766,10 @@ Acces-Control-Allow-Origin: *
     }
 
     class Node {
-        #ip;
         #name = "";
+        #ip;
         #mac;
+        #switch = [];
         #netmask;
         #configuration;
         #fieldbusses;
@@ -785,6 +786,17 @@ Acces-Control-Allow-Origin: *
             return this.#configuration;
         }
 
+        initialiseNode() {
+            if (this.#configuration !== null) {
+                console.log("initialising node "+ this.ip+" with ");
+                console.log(this.#configuration);
+                this.#name = this.#configuration.name;
+                this.#mac = this.#configuration.getMac();
+                console.log(this.#mac)
+                
+            }
+        }
+
         async fetchConfiguration(){
             this.#configuration = await new Configuration(this);
         }
@@ -797,8 +809,7 @@ Acces-Control-Allow-Origin: *
             return( async () => {
                 this.#xmlConfig = await this.fetchXmlConfig(node.ip);
                 for (const value of this.parseConfig(this.#xmlConfig)){
-                    // console.log(value);
-                    this[value.tagName] = value.textContent
+                    this[value.tagName] = value.textContent;
                 };
                 return this;
             })();
@@ -829,6 +840,11 @@ Acces-Control-Allow-Origin: *
             return this.#xmlConfig;
         }
 
+        // Getters that return in human readable format
+        getMac() {
+            return hexToMac(this.mac);
+        }
+
         *parseConfig(xmlObj){
             function* traverseConfig(xmlObj, lvl) {
                 if (xmlObj !== null && typeof xmlObj == 'object') {
@@ -846,11 +862,7 @@ Acces-Control-Allow-Origin: *
             yield* traverseConfig(xmlObj, lvl);
         }
 
-        logChildNodes() {
-            if (this.#xmlConfig){
-                console.log(this.#xmlConfig.childNodes);
-            }
-        }
+
     }
 
     function hexToIP(hex){
@@ -864,10 +876,24 @@ Acces-Control-Allow-Origin: *
         return ip;
     }
 
+    function hexToMac(mac){
+        let macAddress = "";
+        for(let i = 0; i < mac.length; i+=2){
+            macAddress += mac.substring(i, i+2);
+            if(i < mac.length - 2){
+                macAddress += ":";
+            }
+        }
+        return macAddress;
+    }
+
+
     document.addEventListener("DOMContentLoaded", async () => {
         let installation = await new Installation("Lux-Lumen");
-        // console.log(installation.nodes[0].configuration)
-        console.log(installation.nodes[0].configuration["eth2"]);
+        for (node of installation.nodes) {
+            node.initialiseNode();
+        }
+
     });
 
 </script>
