@@ -743,8 +743,7 @@ Acces-Control-Allow-Origin: *
                         let xmlDoc = xmlReq.responseXML;
                         let devices = xmlDoc.getElementsByTagName("dev")[0].innerHTML.split(" ");
                         for (let device of devices) {
-                            let node = new Node(hexToIP(device));
-                            await node.fetchConfiguration();
+                            let node = await new Node(hexToIP(device));
                             foundNodes.push(node);
                         };
                         resolve(foundNodes);
@@ -763,19 +762,50 @@ Acces-Control-Allow-Origin: *
         get nodes(){
             return this.#nodes;
         }
+
+        addDemo(){
+            let universes = [];
+            let fieldbusses = [];
+            for (let i=0; i<10; i++){
+                universes.push(new Universe(`inp${i+1}`, {
+                    "universe": i,
+                    "keep": 512,
+                    "framecounter": 0
+                }))
+            }
+            for (let i=0; i<6; i++){
+                fieldbusses.push(new Fieldbus(`out${i+1}`, {
+                    "codec": 1,
+                    "startAddress": i == 0? 1 : (i*512)+1,
+                    "streamLength": 511,
+                    "finetuningParams": 0
+                }))
+            }
+            this.#nodes.push(new NodeTemplate("127.0.0.1", "Demo", "7b:a6:80:7f:ec:7d", {}, "255.255.255.0", universes, fieldbusses))            
+        }
+
     }
 
     class Node {
-        #name = "";
         #ip;
+        #name;
         #mac;
         #switch = {};
         #netmask;
         #configuration;
+        #universes = [];
         #fieldbusses = [];
 
-        constructor(ip){
+        constructor(ip, skipConfig = false) {
             this.#ip = ip;
+            
+            if (!skipConfig) {
+                return (async () => {
+                    this.#configuration = await new Configuration(ip);
+                    this.initialiseNode();
+                    return this;
+                })();
+            }
         }
 
         get ip() {
@@ -786,6 +816,34 @@ Acces-Control-Allow-Origin: *
             return this.#configuration;
         }
 
+        set ip(ip){
+            this.#ip = ip;
+        }
+
+        set name(name){
+            this.#name = name;
+        }
+
+        set mac(mac){
+            this.#mac = mac;
+        }
+
+        set switch(sw){
+            this.#switch = sw;
+        }
+
+        set netmask(nm){
+            this.#netmask = nm;
+        }
+
+        set universes(un){
+            this.#universes = un;
+        }
+
+        set fieldbusses(fb){
+            this.#fieldbusses = fb;
+        }
+
         initialiseNode() {
             if (this.#configuration !== null) {
                 this.#name = this.#configuration.getInfo("name");
@@ -794,11 +852,34 @@ Acces-Control-Allow-Origin: *
                 this.#netmask = this.#configuration.getInfo("mask");
                 for (const [key, value] of Object.entries(this.#configuration.getInfo("fieldbus"))) {
                     this.#fieldbusses.push(new Fieldbus(key, value))
-                }          
+                }
+                for (const [key, value] of Object.entries(this.#configuration.getInfo("artnet"))) {
+                    this.#universes.push(new Universe(key, value))
+                }                          
             }
         }
-        async fetchConfiguration(){
-            this.#configuration = await new Configuration(this);
+    }
+
+    class NodeTemplate extends Node {
+        constructor(ip, name, mac, sw, nm, un, fb){
+            super(ip, true);
+            this.name = name;
+            this.mac = mac;
+            this.switch = sw;
+            this.netmask = nm;
+            this.universes = un;
+            this.fieldbusses = fb;
+        }
+    }
+
+    class Universe {
+        #id;
+
+        constructor(id, params) {
+            this.#id = id;
+            for (const [key, value] of Object.entries(params)) {
+                this[key] = value;
+            }
         }
     }
 
@@ -814,14 +895,15 @@ Acces-Control-Allow-Origin: *
     }
 
     class Configuration {
-        #switchParameters = ["status", "rxByteCount", "txByteCount", "rxBroadcast", "txBroadcast", "rxUnicast", "txUnicast", "rxMulticast", "txMulticast", "rxPause", "txPause"]
-        #fieldbusParameters = ["codec", "startAddress", "streamLength", "finetuningParams"];
+        #switchParams = ["status", "rxByteCount", "txByteCount", "rxBroadcast", "txBroadcast", "rxUnicast", "txUnicast", "rxMulticast", "txMulticast", "rxPause", "txPause"]
+        #artnetParams = ["universe", "keep", "framecounter"];
+        #fieldbusParams = ["codec", "startAddress", "streamLength", "finetuningParams"];
         #xmlConfig;
         #configObject;
 
-        constructor(node){
+        constructor(ip){
             return( async () => {
-                this.#xmlConfig = await this.fetchXmlConfig(node.ip);
+                this.#xmlConfig = await this.fetchXmlConfig(ip);
                 this.#configObject = this.parseConfig(this.#xmlConfig);
                 return this;
             })();
@@ -868,17 +950,19 @@ Acces-Control-Allow-Origin: *
                 case "mask":
                     return hexToIP(dig(this.#configObject, tag));
                     break;
-                case "switch":
-                    return this.convertObjectAndMap(tag, this.#switchParameters);
+                case "switch" :
+                    return this.convertObjectAndMap(this.#switchParams, tag);
                     break;
                 case "fieldbus":
-                    return this.convertObjectAndMap(tag, this.#fieldbusParameters);
-                    
-
+                    return this.convertObjectAndMap(this.#fieldbusParams, tag);
+                    break;
+                case "artnet":
+                    return this.convertObjectAndMap(this.#artnetParams, tag);
+                    break;                   
             }          
         }
 
-        convertObjectAndMap(tag, mapParams) {
+        convertObjectAndMap(mapParams, tag) {
             let convertedObject = {};
             for (const [key,value] of Object.entries(dig(this.#configObject, tag))){
                 convertedObject[key] = {}
@@ -947,11 +1031,8 @@ Acces-Control-Allow-Origin: *
 
     document.addEventListener("DOMContentLoaded", async () => {
         let installation = await new Installation("Lux-Lumen");
-        for (node of installation.nodes) {
-            node.initialiseNode();
-        }
-
-        console.log(installation.nodes[0])
+        installation.addDemo();
+        console.log(installation);
 
     });
 
