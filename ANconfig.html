@@ -521,7 +521,7 @@ Acces-Control-Allow-Origin: *
     #accolade-9 {position: relative;grid-row:9; grid-column: 1/8;overflow: hidden;}
     #accolade-10 {position: relative;grid-row:10; grid-column: 1/8;overflow: hidden;}
 
-    #accolade-1 h3 {
+    #accolades h3 {
         grid-column: 1;
         position: absolute;
         top: 10px;
@@ -531,8 +531,16 @@ Acces-Control-Allow-Origin: *
         color: var(--ll-yellow);
         height: 100%;
     }
+
+    #fieldbusses{
+        display: grid;
+        grid-template-rows: subgrid;
+        grid-template-columns: subgrid;
+        grid-row: 1/12;
+        grid-column: 1/10;
+    }
     
-    .fieldbusses{
+    .fieldbus-card{
         position: relative;
         display: grid;
         grid-row: 1/11;
@@ -544,6 +552,8 @@ Acces-Control-Allow-Origin: *
         border-radius: 25px;
         background-color: var(--bg-card-grey);
         box-shadow: 0px 10px 15px 2px rgba(0,0,0,0.5);
+        color: var(--ll-yellow);
+        font-family: var(--font-regular);
     }
 
     .fieldbus{
@@ -574,47 +584,47 @@ Acces-Control-Allow-Origin: *
     #fb-5 {grid-column: 8/9; grid-row: 1/12;}
     #fb-6 {grid-column: 9/10; grid-row: 1/12;}
 
-    #fb-1 div #address-block-1 {
+    .fieldbus div {
+        /* display: flex;
+        flex-direction: column;
+        justify-content: space-around; */
+        /* align-items: center; */
         position: relative;
-        height: 20%;
         background-color: var(--bg-coal);
         border-radius: 25px;
-        outline: 4px solid var(--ll-yellow);
-        outline-offset: -4px;
+        outline: 3px solid var(--ll-yellow);
+        outline-offset: -2px;
     }
 
-    #address-block-1 h2 {
-        font-family: var(--font-regular);
-        font-size: clamp(var(--font-size-small), 2vw, var(--font-size-large));
+    .fieldbus h2 {
+        font-size: clamp(var(--font-size-small), 2vw, var(--font-size-medium));
         font-weight: lighter;
-        color: var(--ll-yellow);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 90%;
-    }
-
-    #address-block-1 h3 {
         position: absolute;
-        width: 70%;
-        left: 20%;
-        top: 5%;
-        font-family: var(--font-regular);
-        font-size: clamp(var(--font-size-xs), 1.5vw, var(--font-size-small));
+        bottom: 15%;
+        text-align: center;
+        width: 100%;
+        /* display: flex;
+        align-items: center; */
+    }
+
+    .fieldbus h3 {
+        position: absolute;
+        width: 65%;
+        left: 25%;
+        top: 10%;
+        font-size: clamp(var(--font-size-xs), 1vw, var(--font-size-small));
         font-weight: lighter;
-        color: var(--ll-yellow);
     }
 
     .fb-protocol {
+        position: relative;
         text-align: center;
         display: flex;
         grid-row: 11/12;
         flex-direction: column;
         justify-content: space-evenly;
         align-items: center;
-        font-family: var(--font-regular);
-        font-size: clamp(var(--font-size-xs), 1.5vw, var(--font-size-small));
-        color: var(--ll-yellow);
+        font-size: clamp(var(--font-size-xs), 1vw, var(--font-size-small));
     }
 
     .fb-protocol select {
@@ -781,9 +791,9 @@ Acces-Control-Allow-Origin: *
                 universes.push(new Universe(`inp${i+1}`, i, 512, 0));
             }
             for (let i=0; i<6; i++){
-                fieldbusses.push(new Fieldbus(`out${i+1}`, 1, i == 0? 1 : (i*512)+1, 511, 0));
+                fieldbusses.push(new Fieldbus(`out${i+1}`, 2, i == 0? 1 : (i*512)+1, 10, 0));
             }
-            this.#nodes.push(new NodeTemplate("127.0.0.1", "Demo", "7b:a6:80:7f:ec:7d", {}, "255.255.255.0", universes, fieldbusses))            
+            this.#nodes.push(new NodeTemplate("127.0.0.1", "Demo", "7b:a6:80:7f:ec:7d", {}, "255.255.255.0", universes, fieldbusses, ["Disabled", "Used-by-previous-channel", "DMX-512", "DMX-RDM"]))            
         }
 
         updateNav(){
@@ -819,14 +829,81 @@ Acces-Control-Allow-Origin: *
             this.showActiveNode();
         }
 
+        // <div id="accolade-1">
+        //         <h3>10fps</h3>
+        //         <svg height="100%" viewBox="0 0 2000 72">  
+        //             <use xlink:href="#accolade"/>
+        //         </svg>
+        //     </div>
+
         showActiveNode() {
-            let universesElement = document.getElementById("universes")
+            // Universes en hun accolades
+            let universesElement = document.getElementById("universes");
+            let accoladesElement = document.getElementById("accolades")
             universesElement.innerHTML = '';
-            console.log(this.#activeNode);
+            accoladesElement.innerHTML = '';
+            let counter = 1;
             this.#activeNode.universes.forEach(un => {
                 let u = document.createElement("li");
+                let a = document.createElement("div");
+                a.id = `accolade-${counter}`;
+                a.innerHTML = ` <h3>60fps</h3>
+                                <svg height="100%" viewBox="0 0 2000 72">  
+                                    <use xlink:href="#accolade"/>
+                                </svg>`
                 u.innerHTML = `${un.universe}<span>${un.keep}</span>`
+                accoladesElement.appendChild(a);
                 universesElement.appendChild(u);
+                counter++;
+            })
+
+    //         #fb-1 div #address-block-1 {
+    //     position: relative;
+    //     top: 20%;
+    //     height: 20%;
+    //     background-color: var(--bg-coal);
+    //     border-radius: 25px;
+    //     outline: 4px solid var(--ll-yellow);
+    //     outline-offset: -4px;
+    // }
+
+            // Fieldbusses
+            let fieldbussesElement = document.getElementById("fieldbusses");
+            fieldbussesElement.innerHTML = '';
+            counter = 1;
+            this.#activeNode.fieldbusses.forEach(fb => {
+                console.log(fb);
+                let fbElement = document.createElement("div");
+                fbElement.classList.add("fieldbus-card");
+                fbElement.id = `fb-${counter}`;
+                fbElement.innerHTML = `<div class="fieldbus">
+                    <h1>FIELDBUS ${counter}</h1>
+                    <div id="address-block-${counter}">
+                        <h3>start: <span>${fb.startAddress}</span></h3>
+                        <h2>${fb.streamLength}</h2>
+                    </div>
+                    </div>
+                    <div class="fb-protocol">
+                        <h2>Codec:</h3>
+                        <h2>${this.#activeNode.codecs[fb.codec].split(" ")[0]}</h2>
+                        <div id="ethernet">
+                            <svg width="75%" viewBox="0 0 512 490.43">  
+                                <use href="#ethernet-port"/>
+                            </svg>
+                        </div>
+                    </div>`;
+                fieldbussesElement.appendChild(fbElement);   
+                let addressBlock = document.getElementById(`address-block-${counter}`);
+                console.log(addressBlock);
+                if (this.#activeNode.codecs[fb.codec].split(" ")[0] === "disabled") {
+                    addressBlock.style.display = "none"
+                }
+                // height komt overeen met streamlength, top is startadres
+                let start = String((fb.startAddress/5120)*100)+"%";
+                let stream = String((fb.streamLength/5120)*100)+"%"
+                addressBlock.style.height = stream;
+                addressBlock.style.top = start;
+                counter++;    
             })
         }
     }
@@ -840,6 +917,7 @@ Acces-Control-Allow-Origin: *
         #configuration;
         #universes = [];
         #fieldbusses = [];
+        #codecs = [];
 
         constructor(ip, skipConfig = false) {
             this.#ip = ip;
@@ -873,8 +951,16 @@ Acces-Control-Allow-Origin: *
             return this.#universes;
         }
 
+        get fieldbusses() {
+            return this.#fieldbusses;
+        }
+
         get configuration(){
             return this.#configuration;
+        }
+
+        get codecs() {
+            return this.#codecs;
         }
 
         set ip(ip) {
@@ -948,6 +1034,10 @@ Acces-Control-Allow-Origin: *
             this.#fieldbusses = fb;
         }
 
+        set codecs(c){
+            this.#codecs = c;
+        }
+
         initialiseNode() {
             if (this.#configuration !== null) {;
                 this.#name = this.#configuration.name;
@@ -967,13 +1057,16 @@ Acces-Control-Allow-Origin: *
                         params.push(v);
                     }
                     this.#universes.push(new Universe(key, ...params));
+                }
+                for (const value of Object.values(this.#configuration.codec)) {
+                    this.codecs.push(value);
                 }                          
             }
         }
     }
 
     class NodeTemplate extends Node {
-        constructor(ip, name, mac, sw, nm, un, fb){
+        constructor(ip, name, mac, sw, nm, un, fb, c){
             super(ip, true);
             this.name = name;
             this.mac = mac;
@@ -981,6 +1074,7 @@ Acces-Control-Allow-Origin: *
             this.netmask = nm;
             this.universes = un;
             this.fieldbusses = fb;
+            this.codecs = c;
         }
     }
 
@@ -1028,6 +1122,28 @@ Acces-Control-Allow-Origin: *
             this.#streamLength = streamLength;
             this.#finetuningParams = finetuningParams;
         }
+
+        get id () {
+            return this.#id;
+        }
+
+        get codec() {
+            return this.#codec;
+        }
+
+        get startAddress() {
+            return this.#startAddress;
+        }
+
+        get streamLength() {
+            return this.#streamLength;
+        }
+
+        get finetuningParams() {
+            return this.#finetuningParams;
+        }
+
+
     }
 
     class Configuration {
@@ -1093,6 +1209,10 @@ Acces-Control-Allow-Origin: *
 
         get artnet() {
             return this.convertObjectAndMap(ARTNETPARAMS, "artnet");
+        }
+
+        get codec() {
+            return this.#configObject["codec"];
         }
 
         convertObjectAndMap(mapParams, tag) {
@@ -1285,7 +1405,7 @@ Acces-Control-Allow-Origin: *
         </svg>
         <!-- end of accolade definition -->
         <div id="accolades">
-            <div id="accolade-1">
+            <!-- <div id="accolade-1">
                 <h3>10fps</h3>
                 <svg height="100%" viewBox="0 0 2000 72">  
                     <use xlink:href="#accolade"/>
@@ -1335,57 +1455,59 @@ Acces-Control-Allow-Origin: *
                 <svg height="100%" viewBox="0 0 2000 72">  
                     <use xlink:href="#accolade"/>
                 </svg>
-            </div>
+            </div> -->
         </div>
-        <div class="fieldbusses" id="fb-1">
-            <div class="fieldbus">
-                <h1>FIELDBUS 1</h1>
-                <div id="address-block-1">
-                    <h3>start: <span>5121</span></h3>
-                    <h2>1024</h2>
+        <div id="fieldbusses">
+            <div class="fieldbus-card" id="fb-1">
+                <div class="fieldbus">
+                    <h1>FIELDBUS 1</h1>
+                    <div id="address-block-1">
+                        <h3>start: <span>5121</span></h3>
+                        <h2>1024</h2>
+                    </div>
+                </div>
+                <div class="fb-protocol">
+                    <div class="protocol-dd">
+                        <label for="protocol-1">protocol: </label>
+                        <select id="protocol-1">
+                            <option value="dmx512">DMX-512</option>
+                            <option value="dmxrdm">DMX-RDM</option>
+                            <option value="ybleads">YB-LEDs</option>
+                            <option value="disabled" disabled>Disabled</option>
+                    </select>
+                    </div>
+                    <div id="ethernet">
+                        <svg width="75%" viewBox="0 0 512 490.43">  
+                            <use href="#ethernet-port"/>
+                        </svg>
+                    </div>
                 </div>
             </div>
-            <div class="fb-protocol">
-                <div class="protocol-dd">
-                    <label for="protocol-1">protocol: </label>
-                    <select id="protocol-1">
-                        <option value="dmx512">DMX-512</option>
-                        <option value="dmxrdm">DMX-RDM</option>
-                        <option value="ybleads">YB-LEDs</option>
-                        <option value="disabled" disabled>Disabled</option>
-                </select>
-                </div>
-                <div id="ethernet">
-                    <svg width="75%" viewBox="0 0 512 490.43">  
-                        <use href="#ethernet-port"/>
-                    </svg>
+            <!-- <div class="fieldbus-card" id="fb-2">
+                <div class="fieldbus">
+                    <h1>FIELDBUS 2</h1>
                 </div>
             </div>
-        </div>
-        <div class="fieldbusses" id="fb-2">
-            <div class="fieldbus">
-                <h1>FIELDBUS 2</h1>
+            <div class="fieldbus-card" id="fb-3">
+                <div class="fieldbus">
+                    <h1>FIELDBUS 3</h1>
+                </div>
             </div>
-        </div>
-        <div class="fieldbusses" id="fb-3">
-            <div class="fieldbus">
-                <h1>FIELDBUS 3</h1>
+            <div class="fieldbus-card" id="fb-4">
+                <div class="fieldbus">
+                    <h1>FIELDBUS 4</h1>
+                </div>
             </div>
-        </div>
-        <div class="fieldbusses" id="fb-4">
-            <div class="fieldbus">
-                <h1>FIELDBUS 4</h1>
+            <div class="fieldbus-card" id="fb-5">
+                <div class="fieldbus">
+                    <h1>FIELDBUS 5</h1>
+                </div>
             </div>
-        </div>
-        <div class="fieldbusses" id="fb-5">
-            <div class="fieldbus">
-                <h1>FIELDBUS 5</h1>
-            </div>
-        </div>
-        <div class="fieldbusses" id="fb-6">
-            <div class="fieldbus">
-                <h1>FIELDBUS 6</h1>
-            </div>
+            <div class="fieldbus-card" id="fb-6">
+                <div class="fieldbus">
+                    <h1>FIELDBUS 6</h1>
+                </div>
+            </div> -->
         </div>
     </div>
 </body>
