@@ -399,7 +399,7 @@ Acces-Control-Allow-Origin: *
         grid-column: 2/3;
         grid-row: 2/3;
         grid-template-columns: calc(40px - var(--padding-medium)) calc(2*var(--padding-medium) + 50px)  calc(3*var(--padding-medium)) repeat(6,2fr);
-        grid-template-rows: repeat(10,1fr) 150px;
+        grid-template-rows: repeat(6,1fr) 100px;
         margin: var(--padding-large) var(--padding-small) 0;
         min-width: 570px;
     }
@@ -408,7 +408,7 @@ Acces-Control-Allow-Origin: *
         position: relative;
         display: grid;
         grid-column: 2/3;
-        grid-row: 1/11;
+        grid-row: 1/7;
         grid-template-rows: subgrid;
         grid-template-columns: subgrid;
         border-radius: 0px 12px 12px 12px;
@@ -447,7 +447,7 @@ Acces-Control-Allow-Origin: *
     #universes {
         display: grid;
         grid-column: 2/3;
-        grid-row: 1/11;
+        grid-row: 1/7;
         grid-template-rows: subgrid;
         grid-template-columns: subgrid;
         position: relative;
@@ -496,6 +496,40 @@ Acces-Control-Allow-Origin: *
         z-index: -1;
     }
 
+    #universe-filter-container {
+        top: 25px;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        justify-content: end;
+    }
+
+    #universe-filter {
+        padding: 10px;
+        display: flex;
+        flex-direction: row;
+        justify-content: space-around;
+    }
+
+    #universe-filter > * {
+        height: 25px;
+        width: 25px;
+        background-color: var(--bg-coal);
+        border: 2px solid var(--ll-yellow);
+        border-radius: 100%
+    }
+
+    #universe-filter > *:hover{
+        cursor: pointer;
+    }
+
+
+    #universe-filter h3 {
+        display: flex;
+        padding-top: 3px;
+        justify-content: center;
+    }
+
     #accolades {
         display: grid;
         grid-column: 3/10;
@@ -510,7 +544,9 @@ Acces-Control-Allow-Origin: *
         margin-bottom: -2.65px;
         overflow: hidden;
     }
-    #accolade-1 {position: relative;grid-row:1; grid-column: 1/8;overflow: hidden;}
+
+    .accolade {position: relative; grid-column: 1/8;overflow: hidden;}
+    /* #accolade-1 {position: relative;grid-row:1; grid-column: 1/8;overflow: hidden;}
     #accolade-2 {position: relative;grid-row:2; grid-column: 1/8;overflow: hidden;}
     #accolade-3 {position: relative;grid-row:3; grid-column: 1/8;overflow: hidden;}
     #accolade-4 {position: relative;grid-row:4; grid-column: 1/8;overflow: hidden;}
@@ -519,7 +555,7 @@ Acces-Control-Allow-Origin: *
     #accolade-7 {position: relative;grid-row:7; grid-column: 1/8;overflow: hidden;}
     #accolade-8 {position: relative;grid-row:8; grid-column: 1/8;overflow: hidden;}
     #accolade-9 {position: relative;grid-row:9; grid-column: 1/8;overflow: hidden;}
-    #accolade-10 {position: relative;grid-row:10; grid-column: 1/8;overflow: hidden;}
+    #accolade-10 {position: relative;grid-row:10; grid-column: 1/8;overflow: hidden;} */
 
     #accolades h3 {
         grid-column: 1;
@@ -536,14 +572,14 @@ Acces-Control-Allow-Origin: *
         display: grid;
         grid-template-rows: subgrid;
         grid-template-columns: subgrid;
-        grid-row: 1/12;
+        grid-row: 1/8;
         grid-column: 1/10;
     }
     
     .fieldbus-card{
         position: relative;
         display: grid;
-        grid-row: 1/11;
+        grid-row: 1/8;
         grid-template-rows: subgrid;
         justify-self: end;
         width: 70%;
@@ -556,10 +592,11 @@ Acces-Control-Allow-Origin: *
         font-family: var(--font-regular);
     }
 
+    
     .fieldbus{
         position: relative;
         justify-self: center;
-        grid-row: 1/11;
+        grid-row: 1/7;
         width:90%;
         border-radius: 25px;
         background-color: var(--bg-grey);
@@ -577,12 +614,12 @@ Acces-Control-Allow-Origin: *
         opacity: 50%;
     }
 
-    #fb-1 {grid-column: 4/5; grid-row: 1/12;}
-    #fb-2 {grid-column: 5/6; grid-row: 1/12;}
-    #fb-3 {grid-column: 6/7; grid-row: 1/12;}
-    #fb-4 {grid-column: 7/8; grid-row: 1/12;}
-    #fb-5 {grid-column: 8/9; grid-row: 1/12;}
-    #fb-6 {grid-column: 9/10; grid-row: 1/12;}
+    #fb-1 {grid-column: 4/5}
+    #fb-2 {grid-column: 5/6}
+    #fb-3 {grid-column: 6/7}
+    #fb-4 {grid-column: 7/8}
+    #fb-5 {grid-column: 8/9}
+    #fb-6 {grid-column: 9/10}
 
     .fieldbus div {
         /* display: flex;
@@ -620,7 +657,7 @@ Acces-Control-Allow-Origin: *
         position: relative;
         text-align: center;
         display: flex;
-        grid-row: 11/12;
+        /* grid-row: 11/12; */
         flex-direction: column;
         justify-content: space-evenly;
         align-items: center;
@@ -791,7 +828,7 @@ Acces-Control-Allow-Origin: *
                 universes.push(new Universe(`inp${i+1}`, i, 512, 0));
             }
             for (let i=0; i<6; i++){
-                fieldbusses.push(new Fieldbus(`out${i+1}`, 2, i == 0? 1 : (i*512)+1, 10, 0));
+                fieldbusses.push(new Fieldbus(`out${i+1}`, 2, i == 0? 1 : (i*512)+1, 512, 0));
             }
             this.#nodes.push(new NodeTemplate("127.0.0.1", "Demo", "7b:a6:80:7f:ec:7d", {}, "255.255.255.0", universes, fieldbusses, ["Disabled", "Used-by-previous-channel", "DMX-512", "DMX-RDM"]))            
         }
@@ -840,20 +877,24 @@ Acces-Control-Allow-Origin: *
             // Universes en hun accolades
             let universesElement = document.getElementById("universes");
             let accoladesElement = document.getElementById("accolades")
-            universesElement.innerHTML = '';
+            universesElement.innerHTML = '';    
             accoladesElement.innerHTML = '';
             let counter = 1;
             this.#activeNode.universes.forEach(un => {
-                let u = document.createElement("li");
-                let a = document.createElement("div");
-                a.id = `accolade-${counter}`;
-                a.innerHTML = ` <h3>60fps</h3>
-                                <svg height="100%" viewBox="0 0 2000 72">  
-                                    <use xlink:href="#accolade"/>
-                                </svg>`
-                u.innerHTML = `${un.universe}<span>${un.keep}</span>`
-                accoladesElement.appendChild(a);
-                universesElement.appendChild(u);
+                if (counter <= this.#activeNode.shownUniverses) {
+                    let u = document.createElement("li");
+                    let a = document.createElement("div");
+                    // a.style.gridRow = `"${counter}"`
+                    a.id = `accolade-${counter}`;
+                    a.classList.add("accolade");
+                    a.innerHTML = ` <h3>60fps</h3>
+                                    <svg height="100%" viewBox="0 0 2000 72">  
+                                        <use xlink:href="#accolade"/>
+                                    </svg>`
+                    u.innerHTML = `${un.universe}<span>${un.keep}</span>`
+                    accoladesElement.appendChild(a);
+                    universesElement.appendChild(u);
+                }
                 counter++;
             })
 
@@ -872,7 +913,6 @@ Acces-Control-Allow-Origin: *
             fieldbussesElement.innerHTML = '';
             counter = 1;
             this.#activeNode.fieldbusses.forEach(fb => {
-                console.log(fb);
                 let fbElement = document.createElement("div");
                 fbElement.classList.add("fieldbus-card");
                 fbElement.id = `fb-${counter}`;
@@ -894,17 +934,60 @@ Acces-Control-Allow-Origin: *
                     </div>`;
                 fieldbussesElement.appendChild(fbElement);   
                 let addressBlock = document.getElementById(`address-block-${counter}`);
-                console.log(addressBlock);
                 if (this.#activeNode.codecs[fb.codec].split(" ")[0] === "disabled") {
                     addressBlock.style.display = "none"
                 }
                 // height komt overeen met streamlength, top is startadres
-                let start = String((fb.startAddress/5120)*100)+"%";
-                let stream = String((fb.streamLength/5120)*100)+"%"
+                let start = String((fb.startAddress/(512*this.#activeNode.shownUniverses))*100)+"%";
+                let stream = String((fb.streamLength/(512*this.#activeNode.shownUniverses))*100)+"%"
                 addressBlock.style.height = stream;
                 addressBlock.style.top = start;
                 counter++;    
             })
+
+            this.changeGridStyling();
+        }
+
+        eventInit() {
+            let uniButtons      = document.getElementsByClassName("un-button");
+            for (const button of uniButtons) {
+                button.addEventListener("click", () => {
+                    console.log(button);
+                    if (button.id === "increment") {
+                        if (this.#activeNode.shownUniverses < this.#activeNode.maxShownUniverses) {
+                            console.log("incrementing");
+                            this.#activeNode.incShownUni();
+                        }
+                    } else if (button.id === "decrement") {
+                        if (this.#activeNode.shownUniverses > this.#activeNode.minShownUniverses) {
+                            console.log("decrementing");
+                            this.#activeNode.decShownUni();
+                        }
+                    }
+                    this.showActiveNode();
+                    this.changeGridStyling();
+                })
+            }
+        }
+
+        changeGridStyling(){
+            let main            = document.getElementById("main-config");
+            let uniC            = document.getElementById("universe-card");
+            let uni             = document.getElementById("universes");
+            let fieldbusses     = document.getElementById("fieldbusses");
+            let fbC             = document.getElementsByClassName("fieldbus-card");
+            let fb              = document.getElementsByClassName("fieldbus");
+
+            main.style.gridTemplateRows = `repeat(${this.#activeNode.shownUniverses}, 1fr) 100px`
+            uniC.style.gridRow          = `1/${this.#activeNode.shownUniverses+1}`
+            uni.style.gridRow           = `1/${this.#activeNode.shownUniverses+1}`
+            fieldbusses.style.gridRow   = `1/${this.#activeNode.shownUniverses+2}`
+            for (const fb of fbC) {
+                fb.style.gridRow        = `1/${this.#activeNode.shownUniverses+2}`
+            }
+            for (const f of fb) {
+                f.style.gridRow         = `1/${this.#activeNode.shownUniverses+1}`
+            }
         }
     }
 
@@ -918,6 +1001,9 @@ Acces-Control-Allow-Origin: *
         #universes = [];
         #fieldbusses = [];
         #codecs = [];
+        #maxShownUniverses = 10;
+        #minShownUniverses = 6
+        #shownUniverses = 6;
 
         constructor(ip, skipConfig = false) {
             this.#ip = ip;
@@ -961,6 +1047,18 @@ Acces-Control-Allow-Origin: *
 
         get codecs() {
             return this.#codecs;
+        }
+
+        get shownUniverses() {
+            return this.#shownUniverses;
+        }
+
+        get maxShownUniverses() {
+            return this.#maxShownUniverses;
+        }
+
+        get minShownUniverses() {
+            return this.#minShownUniverses;
         }
 
         set ip(ip) {
@@ -1036,6 +1134,14 @@ Acces-Control-Allow-Origin: *
 
         set codecs(c){
             this.#codecs = c;
+        }
+
+        incShownUni(){
+            this.#shownUniverses++;
+        }
+
+        decShownUni(){
+            this.#shownUniverses--;
         }
 
         initialiseNode() {
@@ -1285,8 +1391,8 @@ Acces-Control-Allow-Origin: *
     document.addEventListener("DOMContentLoaded", async () => {
         let installation = await new Installation("Lux-Lumen");
         installation.addDemo();
-        console.log(installation)
         installation.updateNav();
+        installation.eventInit();
     });
 
 </script>
@@ -1392,6 +1498,12 @@ Acces-Control-Allow-Origin: *
                 <li>7<span>512</span></li>
                 <li>8<span>512</span></li> -->
             </ol>
+            <div id="universe-filter-container">
+                <div id="universe-filter">
+                    <div class="un-button" id="decrement"><h3>-</h3></div>
+                    <div class="un-button" id="increment"><h3>+</h3></div>
+                </div>
+            </div>
         </div>
         <!-- svg definition of the accolades -->
         <svg viewBox="0 0 1024 72" xmlns="http://www.w3.org/2000/svg">
@@ -1458,7 +1570,7 @@ Acces-Control-Allow-Origin: *
             </div> -->
         </div>
         <div id="fieldbusses">
-            <div class="fieldbus-card" id="fb-1">
+            <!-- <div class="fieldbus-card" id="fb-1">
                 <div class="fieldbus">
                     <h1>FIELDBUS 1</h1>
                     <div id="address-block-1">
@@ -1481,7 +1593,7 @@ Acces-Control-Allow-Origin: *
                             <use href="#ethernet-port"/>
                         </svg>
                     </div>
-                </div>
+                </div> -->
             </div>
             <!-- <div class="fieldbus-card" id="fb-2">
                 <div class="fieldbus">
