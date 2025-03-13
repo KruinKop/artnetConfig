@@ -119,7 +119,7 @@ Acces-Control-Allow-Origin: *
         background-color: var(--ll-mustard); 
         border-radius: 20px;
         box-shadow: 0px 10px 15px 2px rgba(0,0,0,0.5);
-        z-index: -3;
+        /* z-index: -3; */
     }
 
     #banner {
@@ -157,16 +157,17 @@ Acces-Control-Allow-Origin: *
     }
 
     #dark-mode-switch label {
-        width: 60px;
+        width: 70px;
         height: 30px;
         position: relative;
-        bottom: 10px;
+        bottom: 6px;
         display: block;
         background-color: var(--bg-coal);
         border-radius: 200px;
         box-shadow: inset 0px 5px 15px rgba(0,0,0,0.4), inset 0px -5px 15px rgba(255,255,255,0.4);
         cursor: pointer;
         transition: 0.3s;
+
     }
 
     #dark-mode-switch label:after{
@@ -195,11 +196,11 @@ Acces-Control-Allow-Origin: *
     #dark-mode-switch input:checked + label:after {
         left: calc(100% - 2.5px);
         transform: translateX(-100%);
-        background: linear-gradient(180deg, var(--ll-mustard), var(--ll-yellow));
+        background: linear-gradient(270deg, var(--ll-yellow), var(--bg-card-grey));
     }
 
     #dark-mode-switch label:active:after {
-        width: 40px;
+        width: 35px;
     }
 
     #dark-mode-switch label svg {
@@ -210,14 +211,16 @@ Acces-Control-Allow-Origin: *
     }
 
     #dark-mode-switch label svg.sun {
-        left: 35px;
+        width: 25px;
+        left: 43px;
+        top: -35px;
         fill: #7e7e7e;
         transition: 0.3s;
     }
 
     #dark-mode-switch label svg.moon {
         left: 5px;
-        fill: #fff;
+        fill: #dbdbdb;
         transition: 0.3s;
     }
 
@@ -258,6 +261,7 @@ Acces-Control-Allow-Origin: *
         font-size: var(--font-size-large);
         text-align: right;
         margin-right: 10px;
+
     }
 
     /* Lux-Lumen */
@@ -268,6 +272,7 @@ Acces-Control-Allow-Origin: *
     /* Art-Net node */
     #title h2:nth-child(2) {
         color: var(--bg-coal);
+        z-index: 1;
     }
 
     #node-list {
@@ -399,7 +404,7 @@ Acces-Control-Allow-Origin: *
         grid-column: 2/3;
         grid-row: 2/3;
         grid-template-columns: calc(40px - var(--padding-medium)) calc(2*var(--padding-medium) + 50px)  calc(3*var(--padding-medium)) repeat(6,2fr);
-        grid-template-rows: repeat(6,1fr) 100px;
+        /* grid-template-rows: repeat(6,1fr) 1px; */
         margin: var(--padding-large) var(--padding-small) 0;
         min-width: 570px;
     }
@@ -481,7 +486,7 @@ Acces-Control-Allow-Origin: *
         position: relative;
         background: var(--bg-grey);
         border-radius: 10px;
-        z-index: 0;
+        z-index: 1;
         box-shadow: 0px 5px 15px 2px rgba(0,0,0,0.5);
     }
 
@@ -493,11 +498,11 @@ Acces-Control-Allow-Origin: *
         top: 25px;
         left: 50px;
         border-radius: 10px;
-        z-index: -1;
+        /* z-index: -1; */
     }
 
     #universe-filter-container {
-        top: 25px;
+        top: 30px;
         position: relative;
         display: flex;
         flex-direction: column;
@@ -511,12 +516,13 @@ Acces-Control-Allow-Origin: *
         justify-content: space-around;
     }
 
-    #universe-filter > * {
+    #universe-filter > button {
         height: 25px;
         width: 25px;
         background-color: var(--bg-coal);
         border: 2px solid var(--ll-yellow);
-        border-radius: 100%
+        color: var(--ll-yellow);
+        border-radius: 100%;
     }
 
     #universe-filter > *:hover{
@@ -531,6 +537,7 @@ Acces-Control-Allow-Origin: *
     }
 
     #accolades {
+        position: relative;
         display: grid;
         grid-column: 3/10;
         grid-row: 1/11;
@@ -539,10 +546,14 @@ Acces-Control-Allow-Origin: *
     }
 
     #accolades div {
+        position: relative;
+        left: -20px;
+        height: 104%;
         display: grid;
         grid-template-columns: subgrid;
         margin-bottom: -2.65px;
         overflow: hidden;
+        /* z-index: -1; */
     }
 
     .accolade {position: relative; grid-column: 1/8;overflow: hidden;}
@@ -557,13 +568,10 @@ Acces-Control-Allow-Origin: *
     #accolade-9 {position: relative;grid-row:9; grid-column: 1/8;overflow: hidden;}
     #accolade-10 {position: relative;grid-row:10; grid-column: 1/8;overflow: hidden;} */
 
-    #accolades h3 {
-        grid-column: 1;
+    #accolades h3 { 
         position: absolute;
-        top: 10px;
-        left: 30px;
-        display: flex;
-        align-items: flex-start;
+        bottom: -10px;
+        left: 50px;
         color: var(--ll-yellow);
         height: 100%;
     }
@@ -673,7 +681,7 @@ Acces-Control-Allow-Origin: *
     .fb-protocol #ethernet {
         display: flex;
         justify-content: center;
-        max-width: 75%;
+        max-width: 60%;
     }
 
     /* ============= Dynamic resizing ============== */
@@ -681,13 +689,6 @@ Acces-Control-Allow-Origin: *
     @media screen and (max-width: 950px) {
         :root {
             --grid-nav-width: 21vw;
-        }
-    }
-
-    @media screen and (min-height: 1158px) {
-        #accolades h3 {
-            left: 0px;
-            top: 33%;
         }
     }
 
@@ -821,6 +822,10 @@ Acces-Control-Allow-Origin: *
             });
         }
 
+        sayHello(){
+            console.log('hello')
+        }
+
         addDemo(){
             let universes = [];
             let fieldbusses = [];
@@ -936,12 +941,15 @@ Acces-Control-Allow-Origin: *
                 let addressBlock = document.getElementById(`address-block-${counter}`);
                 if (this.#activeNode.codecs[fb.codec].split(" ")[0] === "disabled") {
                     addressBlock.style.display = "none"
-                }
+                }         
                 // height komt overeen met streamlength, top is startadres
                 let start = String((fb.startAddress/(512*this.#activeNode.shownUniverses))*100)+"%";
                 let stream = String((fb.streamLength/(512*this.#activeNode.shownUniverses))*100)+"%"
                 addressBlock.style.height = stream;
                 addressBlock.style.top = start;
+                if (counter > this.#activeNode.shownUniverses) {
+                    addressBlock.style.display = "none";
+                }
                 counter++;    
             })
 
@@ -949,19 +957,28 @@ Acces-Control-Allow-Origin: *
         }
 
         eventInit() {
-            let uniButtons      = document.getElementsByClassName("un-button");
+            window.onresize = (e) => {console.log(e)}
+            let uniButtons = document.getElementsByClassName("un-button");
             for (const button of uniButtons) {
                 button.addEventListener("click", () => {
-                    console.log(button);
+                    let accolades = document.querySelectorAll("#accolades div");
                     if (button.id === "increment") {
                         if (this.#activeNode.shownUniverses < this.#activeNode.maxShownUniverses) {
                             console.log("incrementing");
-                            this.#activeNode.incShownUni();
+                            this.#activeNode.changeShownUni(true);
                         }
                     } else if (button.id === "decrement") {
                         if (this.#activeNode.shownUniverses > this.#activeNode.minShownUniverses) {
                             console.log("decrementing");
-                            this.#activeNode.decShownUni();
+                            let overLap = false;
+                            for (const fb of this.#activeNode.fieldbusses) {
+                                if ((fb.startAddress + fb.streamLength)-1 > (this.#activeNode.shownUniverses-1) * 512) {
+                                    overLap = true;
+                                }
+                            }
+                            if (!overLap) {
+                                this.#activeNode.changeShownUni(false);
+                            }
                         }
                     }
                     this.showActiveNode();
@@ -978,7 +995,7 @@ Acces-Control-Allow-Origin: *
             let fbC             = document.getElementsByClassName("fieldbus-card");
             let fb              = document.getElementsByClassName("fieldbus");
 
-            main.style.gridTemplateRows = `repeat(${this.#activeNode.shownUniverses}, 1fr) 100px`
+            main.style.gridTemplateRows = `repeat(${this.#activeNode.shownUniverses}, 1fr) 120px`
             uniC.style.gridRow          = `1/${this.#activeNode.shownUniverses+1}`
             uni.style.gridRow           = `1/${this.#activeNode.shownUniverses+1}`
             fieldbusses.style.gridRow   = `1/${this.#activeNode.shownUniverses+2}`
@@ -1002,7 +1019,7 @@ Acces-Control-Allow-Origin: *
         #fieldbusses = [];
         #codecs = [];
         #maxShownUniverses = 10;
-        #minShownUniverses = 6
+        #minShownUniverses = 6;
         #shownUniverses = 6;
 
         constructor(ip, skipConfig = false) {
@@ -1060,7 +1077,7 @@ Acces-Control-Allow-Origin: *
         get minShownUniverses() {
             return this.#minShownUniverses;
         }
-
+        
         set ip(ip) {
             console.log(ip);
             console.log(this.#netmask);
@@ -1136,12 +1153,8 @@ Acces-Control-Allow-Origin: *
             this.#codecs = c;
         }
 
-        incShownUni(){
-            this.#shownUniverses++;
-        }
-
-        decShownUni(){
-            this.#shownUniverses--;
+        changeShownUni(up){
+            up? this.#shownUniverses++ : this.#shownUniverses--;
         }
 
         initialiseNode() {
@@ -1438,9 +1451,11 @@ Acces-Control-Allow-Origin: *
             <div id="dark-mode-switch">
                 <input type="checkbox" id="switch">
                 <label for="switch">
-                <svg class="moon" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 122.88 122.89" style="enable-background:new 0 0 122.88 122.89" xml:space="preserve"><g><path d="M49.06,1.27c2.17-0.45,4.34-0.77,6.48-0.98c2.2-0.21,4.38-0.31,6.53-0.29c1.21,0.01,2.18,1,2.17,2.21 c-0.01,0.93-0.6,1.72-1.42,2.03c-9.15,3.6-16.47,10.31-20.96,18.62c-4.42,8.17-6.1,17.88-4.09,27.68l0.01,0.07 c2.29,11.06,8.83,20.15,17.58,25.91c8.74,5.76,19.67,8.18,30.73,5.92l0.07-0.01c7.96-1.65,14.89-5.49,20.3-10.78 c5.6-5.47,9.56-12.48,11.33-20.16c0.27-1.18,1.45-1.91,2.62-1.64c0.89,0.21,1.53,0.93,1.67,1.78c2.64,16.2-1.35,32.07-10.06,44.71 c-8.67,12.58-22.03,21.97-38.18,25.29c-16.62,3.42-33.05-0.22-46.18-8.86C14.52,104.1,4.69,90.45,1.27,73.83 C-2.07,57.6,1.32,41.55,9.53,28.58C17.78,15.57,30.88,5.64,46.91,1.75c0.31-0.08,0.67-0.16,1.06-0.25l0.01,0l0,0L49.06,1.27 L49.06,1.27z M51.86,5.2c-0.64,0.11-1.28,0.23-1.91,0.36l-1.01,0.22l0,0c-0.29,0.07-0.63,0.14-1,0.23 c-14.88,3.61-27.05,12.83-34.7,24.92C5.61,42.98,2.46,57.88,5.56,72.94c3.18,15.43,12.31,28.11,24.51,36.15 c12.19,8.03,27.45,11.41,42.88,8.23c15-3.09,27.41-11.81,35.46-23.49c6.27-9.09,9.9-19.98,10.09-31.41 c-2.27,4.58-5.3,8.76-8.96,12.34c-6,5.86-13.69,10.13-22.51,11.95l-0.01,0c-12.26,2.52-24.38-0.16-34.07-6.54 c-9.68-6.38-16.93-16.45-19.45-28.7l0-0.01C31.25,40.58,33.1,29.82,38,20.77C41.32,14.63,46.05,9.27,51.86,5.2L51.86,5.2z"/></g></svg>
-                <svg class="sun" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 240 240" style="enable-background:new 0 0 240 240" xml:space="preserve"><g><path d="M58.57,25.81c-2.13-3.67-0.87-8.38,2.8-10.51c3.67-2.13,8.38-0.88,10.51,2.8l9.88,17.1c2.13,3.67,0.87,8.38-2.8,10.51 c-3.67,2.13-8.38,0.88-10.51-2.8L58.57,25.81L58.57,25.81z M120,51.17c19.01,0,36.21,7.7,48.67,20.16 C181.12,83.79,188.83,101,188.83,120c0,19.01-7.7,36.21-20.16,48.67c-12.46,12.46-29.66,20.16-48.67,20.16 c-19.01,0-36.21-7.7-48.67-20.16C58.88,156.21,51.17,139.01,51.17,120c0-19.01,7.7-36.21,20.16-48.67 C83.79,58.88,101,51.17,120,51.17L120,51.17z M158.27,81.73c-9.79-9.79-23.32-15.85-38.27-15.85c-14.95,0-28.48,6.06-38.27,15.85 c-9.79,9.79-15.85,23.32-15.85,38.27c0,14.95,6.06,28.48,15.85,38.27c9.79,9.79,23.32,15.85,38.27,15.85 c14.95,0,28.48-6.06,38.27-15.85c9.79-9.79,15.85-23.32,15.85-38.27C174.12,105.05,168.06,91.52,158.27,81.73L158.27,81.73z M113.88,7.71c0-4.26,3.45-7.71,7.71-7.71c4.26,0,7.71,3.45,7.71,7.71v19.75c0,4.26-3.45,7.71-7.71,7.71 c-4.26,0-7.71-3.45-7.71-7.71V7.71L113.88,7.71z M170.87,19.72c2.11-3.67,6.8-4.94,10.48-2.83c3.67,2.11,4.94,6.8,2.83,10.48 l-9.88,17.1c-2.11,3.67-6.8,4.94-10.48,2.83c-3.67-2.11-4.94-6.8-2.83-10.48L170.87,19.72L170.87,19.72z M214.19,58.57 c3.67-2.13,8.38-0.87,10.51,2.8c2.13,3.67,0.88,8.38-2.8,10.51l-17.1,9.88c-3.67,2.13-8.38,0.87-10.51-2.8 c-2.13-3.67-0.88-8.38,2.8-10.51L214.19,58.57L214.19,58.57z M232.29,113.88c4.26,0,7.71,3.45,7.71,7.71 c0,4.26-3.45,7.71-7.71,7.71h-19.75c-4.26,0-7.71-3.45-7.71-7.71c0-4.26,3.45-7.71,7.71-7.71H232.29L232.29,113.88z M220.28,170.87 c3.67,2.11,4.94,6.8,2.83,10.48c-2.11,3.67-6.8,4.94-10.48,2.83l-17.1-9.88c-3.67-2.11-4.94-6.8-2.83-10.48 c2.11-3.67,6.8-4.94,10.48-2.83L220.28,170.87L220.28,170.87z M181.43,214.19c2.13,3.67,0.87,8.38-2.8,10.51 c-3.67,2.13-8.38,0.88-10.51-2.8l-9.88-17.1c-2.13-3.67-0.87-8.38,2.8-10.51c3.67-2.13,8.38-0.88,10.51,2.8L181.43,214.19 L181.43,214.19z M126.12,232.29c0,4.26-3.45,7.71-7.71,7.71c-4.26,0-7.71-3.45-7.71-7.71v-19.75c0-4.26,3.45-7.71,7.71-7.71 c4.26,0,7.71,3.45,7.71,7.71V232.29L126.12,232.29z M69.13,220.28c-2.11,3.67-6.8,4.94-10.48,2.83c-3.67-2.11-4.94-6.8-2.83-10.48 l9.88-17.1c2.11-3.67,6.8-4.94,10.48-2.83c3.67,2.11,4.94,6.8,2.83,10.48L69.13,220.28L69.13,220.28z M25.81,181.43 c-3.67,2.13-8.38,0.87-10.51-2.8c-2.13-3.67-0.88-8.38,2.8-10.51l17.1-9.88c3.67-2.13,8.38-0.87,10.51,2.8 c2.13,3.67,0.88,8.38-2.8,10.51L25.81,181.43L25.81,181.43z M7.71,126.12c-4.26,0-7.71-3.45-7.71-7.71c0-4.26,3.45-7.71,7.71-7.71 h19.75c4.26,0,7.71,3.45,7.71,7.71c0,4.26-3.45,7.71-7.71,7.71H7.71L7.71,126.12z M19.72,69.13c-3.67-2.11-4.94-6.8-2.83-10.48 c2.11-3.67,6.8-4.94,10.48-2.83l17.1,9.88c3.67,2.11,4.94,6.8,2.83,10.48c-2.11,3.67-6.8,4.94-10.48,2.83L19.72,69.13L19.72,69.13z"/></g></svg>
-            </label>
+                    <svg class="sun" xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="100" height="100" viewBox="0 0 50 50">
+                        <path d="M 24.90625 3.96875 C 24.863281 3.976563 24.820313 3.988281 24.78125 4 C 24.316406 4.105469 23.988281 4.523438 24 5 L 24 11 C 23.996094 11.359375 24.183594 11.695313 24.496094 11.878906 C 24.808594 12.058594 25.191406 12.058594 25.503906 11.878906 C 25.816406 11.695313 26.003906 11.359375 26 11 L 26 5 C 26.011719 4.710938 25.894531 4.433594 25.6875 4.238281 C 25.476563 4.039063 25.191406 3.941406 24.90625 3.96875 Z M 10.65625 9.84375 C 10.28125 9.910156 9.980469 10.183594 9.875 10.546875 C 9.769531 10.914063 9.878906 11.304688 10.15625 11.5625 L 14.40625 15.8125 C 14.648438 16.109375 15.035156 16.246094 15.410156 16.160156 C 15.78125 16.074219 16.074219 15.78125 16.160156 15.410156 C 16.246094 15.035156 16.109375 14.648438 15.8125 14.40625 L 11.5625 10.15625 C 11.355469 9.933594 11.054688 9.820313 10.75 9.84375 C 10.71875 9.84375 10.6875 9.84375 10.65625 9.84375 Z M 39.03125 9.84375 C 38.804688 9.875 38.59375 9.988281 38.4375 10.15625 L 34.1875 14.40625 C 33.890625 14.648438 33.753906 15.035156 33.839844 15.410156 C 33.925781 15.78125 34.21875 16.074219 34.589844 16.160156 C 34.964844 16.246094 35.351563 16.109375 35.59375 15.8125 L 39.84375 11.5625 C 40.15625 11.265625 40.246094 10.800781 40.0625 10.410156 C 39.875 10.015625 39.460938 9.789063 39.03125 9.84375 Z M 25 15 C 19.484375 15 15 19.484375 15 25 C 15 30.515625 19.484375 35 25 35 C 30.515625 35 35 30.515625 35 25 C 35 19.484375 30.515625 15 25 15 Z M 4.71875 24 C 4.167969 24.078125 3.78125 24.589844 3.859375 25.140625 C 3.9375 25.691406 4.449219 26.078125 5 26 L 11 26 C 11.359375 26.003906 11.695313 25.816406 11.878906 25.503906 C 12.058594 25.191406 12.058594 24.808594 11.878906 24.496094 C 11.695313 24.183594 11.359375 23.996094 11 24 L 5 24 C 4.96875 24 4.9375 24 4.90625 24 C 4.875 24 4.84375 24 4.8125 24 C 4.78125 24 4.75 24 4.71875 24 Z M 38.71875 24 C 38.167969 24.078125 37.78125 24.589844 37.859375 25.140625 C 37.9375 25.691406 38.449219 26.078125 39 26 L 45 26 C 45.359375 26.003906 45.695313 25.816406 45.878906 25.503906 C 46.058594 25.191406 46.058594 24.808594 45.878906 24.496094 C 45.695313 24.183594 45.359375 23.996094 45 24 L 39 24 C 38.96875 24 38.9375 24 38.90625 24 C 38.875 24 38.84375 24 38.8125 24 C 38.78125 24 38.75 24 38.71875 24 Z M 15 33.875 C 14.773438 33.90625 14.5625 34.019531 14.40625 34.1875 L 10.15625 38.4375 C 9.859375 38.679688 9.722656 39.066406 9.808594 39.441406 C 9.894531 39.8125 10.1875 40.105469 10.558594 40.191406 C 10.933594 40.277344 11.320313 40.140625 11.5625 39.84375 L 15.8125 35.59375 C 16.109375 35.308594 16.199219 34.867188 16.039063 34.488281 C 15.882813 34.109375 15.503906 33.867188 15.09375 33.875 C 15.0625 33.875 15.03125 33.875 15 33.875 Z M 34.6875 33.875 C 34.3125 33.941406 34.011719 34.214844 33.90625 34.578125 C 33.800781 34.945313 33.910156 35.335938 34.1875 35.59375 L 38.4375 39.84375 C 38.679688 40.140625 39.066406 40.277344 39.441406 40.191406 C 39.8125 40.105469 40.105469 39.8125 40.191406 39.441406 C 40.277344 39.066406 40.140625 38.679688 39.84375 38.4375 L 35.59375 34.1875 C 35.40625 33.988281 35.148438 33.878906 34.875 33.875 C 34.84375 33.875 34.8125 33.875 34.78125 33.875 C 34.75 33.875 34.71875 33.875 34.6875 33.875 Z M 24.90625 37.96875 C 24.863281 37.976563 24.820313 37.988281 24.78125 38 C 24.316406 38.105469 23.988281 38.523438 24 39 L 24 45 C 23.996094 45.359375 24.183594 45.695313 24.496094 45.878906 C 24.808594 46.058594 25.191406 46.058594 25.503906 45.878906 C 25.816406 45.695313 26.003906 45.359375 26 45 L 26 39 C 26.011719 38.710938 25.894531 38.433594 25.6875 38.238281 C 25.476563 38.039063 25.191406 37.941406 24.90625 37.96875 Z"></path>
+                    </svg>
+                    <?xml version="1.0" encoding="utf-8"?><svg class="moon" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 122.88 122.89" style="enable-background:new 0 0 122.88 122.89" xml:space="preserve"><g><path d="M49.06,1.27c2.17-0.45,4.34-0.77,6.48-0.98c2.2-0.21,4.38-0.31,6.53-0.29c1.21,0.01,2.18,1,2.17,2.21 c-0.01,0.93-0.6,1.72-1.42,2.03c-9.15,3.6-16.47,10.31-20.96,18.62c-4.42,8.17-6.1,17.88-4.09,27.68l0.01,0.07 c2.29,11.06,8.83,20.15,17.58,25.91c8.74,5.76,19.67,8.18,30.73,5.92l0.07-0.01c7.96-1.65,14.89-5.49,20.3-10.78 c5.6-5.47,9.56-12.48,11.33-20.16c0.27-1.18,1.45-1.91,2.62-1.64c0.89,0.21,1.53,0.93,1.67,1.78c2.64,16.2-1.35,32.07-10.06,44.71 c-8.67,12.58-22.03,21.97-38.18,25.29c-16.62,3.42-33.05-0.22-46.18-8.86C14.52,104.1,4.69,90.45,1.27,73.83 C-2.07,57.6,1.32,41.55,9.53,28.58C17.78,15.57,30.88,5.64,46.91,1.75c0.31-0.08,0.67-0.16,1.06-0.25l0.01,0l0,0L49.06,1.27 L49.06,1.27z"/></g></svg>
+                </label>
             </div>
         </div>
     </header>
@@ -1500,8 +1515,8 @@ Acces-Control-Allow-Origin: *
             </ol>
             <div id="universe-filter-container">
                 <div id="universe-filter">
-                    <div class="un-button" id="decrement"><h3>-</h3></div>
-                    <div class="un-button" id="increment"><h3>+</h3></div>
+                    <button class="un-button" id="decrement">-</button>
+                    <button class="un-button" id="increment">+</button>
                 </div>
             </div>
         </div>
@@ -1509,9 +1524,9 @@ Acces-Control-Allow-Origin: *
         <svg viewBox="0 0 1024 72" xmlns="http://www.w3.org/2000/svg">
             <defs>
                 <symbol id="accolade">
-                    <path d="M28.4318 1.72424H10130" stroke="#FFF200" stroke-width="2"/>
-                    <path d="M28.4318 70.7244L10130.81 70.7245" stroke="#FFF200" stroke-width="2"/>
-                    <path d="M28.4318 1.70703C21.2604 1.70703 17.0489 5.19076 17.0489 12.588C17.0489 20.8949 22.0324 23.627 23.7341 28.1793C26.3582 35.1994 18.7241 36.2934 13.4779 36.2116H0.493549L13.4779 36.2198C18.7241 36.138 26.3582 37.232 23.7341 44.2521C22.0324 48.8044 17.0489 51.5365 17.0489 59.8434C17.0489 67.2406 21.2604 70.7244 28.4318 70.7244" fill="none" stroke="#FFF200" stroke-width="2"/>
+                    <path d="M41.4318 1.72424H2617.06" stroke="#FFF200" stroke-width="2"/>
+                    <path d="M41.4318 70.7244H2617.06" stroke="#FFF200" stroke-width="2"/>
+                    <path d="M26.4779 36.2288C31.7241 36.3106 39.3583 35.2166 36.7341 28.1965C35.0324 23.6442 30.049 20.9121 30.049 12.6052C30.049 5.20797 34.2605 1.72424 41.4318 1.72424M0.437164 36.237H26.4779C31.7241 36.1552 39.3583 37.2492 36.7341 44.2693C35.0324 48.8216 30.049 51.5537 30.049 59.8606C30.049 67.2579 34.2605 70.7416 41.4318 70.7416" fill="none" stroke="#FFF200" stroke-width="2"/>
                 </symbol>
             </defs>
         </svg>
