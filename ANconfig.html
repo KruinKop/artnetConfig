@@ -68,11 +68,16 @@ Acces-Control-Allow-Origin: *
     :root {
         /* colors */
         --ll-yellow: #FFF200;
+        --ll-light-yellow: #F8EB00;
         --ll-mustard: #B9AF00;
         --bg-coal: #363633;
+        --bg-light: #F5F5F5;
         --bg-dmx-box: #2F2F2F;
         --bg-grey: #82827B;
+        --bg-light-grey: #c9c9c9;
+        --bg-light-address: #FDFFF9;
         --bg-card-grey: #4d4d4d;
+        --bg-light-card-grey: #DDDDDD;
         --bg-error-red: #8a3838;
         --bg-status-green: #2Aff00;
 
@@ -102,9 +107,24 @@ Acces-Control-Allow-Origin: *
         grid-template-columns: var(--grid-nav-width) 1fr;
         grid-template-rows: var(--banner-height) calc(100vh - var(--banner-height) - var(--padding-small));
     }
+    body.light {
+        background-color: var(--bg-light);
+    }
 
-    nav, #info, #banner span {
+    nav, .info, #banner span {
         font-family: var(--font-regular);
+    }
+
+    #title h2:nth-child(2), h1 {
+        color: var(--bg-coal);
+    }
+
+    .info {
+        color: var(--ll-light-yellow)
+    }
+
+    .info.light {
+        color: black;
     }
 
     /*==================================== Banner ==================================== */
@@ -118,8 +138,11 @@ Acces-Control-Allow-Origin: *
         min-width: 620px;
         background-color: var(--ll-mustard); 
         border-radius: 20px;
-        box-shadow: 0px 10px 15px 2px rgba(0,0,0,0.5);
+        box-shadow: 5px 10px 15px rgba(0,0,0,0.5);
         /* z-index: -3; */
+    }
+    header.light{
+        background-color: var(--ll-light-yellow);
     }
 
     #banner {
@@ -147,7 +170,7 @@ Acces-Control-Allow-Origin: *
         bottom: 2px;
         font-size: var(--font-size-xxl);
         font-family: Brush Script MT;
-        font-weight: lighter;    
+        font-weight: lighter;
     }
 
     /* ============= Dark mode switch ============== */
@@ -196,7 +219,7 @@ Acces-Control-Allow-Origin: *
     #dark-mode-switch input:checked + label:after {
         left: calc(100% - 2.5px);
         transform: translateX(-100%);
-        background: linear-gradient(270deg, var(--ll-yellow), var(--bg-card-grey));
+        background: linear-gradient(270deg, var(--bg-light-card-grey), var(--bg-card-grey));
     }
 
     #dark-mode-switch label:active:after {
@@ -249,7 +272,10 @@ Acces-Control-Allow-Origin: *
         background-color: var(--bg-grey);
         border-radius: 20px;
         z-index: 11;
+    }
 
+    #sidebar.light {
+        background-color: var(--bg-light-grey);
     }
 
     nav {      
@@ -265,13 +291,12 @@ Acces-Control-Allow-Origin: *
     }
 
     /* Lux-Lumen */
-    #title h2:nth-child(1) {
+    #title h2:nth-child(1), #info {
         color: var(--ll-yellow);
     }
 
     /* Art-Net node */
     #title h2:nth-child(2) {
-        color: var(--bg-coal);
         z-index: 1;
     }
 
@@ -283,13 +308,14 @@ Acces-Control-Allow-Origin: *
     .node {
         font-size: var(--font-size-medium);
         padding: var(--padding-small) 0 var(--padding-small) var(--padding-small);
+        color: var(--bg-coal);
     }
 
     .node:hover {
         cursor: pointer;
     }
 
-    .node-info {
+    .info {
         display: none;
         font-size: var(--font-size-small);
         padding-top: 0.5rem;
@@ -299,22 +325,21 @@ Acces-Control-Allow-Origin: *
         display: none;
     }
 
-    .node-info li {
+    .info li {
         margin-top: 0.5rem;
     }
 
-    .node-info p {
+    .info p {
         display: inline;
     }
 
-    #info {
+    .info.config {
         font-size: var(--font-size-xs);
         flex-direction: column;
         display: flex;
         justify-content: center;
         align-items: center;
         grid-row: 3/4;
-        color: var(--ll-yellow);
     }
 
     /* ============= Selected node ============== */
@@ -328,7 +353,12 @@ Acces-Control-Allow-Origin: *
         z-index: -3;
     }
 
-    .node.selected .node-info {
+    .node.selected.light {
+        background-color: var(--bg-light);
+        color: black;
+    }
+
+    .node.selected .info {
         display: block;
     }
 
@@ -344,8 +374,16 @@ Acces-Control-Allow-Origin: *
         bottom: 38px;
         width: 30px;
         height: 30px;
-        background-color: #363633;
+        background-color: var(--bg-coal);
         z-index: -2;
+    }
+
+    .node.selected.light span:before {
+        background-color: var(--bg-light);
+    }
+
+    .node.selected.light span:after {
+        background-color: var(--bg-light-grey);
     }
 
     .node.selected span:after {
@@ -371,7 +409,6 @@ Acces-Control-Allow-Origin: *
         top: 16px;
         width: 30px;
         height: 30px;
-        background-color: #363633;
         z-index: -2;
     }
 
@@ -382,7 +419,6 @@ Acces-Control-Allow-Origin: *
         top: 16.5px;
         width: 60px;
         height: 60px;
-        background-color: var(--bg-grey);
         border-radius: 100%;
         z-index: -1;
     }
@@ -404,12 +440,29 @@ Acces-Control-Allow-Origin: *
         grid-column: 2/3;
         grid-row: 2/3;
         grid-template-columns: calc(40px - var(--padding-medium)) calc(2*var(--padding-medium) + 50px)  calc(3*var(--padding-medium)) repeat(6,2fr);
-        /* grid-template-rows: repeat(6,1fr) 1px; */
         margin: var(--padding-large) var(--padding-small) 0;
         min-width: 570px;
     }
 
-    #universe-card {
+    .range {
+        background-color: var(--bg-grey);
+    }
+
+    .range.light {
+        background-color: var(--bg-light-address);
+        color: black;
+    }
+
+    .card {
+        background-color: var(--bg-card-grey);
+    }
+
+    .card.light {
+        background-color: var(--bg-light-card-grey);
+        color: black;
+    }
+
+    .universe.card {
         position: relative;
         display: grid;
         grid-column: 2/3;
@@ -417,12 +470,11 @@ Acces-Control-Allow-Origin: *
         grid-template-rows: subgrid;
         grid-template-columns: subgrid;
         border-radius: 0px 12px 12px 12px;
-        background-color: var(--bg-card-grey);
         color: var(--ll-yellow);
         box-shadow: 0px 10px 15px 2px rgba(0,0,0,0.5);
     }
     
-    #universe-card:before {
+    .universe.card:before {
         top: -15px;
         left: 10px;
         position: absolute;
@@ -435,7 +487,7 @@ Acces-Control-Allow-Origin: *
         z-index: -1;
     }
 
-    #universe-card:after {
+    .universe:after {
         top: -50px;
         left: 25px;
         position: absolute;
@@ -443,7 +495,7 @@ Acces-Control-Allow-Origin: *
         display: inline-block;
         width: 40px;
         height: 50px;
-        background-color: var(--ll-mustard);
+        background-color: var(--ll-yellow);
         border-radius: 5px;
         z-index: -4;
         box-shadow: 5px 0px 15px 2px rgba(0,0,0,0.5) inset;
@@ -458,7 +510,7 @@ Acces-Control-Allow-Origin: *
         position: relative;
     }
 
-    #universes:before {
+    .universe #tab {
         display: inline-block;
         position: absolute;
         right: 60px;
@@ -468,7 +520,6 @@ Acces-Control-Allow-Origin: *
         transform: rotate(-90deg);
         font-size: var(--font-size-small);
         padding: 7px;
-        background-color: var(--bg-card-grey);
         border-radius: 12px 12px 0px 0px;
     }
 
@@ -484,7 +535,7 @@ Acces-Control-Allow-Origin: *
         justify-self: center;
         font-size: var(--font-size-medium);
         position: relative;
-        background: var(--bg-grey);
+        /* background: var(--bg-grey); */
         border-radius: 10px;
         z-index: 1;
         box-shadow: 0px 5px 15px 2px rgba(0,0,0,0.5);
@@ -493,12 +544,11 @@ Acces-Control-Allow-Origin: *
     #universes li span {
         font-size: var(--font-size-small);
         position: absolute;
-        background: var(--bg-grey);
+        /* background: var(--bg-grey); */
         padding: 5px;
         top: 25px;
         left: 50px;
         border-radius: 10px;
-        /* z-index: -1; */
     }
 
     #universe-filter-container {
@@ -516,7 +566,7 @@ Acces-Control-Allow-Origin: *
         justify-content: space-around;
     }
 
-    #universe-filter > button {
+    .un-button {
         height: 25px;
         width: 25px;
         background-color: var(--bg-coal);
@@ -524,6 +574,13 @@ Acces-Control-Allow-Origin: *
         color: var(--ll-yellow);
         border-radius: 100%;
     }
+
+    .un-button.light {
+        background-color: var(--bg-light-grey);
+        border: 2px solid var(--bg-dmx-box);
+        color: var(--bg-dmx-box);
+    }
+
 
     #universe-filter > *:hover{
         cursor: pointer;
@@ -553,26 +610,15 @@ Acces-Control-Allow-Origin: *
         grid-template-columns: subgrid;
         margin-bottom: -2.65px;
         overflow: hidden;
-        /* z-index: -1; */
     }
 
     .accolade {position: relative; grid-column: 1/8;overflow: hidden;}
-    /* #accolade-1 {position: relative;grid-row:1; grid-column: 1/8;overflow: hidden;}
-    #accolade-2 {position: relative;grid-row:2; grid-column: 1/8;overflow: hidden;}
-    #accolade-3 {position: relative;grid-row:3; grid-column: 1/8;overflow: hidden;}
-    #accolade-4 {position: relative;grid-row:4; grid-column: 1/8;overflow: hidden;}
-    #accolade-5 {position: relative;grid-row:5; grid-column: 1/8;overflow: hidden;}
-    #accolade-6 {position: relative;grid-row:6; grid-column: 1/8;overflow: hidden;}
-    #accolade-7 {position: relative;grid-row:7; grid-column: 1/8;overflow: hidden;}
-    #accolade-8 {position: relative;grid-row:8; grid-column: 1/8;overflow: hidden;}
-    #accolade-9 {position: relative;grid-row:9; grid-column: 1/8;overflow: hidden;}
-    #accolade-10 {position: relative;grid-row:10; grid-column: 1/8;overflow: hidden;} */
 
     #accolades h3 { 
+        display: block;
         position: absolute;
         bottom: -10px;
-        left: 50px;
-        color: var(--ll-yellow);
+        left: 55px;
         height: 100%;
     }
 
@@ -584,7 +630,7 @@ Acces-Control-Allow-Origin: *
         grid-column: 1/10;
     }
     
-    .fieldbus-card{
+    .fieldbus.card {
         position: relative;
         display: grid;
         grid-row: 1/8;
@@ -594,23 +640,23 @@ Acces-Control-Allow-Origin: *
         max-width: 125px;
         min-width: 50px;
         border-radius: 25px;
-        background-color: var(--bg-card-grey);
+        /* background-color: var(--bg-card-grey); */
         box-shadow: 0px 10px 15px 2px rgba(0,0,0,0.5);
         color: var(--ll-yellow);
         font-family: var(--font-regular);
     }
 
     
-    .fieldbus{
+    .address.range{
         position: relative;
         justify-self: center;
         grid-row: 1/7;
         width:90%;
         border-radius: 25px;
-        background-color: var(--bg-grey);
+        /* background-color: var(--bg-grey); */
     }
 
-    .fieldbus h1 {
+    .address.range h1 {
         position: absolute;
         left: 50%;
         width: 0;
@@ -629,11 +675,7 @@ Acces-Control-Allow-Origin: *
     #fb-5 {grid-column: 8/9}
     #fb-6 {grid-column: 9/10}
 
-    .fieldbus div {
-        /* display: flex;
-        flex-direction: column;
-        justify-content: space-around; */
-        /* align-items: center; */
+    .address.range div {
         position: relative;
         background-color: var(--bg-coal);
         border-radius: 25px;
@@ -641,18 +683,21 @@ Acces-Control-Allow-Origin: *
         outline-offset: -2px;
     }
 
-    .fieldbus h2 {
+    .address.range div.light{
+        background-color: var(--bg-light-grey);
+        outline: 3px solid var(--bg-card-grey)
+    }
+
+    .address.range h2 {
         font-size: clamp(var(--font-size-small), 2vw, var(--font-size-medium));
         font-weight: lighter;
         position: absolute;
         bottom: 15%;
         text-align: center;
         width: 100%;
-        /* display: flex;
-        align-items: center; */
     }
 
-    .fieldbus h3 {
+    .address.range h3 {
         position: absolute;
         width: 65%;
         left: 25%;
@@ -661,18 +706,17 @@ Acces-Control-Allow-Origin: *
         font-weight: lighter;
     }
 
-    .fb-protocol {
+    .fb-protocol.info {
         position: relative;
         text-align: center;
         display: flex;
-        /* grid-row: 11/12; */
         flex-direction: column;
         justify-content: space-evenly;
         align-items: center;
         font-size: clamp(var(--font-size-xs), 1vw, var(--font-size-small));
     }
 
-    .fb-protocol select {
+    .fb-protocol.info select {
         margin-top: 5px;
         text-align: center;
         width: 90%;
@@ -710,7 +754,7 @@ Acces-Control-Allow-Origin: *
             padding: calc(var(--padding-small) / 2);
         } 
 
-        .node.selected .node-info {
+        .node.selected .info {
             display: none;
         } 
 
@@ -777,15 +821,17 @@ Acces-Control-Allow-Origin: *
         #customer;
         #nodes = [];
         #activeNode;
+        #lightMode = false;
 
         // Immediately Invoked Async Function Expression zorgt ervoor dat we de nodes kunnen ophalen en nieuwe
         // object instanties kunnen aanmaken zonder then-chaining of extra async functies te gebruiken 
         // https://itnext.io/1-minute-to-become-a-better-developer-4-aeabd6586396
         constructor(customer){
             return (async () => {
-                this.#nodes = await this.fetchNodes();
-                this.#activeNode = this.#nodes[0];
                 this.#customer = customer;
+                this.#nodes = await this.fetchNodes();
+                this.addDemo();
+                this.#activeNode = this.#nodes[0];
                 return this;
             })();
         }
@@ -827,6 +873,7 @@ Acces-Control-Allow-Origin: *
         }
 
         addDemo(){
+            console.log("adding demo")
             let universes = [];
             let fieldbusses = [];
             for (let i=0; i<10; i++){
@@ -835,10 +882,12 @@ Acces-Control-Allow-Origin: *
             for (let i=0; i<6; i++){
                 fieldbusses.push(new Fieldbus(`out${i+1}`, 2, i == 0? 1 : (i*512)+1, 512, 0));
             }
-            this.#nodes.push(new NodeTemplate("127.0.0.1", "Demo", "7b:a6:80:7f:ec:7d", {}, "255.255.255.0", universes, fieldbusses, ["Disabled", "Used-by-previous-channel", "DMX-512", "DMX-RDM"]))            
+            this.#nodes.push(new NodeTemplate("127.0.0.1", "Demo", "7b:a6:80:7f:ec:7d", {}, "255.255.255.0", universes, fieldbusses, ["Disabled", "Used-by-previous-channel", "DMX-512", "DMX-RDM"]))           
         }
 
         updateNav(){
+            let lm = ""
+            if (this.#lightMode) lm="light";
             let navBar = document.getElementById("node-list");
             this.#nodes.forEach(node => {
                 let nodeElement = document.createElement("li")
@@ -849,16 +898,16 @@ Acces-Control-Allow-Origin: *
                     }
                     if (!nodeElement.classList.contains("selected")) {
                         nodeElement.classList.add("selected");
+                        if (this.#lightMode) nodeElement.classList.add("light")
                         this.#activeNode = node;
                     }
-
                     this.showActiveNode();
                 })
                 nodeElement.classList.add("node");
                 if (node.ip == (nodeIp.split("http://"))[1]) nodeElement.classList.add("selected");
                 nodeElement.innerHTML = `
                 <span><div id="status"></div>${node.name}</span>
-                <ul class="node-info">
+                <ul class="info ${lm}">
                 <li class="IP">IP: <p>${node.ip}</p></li>
                 <li class="netMask">Netmask: <p>${node.netmask}</p></li>
                 <li class="mac">MAC: <p>${node.mac}</p></li>
@@ -871,14 +920,9 @@ Acces-Control-Allow-Origin: *
             this.showActiveNode();
         }
 
-        // <div id="accolade-1">
-        //         <h3>10fps</h3>
-        //         <svg height="100%" viewBox="0 0 2000 72">  
-        //             <use xlink:href="#accolade"/>
-        //         </svg>
-        //     </div>
-
         showActiveNode() {
+            let lm = ""
+            if (this.#lightMode) lm="light";
             // Universes en hun accolades
             let universesElement = document.getElementById("universes");
             let accoladesElement = document.getElementById("accolades")
@@ -888,30 +932,22 @@ Acces-Control-Allow-Origin: *
             this.#activeNode.universes.forEach(un => {
                 if (counter <= this.#activeNode.shownUniverses) {
                     let u = document.createElement("li");
+                    u.classList.add("range");
+                    if (this.#lightMode) u.classList.add("light");
+                    u.innerHTML = `${un.universe}<span class="range ${lm}">${un.keep}</span>`
+                    
                     let a = document.createElement("div");
-                    // a.style.gridRow = `"${counter}"`
                     a.id = `accolade-${counter}`;
                     a.classList.add("accolade");
-                    a.innerHTML = ` <h3>60fps</h3>
+                    a.innerHTML = ` <h3 class="info ${lm}">60fps</h3>
                                     <svg height="100%" viewBox="0 0 2000 72">  
                                         <use xlink:href="#accolade"/>
                                     </svg>`
-                    u.innerHTML = `${un.universe}<span>${un.keep}</span>`
                     accoladesElement.appendChild(a);
                     universesElement.appendChild(u);
                 }
                 counter++;
             })
-
-    //         #fb-1 div #address-block-1 {
-    //     position: relative;
-    //     top: 20%;
-    //     height: 20%;
-    //     background-color: var(--bg-coal);
-    //     border-radius: 25px;
-    //     outline: 4px solid var(--ll-yellow);
-    //     outline-offset: -4px;
-    // }
 
             // Fieldbusses
             let fieldbussesElement = document.getElementById("fieldbusses");
@@ -919,16 +955,18 @@ Acces-Control-Allow-Origin: *
             counter = 1;
             this.#activeNode.fieldbusses.forEach(fb => {
                 let fbElement = document.createElement("div");
-                fbElement.classList.add("fieldbus-card");
+                fbElement.classList.add("fieldbus");
+                fbElement.classList.add("card");
+                if (this.#lightMode) fbElement.classList.add("light");
                 fbElement.id = `fb-${counter}`;
-                fbElement.innerHTML = `<div class="fieldbus">
+                fbElement.innerHTML = `<div class="address range ${lm}">
                     <h1>FIELDBUS ${counter}</h1>
-                    <div id="address-block-${counter}">
+                    <div class="${lm}" id="address-block-${counter}">
                         <h3>start: <span>${fb.startAddress}</span></h3>
                         <h2>${fb.streamLength}</h2>
                     </div>
                     </div>
-                    <div class="fb-protocol">
+                    <div class="fb-protocol info ${lm}">
                         <h2>Codec:</h3>
                         <h2>${this.#activeNode.codecs[fb.codec].split(" ")[0]}</h2>
                         <div id="ethernet">
@@ -957,7 +995,18 @@ Acces-Control-Allow-Origin: *
         }
 
         eventInit() {
-            window.onresize = (e) => {console.log(e)}
+            // window.onresize = (e) => {console.log(e)}
+            let dmSwitch = document.querySelector("#dark-mode-switch input");
+            const savedDarkMode = localStorage.getItem("darkMode");
+
+            if (savedDarkMode === "enabled") {
+                dmSwitch.checked = true;
+            } else {
+                dmSwitch.checked = false;
+            }
+            this.switchDarkMode(dmSwitch);
+            dmSwitch.addEventListener("change", () => this.switchDarkMode(dmSwitch));
+
             let uniButtons = document.getElementsByClassName("un-button");
             for (const button of uniButtons) {
                 button.addEventListener("click", () => {
@@ -989,11 +1038,11 @@ Acces-Control-Allow-Origin: *
 
         changeGridStyling(){
             let main            = document.getElementById("main-config");
-            let uniC            = document.getElementById("universe-card");
+            let uniC            = document.querySelector(".universe.card");
             let uni             = document.getElementById("universes");
             let fieldbusses     = document.getElementById("fieldbusses");
-            let fbC             = document.getElementsByClassName("fieldbus-card");
-            let fb              = document.getElementsByClassName("fieldbus");
+            let fbC             = document.querySelectorAll(".fieldbus.card");
+            let fb              = document.querySelectorAll(".address.range");
 
             main.style.gridTemplateRows = `repeat(${this.#activeNode.shownUniverses}, 1fr) 120px`
             uniC.style.gridRow          = `1/${this.#activeNode.shownUniverses+1}`
@@ -1004,6 +1053,35 @@ Acces-Control-Allow-Origin: *
             }
             for (const f of fb) {
                 f.style.gridRow         = `1/${this.#activeNode.shownUniverses+1}`
+            }
+        }
+
+        switchDarkMode(sw) {
+            let accolades = document.querySelectorAll("#accolade path")
+            let lightArr = [];
+            lightArr.push(document.querySelector("body"));
+            lightArr.push(document.querySelector("header"));
+            lightArr.push(document.querySelector("#sidebar"));
+            lightArr.push(...document.querySelectorAll(".node"));
+            lightArr.push(...document.querySelectorAll(".info"));
+            lightArr.push(...document.querySelectorAll(".card"));
+            lightArr.push(...document.querySelectorAll(".range"));
+            lightArr.push(...document.querySelectorAll(".address.range div"));
+            lightArr.push(...document.querySelectorAll("button"));
+            if (sw.checked === true) {
+                this.#lightMode = true;
+                localStorage.setItem("darkMode", "enabled");
+                lightArr.forEach(e => e.classList.add("light"));
+                for (const accolade of accolades) {
+                    accolade.style.stroke = "#4d4d4d"
+                }
+            } else {
+                this.#lightMode = false;
+                localStorage.setItem("darkMode", "disabled");
+                for (const accolade of accolades) {
+                    accolade.style.stroke = "#FFF200"
+                }
+                lightArr.forEach(e => e.classList.remove("light"));
             }
         }
     }
@@ -1403,7 +1481,8 @@ Acces-Control-Allow-Origin: *
 
     document.addEventListener("DOMContentLoaded", async () => {
         let installation = await new Installation("Lux-Lumen");
-        installation.addDemo();
+        console.log(installation);
+        // installation.addDemo();
         installation.updateNav();
         installation.eventInit();
     });
@@ -1466,52 +1545,17 @@ Acces-Control-Allow-Origin: *
         </div>
         <nav>
             <ul id="node-list">
-                <!-- <li class="node">
-                    <span><div id="status"></div>Demo node</span>
-                    <ul class="node-info">
-                        <li class="IP">IP: <p>192.168.1.1</p></li>
-                        <li class="netMask">Netmask: <p>255.255</p></li>
-                        <li class="mac">MAC: <p>mac placeholder</p></li>
-                    </ul>
-                    <div id="bottom-curve"><span></span></div>
-                </li>
-                <li class="node selected">
-                    <span><div id="status"></div>veel te lange node naam</span>
-                    <ul class="node-info">
-                        <li class="IP">IP: <p>192.168.1.1</p></li>
-                        <li class="netMask">Netmask: <p>255.255.255.255</p></li>
-                        <li class="mac">MAC: <p>mac placeholder</p></li>
-                    </ul>
-                    <div id="bottom-curve"><span></span></div>
-                </li>
-                <li class="node">
-                    <span><div id="status"></div>Node 2</span>
-                    <ul class="node-info">
-                        <li class="IP">IP: <p>192.168.1.1</p></li>
-                        <li class="netMask">Netmask: <p>255.255.255.0</p></li>
-                        <li class="mac">MAC: <p>mac placeholder</p></li>
-                    </ul>
-                    <div id="bottom-curve"><span></span></div>
-                </li> -->
             </ul>
         </nav>
-        <div id="info">
+        <div class="info config">
             <h3>firmware: <span>v03.3</span></h3>
             <h3>config: <span>2</span></h3>
         </div>
     </div>
     <div id="main-config">
-        <div id="universe-card">
+        <div class="universe card">
+            <div class="card" id="tab">Universes</div>
             <ol id="universes">
-                <!-- <li>32768<span>512</span></li>
-                <li>1<span>512</span></li>
-                <li>2<span>512</span></li>
-                <li>3<span>512</span></li>
-                <li>4<span>512</span></li>
-                <li>5<span>512</span></li>
-                <li>6<span>512</span></li>
-                <li>7<span>512</span></li>
-                <li>8<span>512</span></li> -->
             </ol>
             <div id="universe-filter-container">
                 <div id="universe-filter">
@@ -1532,109 +1576,9 @@ Acces-Control-Allow-Origin: *
         </svg>
         <!-- end of accolade definition -->
         <div id="accolades">
-            <!-- <div id="accolade-1">
-                <h3>10fps</h3>
-                <svg height="100%" viewBox="0 0 2000 72">  
-                    <use xlink:href="#accolade"/>
-                </svg>
-            </div>
-            <div id="accolade-2">
-                <svg height="100%" viewBox="0 0 2000 72">  
-                    <use xlink:href="#accolade"/>
-                </svg>
-            </div>
-            <div id="accolade-3">
-                <svg height="100%" viewBox="0 0 2000 72">  
-                    <use xlink:href="#accolade"/>
-                </svg>
-            </div>
-            <div id="accolade-4">
-                <svg height="100%" viewBox="0 0 2000 72">  
-                    <use xlink:href="#accolade"/>
-                </svg>
-            </div>
-            <div id="accolade-5">
-                <svg height="100%" viewBox="0 0 2000 72">  
-                    <use xlink:href="#accolade"/>
-                </svg>
-            </div>
-            <div id="accolade-6">
-                <svg height="100%" viewBox="0 0 2000 72">  
-                    <use xlink:href="#accolade"/>
-                </svg>
-            </div>
-            <div id="accolade-7">
-                <svg height="100%" viewBox="0 0 2000 72">  
-                    <use xlink:href="#accolade"/>
-                </svg>
-            </div>
-            <div id="accolade-8">
-                <svg height="100%" viewBox="0 0 2000 72">  
-                    <use xlink:href="#accolade"/>
-                </svg>
-            </div>
-            <div id="accolade-9">
-                <svg height="100%" viewBox="0 0 2000 72">  
-                    <use xlink:href="#accolade"/>
-                </svg>
-            </div>
-            <div id="accolade-10">
-                <svg height="100%" viewBox="0 0 2000 72">  
-                    <use xlink:href="#accolade"/>
-                </svg>
-            </div> -->
         </div>
         <div id="fieldbusses">
-            <!-- <div class="fieldbus-card" id="fb-1">
-                <div class="fieldbus">
-                    <h1>FIELDBUS 1</h1>
-                    <div id="address-block-1">
-                        <h3>start: <span>5121</span></h3>
-                        <h2>1024</h2>
-                    </div>
-                </div>
-                <div class="fb-protocol">
-                    <div class="protocol-dd">
-                        <label for="protocol-1">protocol: </label>
-                        <select id="protocol-1">
-                            <option value="dmx512">DMX-512</option>
-                            <option value="dmxrdm">DMX-RDM</option>
-                            <option value="ybleads">YB-LEDs</option>
-                            <option value="disabled" disabled>Disabled</option>
-                    </select>
-                    </div>
-                    <div id="ethernet">
-                        <svg width="75%" viewBox="0 0 512 490.43">  
-                            <use href="#ethernet-port"/>
-                        </svg>
-                    </div>
-                </div> -->
-            </div>
-            <!-- <div class="fieldbus-card" id="fb-2">
-                <div class="fieldbus">
-                    <h1>FIELDBUS 2</h1>
-                </div>
-            </div>
-            <div class="fieldbus-card" id="fb-3">
-                <div class="fieldbus">
-                    <h1>FIELDBUS 3</h1>
-                </div>
-            </div>
-            <div class="fieldbus-card" id="fb-4">
-                <div class="fieldbus">
-                    <h1>FIELDBUS 4</h1>
-                </div>
-            </div>
-            <div class="fieldbus-card" id="fb-5">
-                <div class="fieldbus">
-                    <h1>FIELDBUS 5</h1>
-                </div>
-            </div>
-            <div class="fieldbus-card" id="fb-6">
-                <div class="fieldbus">
-                    <h1>FIELDBUS 6</h1>
-                </div>
-            </div> -->
+        </div>
         </div>
     </div>
 </body>
