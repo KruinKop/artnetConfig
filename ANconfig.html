@@ -310,7 +310,6 @@ Acces-Control-Allow-Origin: * -->
         font-size: var(--font-size-medium);
         padding: var(--padding-small) 0 var(--padding-small) var(--padding-small);
         color: var(--bg-coal);
-        /* float: left; */
     }
 
     .node:hover {
@@ -488,6 +487,10 @@ Acces-Control-Allow-Origin: * -->
         background-color: var(--bg-dmx-box);
         border-radius: 5px;
         z-index: -1;
+    }
+
+    .universe.card.light:before {
+        background-color: var(--bg-grey);
     }
 
     .universe:after {
@@ -838,36 +841,30 @@ Acces-Control-Allow-Origin: * -->
             return this.#nodes;
         }
 
-        async fetchNodes(){
-            return new Promise(resolve => {
-                let xmlReq = new XMLHttpRequest();
-                xmlReq.open("GET", `${nodeIp}/xdev`, true);
-                xmlReq.overrideMimeType("text/xml");
-                xmlReq.send();
-                xmlReq.onreadystatechange = async function() {
-                    if (xmlReq.readyState == 4 && xmlReq.status == 200) {
-                        let foundNodes = [];
-                        let xmlDoc = xmlReq.responseXML;
-                        let devices = xmlDoc.getElementsByTagName("dev")[0].innerHTML.split(" ");
-                        for (let device of devices) {
-                            let node = await new Node(hexToIP(device));
-                            foundNodes.push(node);
-                        };
-                        resolve(foundNodes);
-                    }
-                    if (this.readyState == 2 && this.status == 200){
-                        let headers = this.getResponseHeader("Content-Type");
-                        if (headers !== "text/xml" & headers !=="text/plain; charset=UTF-8"){
-                            console.log("header is not correct. expected xml file. got this instead: "+headers);
-                            this.abort();
-                        }
-                    }
-                }
-            });
+        get activeNode() {
+            return this.#activeNode;
         }
 
-        sayHello(){
-            console.log('hello')
+        async fetchNodes() {
+            try {
+                const response = await fetch(`${nodeIp}/xdev`);
+                if (!response.ok) {
+                    throw new Error(`Response status: ${response.status}`);
+                }
+                const xmlText = await response.text();
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
+                let foundNodes = [];
+                let devices = xmlDoc.getElementsByTagName("dev")[0].innerHTML.split(" ");
+                for (let device of devices) {
+                    let node = await new Node(hexToIP(device));
+                    foundNodes.push(node);
+                }
+                return foundNodes;
+            } catch (error) {
+                console.error(error.message);
+                return []; 
+            }
         }
 
         addDemo(){
@@ -880,7 +877,7 @@ Acces-Control-Allow-Origin: * -->
             for (let i=0; i<6; i++){
                 fieldbusses.push(new Fieldbus(`out${i+1}`, 2, i == 0? 1 : (i*512)+1, 512, 0));
             }
-            this.#nodes.push(new NodeTemplate("127.0.0.1", "Demo", "7b:a6:80:7f:ec:7d", {}, "255.255.255.0", universes, fieldbusses, ["Disabled", "Used-by-previous-channel", "DMX-512", "DMX-RDM"]))           
+            this.#nodes.push(new NodeTemplate("127.0.0.1", "Demo", "7b:a6:80:7f:ec:7d", {}, "255.255.255.0", universes, fieldbusses, ["Disabled", "Used-by-previous-channel", "DMX-512", "DMX-RDM"], "v3.1"))           
         }
 
         updateNav(){
@@ -902,6 +899,8 @@ Acces-Control-Allow-Origin: * -->
                     this.showActiveNode();
                 })
                 nodeElement.classList.add("node");
+                // check if the webpage address corresponds to one of the nodes in the lists,
+                // make this the selected node if match is found.
                 if (node.ip == (nodeIp.split("http://"))[1]) nodeElement.classList.add("selected");
                 nodeElement.innerHTML = `
                 <div id="top-curve"></div>
@@ -915,13 +914,16 @@ Acces-Control-Allow-Origin: * -->
                 `
                 navBar.appendChild(nodeElement);
             });
-
             this.showActiveNode();
+            const fpsInterval = setInterval(() => this.#activeNode.updateFps(), 1000);
         }
 
         showActiveNode() {
             let lm = ""
             if (this.#lightMode) lm="light";
+            let firmwareVersion = document.querySelector("#firmware span");
+            let configVersion = document.querySelector("#config span");
+            firmwareVersion.innerHTML = this.#activeNode.firmware;
             // Universes en hun accolades
             let universesElement = document.getElementById("universes");
             let accoladesElement = document.getElementById("accolades")
@@ -1100,6 +1102,7 @@ Acces-Control-Allow-Origin: * -->
         #universes = [];
         #fieldbusses = [];
         #codecs = [];
+        #firmware;
         #maxShownUniverses = 10;
         #minShownUniverses = 6;
         #shownUniverses = 6;
@@ -1146,6 +1149,10 @@ Acces-Control-Allow-Origin: * -->
 
         get codecs() {
             return this.#codecs;
+        }
+
+        get firmware() {
+            return this.#firmware;
         }
 
         get shownUniverses() {
@@ -1206,6 +1213,10 @@ Acces-Control-Allow-Origin: * -->
             this.#switch = sw;
         }
 
+        set firmware(fw) {
+            this.#firmware = fw;
+        }
+
         set netmask(nm){
             let reNetmask = /^(255|254|252|248|240|224|192|128|0)\.((255|254|252|248|240|224|192|128|0)\.){2}(255|254|252|248|240|224|192|128|0)$/;
             if (!reNetmask.test(nm)) {
@@ -1245,6 +1256,7 @@ Acces-Control-Allow-Origin: * -->
                 this.#mac = this.#configuration.mac;
                 this.#switch = this.#configuration.switch;
                 this.#netmask = this.#configuration.mask;
+                this.#firmware = this.#configuration.firmware;
                 for (const [key, value] of Object.entries(this.#configuration.fieldbus)) {
                     let params = [];
                     for (let v of Object.values(value)) {
@@ -1264,10 +1276,18 @@ Acces-Control-Allow-Origin: * -->
                 }                          
             }
         }
+
+        updateFps() {
+            // console.log(`updating ${this.name} fps`);
+
+        }
+
     }
 
+
+
     class NodeTemplate extends Node {
-        constructor(ip, name, mac, sw, nm, un, fb, c){
+        constructor(ip, name, mac, sw, nm, un, fb, c, fw){
             super(ip, true);
             this.name = name;
             this.mac = mac;
@@ -1276,6 +1296,7 @@ Acces-Control-Allow-Origin: * -->
             this.universes = un;
             this.fieldbusses = fb;
             this.codecs = c;
+            this.firmware = fw;
         }
     }
 
@@ -1359,25 +1380,21 @@ Acces-Control-Allow-Origin: * -->
             })();
         }
 
-        async fetchXmlConfig(ip){
-            return new Promise( resolve => {
-                let xmlReq = new XMLHttpRequest();
-                xmlReq.open("GET", `http://${ip}/xml`, true);
-                xmlReq.send();
-                xmlReq.onreadystatechange = function() {
-                    if (xmlReq.readyState == 4 && xmlReq.status == 200) {
-                        let xmlDoc = xmlReq.responseXML;
-                        resolve(xmlDoc);
-                    }
-                    else if (this.readyState == 2 && this.status == 200){
-                        let headers = this.getResponseHeader("Content-Type");
-                        if (headers !== "text/xml" & headers !=="text/plain; charset=UTF-8"){
-                            console.log("header is not correct. expected xml file. got this instead: "+headers);
-                            this.abort();
-                        }
-                    }
+        async fetchXmlConfig(ip) {
+            try {
+                const response = await fetch(`http://${ip}/xml`);
+                if (!response.ok) {
+                    throw new Error(`Response status: ${response.status}`);
                 }
-            });            
+                const xmlText = await response.text();
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
+                return xmlDoc;
+            } 
+            catch (error) {
+                console.error("Failed to fetch XML configuration:", error.message);
+                throw error; // Rethrow the error after logging it
+            }
         }
 
         get xmlConfig(){
@@ -1414,6 +1431,10 @@ Acces-Control-Allow-Origin: * -->
 
         get codec() {
             return this.#configObject["codec"];
+        }
+
+        get firmware() {
+            return this.#configObject["sys"]["fw"];
         }
 
         convertObjectAndMap(mapParams, tag) {
@@ -1486,7 +1507,6 @@ Acces-Control-Allow-Origin: * -->
     document.addEventListener("DOMContentLoaded", async () => {
         let installation = await new Installation("Lux-Lumen");
         console.log(installation);
-        // installation.addDemo();
         installation.updateNav();
         installation.eventInit();
     });
@@ -1552,8 +1572,8 @@ Acces-Control-Allow-Origin: * -->
             </ul>
         </nav>
         <div class="info config">
-            <h3>firmware: <span>v03.3</span></h3>
-            <h3>config: <span>2</span></h3>
+            <h3 id="firmware">firmware: <span>v03.3</span></h3>
+            <h3 id="config">config: <span>V0.01</span></h3>
         </div>
     </div>
     <div id="main-config">
