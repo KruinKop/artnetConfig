@@ -1,7 +1,7 @@
-HTTP/1.1 200 OK
+<!-- HTTP/1.1 200 OK
 Connection: close
 Content-Type: text/html
-Acces-Control-Allow-Origin: *
+Acces-Control-Allow-Origin: * -->
 
 <!DOCTYPE html>
 <html lang="en">
@@ -139,7 +139,7 @@ Acces-Control-Allow-Origin: *
         background-color: var(--ll-mustard); 
         border-radius: 20px;
         box-shadow: 5px 10px 15px rgba(0,0,0,0.5);
-        /* z-index: -3; */
+        z-index: 100;
     }
     header.light{
         background-color: var(--ll-light-yellow);
@@ -271,7 +271,7 @@ Acces-Control-Allow-Origin: *
         min-width: 120px;
         background-color: var(--bg-grey);
         border-radius: 20px;
-        z-index: 11;
+        z-index: 101;
     }
 
     #sidebar.light {
@@ -287,6 +287,7 @@ Acces-Control-Allow-Origin: *
         font-size: var(--font-size-large);
         text-align: right;
         margin-right: 10px;
+        float: right;
 
     }
 
@@ -296,9 +297,9 @@ Acces-Control-Allow-Origin: *
     }
 
     /* Art-Net node */
-    #title h2:nth-child(2) {
-        z-index: 1;
-    }
+    /* #title h2:nth-child(2) {
+        z-index: -1;
+    } */
 
     #node-list {
         display: flex;
@@ -309,6 +310,7 @@ Acces-Control-Allow-Origin: *
         font-size: var(--font-size-medium);
         padding: var(--padding-small) 0 var(--padding-small) var(--padding-small);
         color: var(--bg-coal);
+        /* float: left; */
     }
 
     .node:hover {
@@ -345,12 +347,13 @@ Acces-Control-Allow-Origin: *
     /* ============= Selected node ============== */
 
     .node.selected {
+        position: relative;
         margin-left: var(--padding-small);
         margin-right: -1px;
         border-radius: 10px 0px 0px 10px;
         background-color: #363633;
         color: var(--ll-yellow);
-        z-index: -3;
+        z-index: -1;
     }
 
     .node.selected.light {
@@ -362,71 +365,71 @@ Acces-Control-Allow-Origin: *
         display: block;
     }
 
-    .node.selected span{
-        margin-left: var(--padding-small);
+    .node.selected #top-curve {
         position: relative;
     }
 
-    .node.selected span:before{
-        content: "";
+    .node.selected #top-curve:before{
         position: absolute;
-        left: calc(var(--grid-nav-width) - 90px);
-        bottom: 38px;
+        content: "";
+        left: calc(var(--grid-nav-width) - 75px);
+        bottom: 15px;
         width: 30px;
         height: 30px;
         background-color: var(--bg-coal);
-        z-index: -2;
     }
 
-    .node.selected.light span:before {
+    .node.selected.light #top-curve:before,
+    .node.selected.light #bottom-curve:before {
         background-color: var(--bg-light);
     }
 
-    .node.selected.light span:after {
+    .node.selected.light #top-curve:after,
+    .node.selected.light #bottom-curve:after {
         background-color: var(--bg-light-grey);
     }
 
-    .node.selected span:after {
+    .node.selected #top-curve:after {
         content: "";
+        float: right;
         position: absolute;
-        left: calc(var(--grid-nav-width) - 120px);
-        bottom: 38.8px;
+        left: calc(var(--grid-nav-width) - 105px);
+        bottom: 15px;
         width: 60px;
         height: 60px;
         background-color: var(--bg-grey);
         border-radius: 100%;
-        z-index:-1;
-    }
-    .node #bottom-curve {
-        position: relative;
-        height: 0px;
     }
 
-    .node.selected #bottom-curve span:before {
+    .node.selected #bottom-curve {
+        position: relative;
+    }
+
+    .node.selected #bottom-curve:before {
         content:"";
         position: absolute;
-        left: calc(var(--grid-nav-width) - 90px);
-        top: 16px;
+        left: calc(var(--grid-nav-width) - 75px);
+        top: 15px;
         width: 30px;
         height: 30px;
-        z-index: -2;
+        background-color: var(--bg-coal);
     }
 
-    .node.selected #bottom-curve span:after {
+    .node.selected #bottom-curve:after {
         content:"";
         position: absolute;
-        left: calc(var(--grid-nav-width) - 120px);
-        top: 16.5px;
+        left: calc(var(--grid-nav-width) - 105px);
+        top: 15px;
         width: 60px;
         height: 60px;
         border-radius: 100%;
-        z-index: -1;
+        background-color: var(--bg-grey);
     }
 
     .node.selected #status{
-        position: absolute;
-        left: -15px;
-        bottom: 10px;
+        display: inline-block;  
+        margin-right: 7px;
+        margin-bottom: 4px;
         width: 7px;
         height: 7px;
         border-radius: 50%;
@@ -552,18 +555,17 @@ Acces-Control-Allow-Origin: *
     }
 
     #universe-filter-container {
-        top: 30px;
-        position: relative;
-        display: flex;
-        flex-direction: column;
-        justify-content: end;
+        padding-top: 10px;
+        grid-row: 8;
+        z-index: 10;
+        width: 70%;
+        margin: 0px auto 0px auto;
     }
 
     #universe-filter {
-        padding: 10px;
         display: flex;
         flex-direction: row;
-        justify-content: space-around;
+        justify-content: space-between;
     }
 
     .un-button {
@@ -585,7 +587,6 @@ Acces-Control-Allow-Origin: *
     #universe-filter > *:hover{
         cursor: pointer;
     }
-
 
     #universe-filter h3 {
         display: flex;
@@ -707,7 +708,8 @@ Acces-Control-Allow-Origin: *
     }
 
     .fb-protocol.info {
-        position: relative;
+        /* position: relative; */
+        grid-row: 8;
         text-align: center;
         display: flex;
         flex-direction: column;
@@ -765,28 +767,24 @@ Acces-Control-Allow-Origin: *
             height: 5px;
         }
 
-        .node.selected span{
-            margin-left: 11px;
+        .node.selected #top-curve:before{
+            left: calc(var(--grid-nav-width) - 67px);
+            bottom: 7.5px;
         }
 
-        .node.selected span:before{
-            left: calc(var(--grid-nav-width) - 78px);
-            bottom: 22px;
+        .node.selected #top-curve:after {
+            left: calc(var(--grid-nav-width) - 97.5px);
+            bottom: 8px;
         }
 
-        .node.selected span:after {
-            left: calc(var(--grid-nav-width) - 108.5px);
-            bottom: 23px;
+        .node.selected #bottom-curve:before {
+            left: calc(var(--grid-nav-width) - 67px);
+            top: 7px;
         }
 
-        .node.selected #bottom-curve span:before {
-            left: calc(var(--grid-nav-width) - 78px);
-            top: 8px;
-        }
-
-        .node.selected #bottom-curve span:after {
-            left: calc(var(--grid-nav-width) - 108.5px);
-            top: 8.7px;
+        .node.selected #bottom-curve:after {
+            left: calc(var(--grid-nav-width) - 97.5px);
+            top: 7.5px;
         }
     }
 
@@ -795,12 +793,12 @@ Acces-Control-Allow-Origin: *
             grid-template-columns: 135px 1fr;
         }
         
-        .node.selected span:before, .node.selected #bottom-curve span:before {
-            left: 57px;
+        .node.selected #top-curve:before, .node.selected #bottom-curve:before {
+            left: 67px;
         }
 
-        .node.selected span:after, .node.selected #bottom-curve span:after {
-            left: 26px;
+        .node.selected #top-curve:after, .node.selected #bottom-curve:after {
+            left: 37px;
         }
     }
 
@@ -906,13 +904,14 @@ Acces-Control-Allow-Origin: *
                 nodeElement.classList.add("node");
                 if (node.ip == (nodeIp.split("http://"))[1]) nodeElement.classList.add("selected");
                 nodeElement.innerHTML = `
+                <div id="top-curve"></div>
                 <span><div id="status"></div>${node.name}</span>
                 <ul class="info ${lm}">
                 <li class="IP">IP: <p>${node.ip}</p></li>
                 <li class="netMask">Netmask: <p>${node.netmask}</p></li>
                 <li class="mac">MAC: <p>${node.mac}</p></li>
                 </ul>
-                <div id="bottom-curve"><span></span></div>
+                <div id="bottom-curve"></div>
                 `
                 navBar.appendChild(nodeElement);
             });
@@ -1040,19 +1039,24 @@ Acces-Control-Allow-Origin: *
             let main            = document.getElementById("main-config");
             let uniC            = document.querySelector(".universe.card");
             let uni             = document.getElementById("universes");
+            let uniFilter       = document.querySelector("#universe-filter-container");
             let fieldbusses     = document.getElementById("fieldbusses");
             let fbC             = document.querySelectorAll(".fieldbus.card");
             let fb              = document.querySelectorAll(".address.range");
+            let protos          = document.querySelectorAll(".fb-protocol.info");
 
-            main.style.gridTemplateRows = `repeat(${this.#activeNode.shownUniverses}, 1fr) 120px`
-            uniC.style.gridRow          = `1/${this.#activeNode.shownUniverses+1}`
-            uni.style.gridRow           = `1/${this.#activeNode.shownUniverses+1}`
-            fieldbusses.style.gridRow   = `1/${this.#activeNode.shownUniverses+2}`
+            main.style.gridTemplateRows = `repeat(${this.#activeNode.shownUniverses}, 1fr) 25px 120px`
+            uniC.style.gridRow          = `1/${this.#activeNode.shownUniverses+2}`
+            uni.style.gridRow = fieldbusses.style.gridRow = `1/${this.#activeNode.shownUniverses+3}`
+            uniFilter.style.gridRow = `${this.#activeNode.shownUniverses+2}`
             for (const fb of fbC) {
-                fb.style.gridRow        = `1/${this.#activeNode.shownUniverses+2}`
+                fb.style.gridRow        = `1/${this.#activeNode.shownUniverses+3}`
             }
             for (const f of fb) {
                 f.style.gridRow         = `1/${this.#activeNode.shownUniverses+1}`
+            }
+            for (const p of protos) {
+                p.style.gridRow         = `${this.#activeNode.shownUniverses +2}`
             }
         }
 
