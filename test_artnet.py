@@ -45,7 +45,7 @@ if __name__ == "__main__":
         for lp_j in range(len(patchlst)):
             tosend = [lp_j,[]]
             for i in range(0,512,4):
-                tosend[1].extend([int(0),int(0),int(0),int(0)])
+                tosend[1].extend([int(255),int(0),int(0),int(0)])
             aro_qa.put(tosend)
         for i in range(5):
             sleep(0.01)

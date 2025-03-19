@@ -1,7 +1,7 @@
-<!-- HTTP/1.1 200 OK
+HTTP/1.1 200 OK
 Connection: close
 Content-Type: text/html
-Acces-Control-Allow-Origin: * -->
+Acces-Control-Allow-Origin: *
 
 <!DOCTYPE html>
 <html lang="en">
@@ -398,6 +398,7 @@ Acces-Control-Allow-Origin: * -->
         height: 60px;
         background-color: var(--bg-grey);
         border-radius: 100%;
+        /* border-color: var(--bg-grey); */
     }
 
     .node.selected #bottom-curve {
@@ -541,20 +542,19 @@ Acces-Control-Allow-Origin: * -->
         justify-self: center;
         font-size: var(--font-size-medium);
         position: relative;
-        /* background: var(--bg-grey); */
         border-radius: 10px;
-        z-index: 1;
+        z-index: 2;
         box-shadow: 0px 5px 15px 2px rgba(0,0,0,0.5);
     }
 
     #universes li span {
         font-size: var(--font-size-small);
         position: absolute;
-        /* background: var(--bg-grey); */
         padding: 5px;
         top: 25px;
         left: 50px;
         border-radius: 10px;
+        z-index: -1;
     }
 
     #universe-filter-container {
@@ -777,7 +777,7 @@ Acces-Control-Allow-Origin: * -->
 
         .node.selected #top-curve:after {
             left: calc(var(--grid-nav-width) - 97.5px);
-            bottom: 8px;
+            bottom: 7.5px;
         }
 
         .node.selected #bottom-curve:before {
@@ -797,11 +797,11 @@ Acces-Control-Allow-Origin: * -->
         }
         
         .node.selected #top-curve:before, .node.selected #bottom-curve:before {
-            left: 67px;
+            left: 68px;
         }
 
         .node.selected #top-curve:after, .node.selected #bottom-curve:after {
-            left: 37px;
+            left: 37.5px;
         }
     }
 
@@ -847,7 +847,7 @@ Acces-Control-Allow-Origin: * -->
 
         async fetchNodes() {
             try {
-                const response = await fetch(`${nodeIp}/xdev`);
+                const response = await fetch(`${nodeIp}/xdev`, {signal: AbortSignal.timeout(2000)});
                 if (!response.ok) {
                     throw new Error(`Response status: ${response.status}`);
                 }
@@ -862,8 +862,15 @@ Acces-Control-Allow-Origin: * -->
                 }
                 return foundNodes;
             } catch (error) {
-                console.error(error.message);
-                return []; 
+                if (error.name === "TimeoutError") {
+                    console.error("Request timed out");
+                } else if (error.name === "AbortError") {
+                    console.error("Fetch aborted by user");
+                } else if (error.name === "TypeError") {
+                    console.error("AbortSignal.timeout() method is not supported");
+                } else {
+                    console.error("Failed to fetch Nodes:", error.message);
+                }
             }
         }
 
@@ -886,19 +893,9 @@ Acces-Control-Allow-Origin: * -->
             let navBar = document.getElementById("node-list");
             this.#nodes.forEach(node => {
                 let nodeElement = document.createElement("li")
-                nodeElement.addEventListener("click", (ev) => {
-                    let nodes = document.getElementsByClassName("node");
-                    for (let n of nodes) {
-                        n.classList.remove("selected");
-                    }
-                    if (!nodeElement.classList.contains("selected")) {
-                        nodeElement.classList.add("selected");
-                        if (this.#lightMode) nodeElement.classList.add("light")
-                        this.#activeNode = node;
-                    }
-                    this.showActiveNode();
-                })
+                
                 nodeElement.classList.add("node");
+                nodeElement.id = node.mac;
                 // check if the webpage address corresponds to one of the nodes in the lists,
                 // make this the selected node if match is found.
                 if (node.ip == (nodeIp.split("http://"))[1]) nodeElement.classList.add("selected");
@@ -912,10 +909,51 @@ Acces-Control-Allow-Origin: * -->
                 </ul>
                 <div id="bottom-curve"></div>
                 `
-                navBar.appendChild(nodeElement);
-            });
-            this.showActiveNode();
+                nodeElement.addEventListener("click", (ev) => {
+                    let nodes = document.getElementsByClassName("node");
+                    for (let n of nodes) {
+                        n.childNodes[3].style.color = "var(--bg-coal)";
+                        n.classList.remove("selected");
+                    }
+                    if (!nodeElement.classList.contains("selected")) {
+                        nodeElement.classList.add("selected");
+                        if (this.#lightMode) nodeElement.classList.add("light")
+                        let name = nodeElement.childNodes[3];
+                        name.style.color = "var(--ll-yellow)"
+                        this.#activeNode = node;
+                }
+                this.showActiveNode();
+            })
+            navBar.appendChild(nodeElement);
+        });
             const fpsInterval = setInterval(() => this.#activeNode.updateFps(), 1000);
+            const statusInterval = setInterval(async () => {
+                for (const node of this.nodes) {
+                    if (node.mac !== "7B:A6:80:7F:EC:7D" && node.mac !== this.#activeNode.mac) {
+                        try {
+                            const response = await fetch(`http://${node.ip}/xart`, {signal: AbortSignal.timeout(2000)});
+                            if (!response.ok) {
+                                throw new Error(`Response status: ${response.status}`);
+                            }
+                            node.setStatus(true);               
+                        } 
+                        catch (error) {
+                            if (error.name === "TimeoutError") {
+                                console.error("Request timed out");
+                                node.setStatus(false);     
+                            } else if (error.name === "AbortError") {
+                                console.error("Fetch aborted by user");
+                            } else if (error.name === "TypeError") {
+                                console.error("AbortSignal.timeout() method is not supported");
+                            } else {
+                                console.error("Failed to update fps:", error.message);
+                            }
+                        }
+                    }
+                }      
+            }, 5000)
+            
+            this.showActiveNode();
         }
 
         showActiveNode() {
@@ -935,12 +973,11 @@ Acces-Control-Allow-Origin: * -->
                     let u = document.createElement("li");
                     u.classList.add("range");
                     if (this.#lightMode) u.classList.add("light");
-                    u.innerHTML = `${un.universe}<span class="range ${lm}">${un.keep}</span>`
-                    
+                    u.innerHTML = `${un.universe}<span class="range ${lm}">${un.keep}</span>`                  
                     let a = document.createElement("div");
                     a.id = `accolade-${counter}`;
                     a.classList.add("accolade");
-                    a.innerHTML = ` <h3 class="info ${lm}">60fps</h3>
+                    a.innerHTML = ` <h3 class="info ${lm}"></h3>
                                     <svg height="100%" viewBox="0 0 2000 72">  
                                         <use xlink:href="#accolade"/>
                                     </svg>`
@@ -992,6 +1029,40 @@ Acces-Control-Allow-Origin: * -->
                 counter++;    
             })
 
+            // mark double universes in red
+            let unis = document.querySelectorAll("#universes li");
+            let uniArr = [];
+            for (const uni of unis) {
+                uniArr.push((uni.innerHTML).split("<")[0]);
+            }
+
+            let dupObj = {};
+            uniArr.forEach((element, index, array) => {
+                dupObj[element] = Array.from(array.entries()).reduce((indices, [i, e]) => {
+                    if (element === e) {
+                        indices.push(i);
+                    }
+                    return indices;
+                }, []);
+            });
+
+            function setDuplicateError(i) {
+                let uni = document.querySelector(`#universes li:nth-child(${i+1})`);
+                let keep = document.querySelector(`#universes li:nth-child(${i+1}) span`)
+                uni.style.backgroundColor = keep.style.backgroundColor = "var(--bg-error-red)";
+            }
+
+            for (const duplicates of Object.values(dupObj)){
+                if (duplicates.length === 2) {
+                    setDuplicateError(duplicates[1])
+                }
+                else if (duplicates.length > 2) {
+                    duplicates.shift();
+                    for (const i in duplicates) {
+                        setDuplicateError(duplicates[i])
+                    }
+                }           
+            }
             this.changeGridStyling();
         }
 
@@ -1014,12 +1085,10 @@ Acces-Control-Allow-Origin: * -->
                     let accolades = document.querySelectorAll("#accolades div");
                     if (button.id === "increment") {
                         if (this.#activeNode.shownUniverses < this.#activeNode.maxShownUniverses) {
-                            console.log("incrementing");
                             this.#activeNode.changeShownUni(true);
                         }
                     } else if (button.id === "decrement") {
                         if (this.#activeNode.shownUniverses > this.#activeNode.minShownUniverses) {
-                            console.log("decrementing");
                             let overLap = false;
                             for (const fb of this.#activeNode.fieldbusses) {
                                 if ((fb.startAddress + fb.streamLength)-1 > (this.#activeNode.shownUniverses-1) * 512) {
@@ -1106,6 +1175,8 @@ Acces-Control-Allow-Origin: * -->
         #maxShownUniverses = 10;
         #minShownUniverses = 6;
         #shownUniverses = 6;
+        #lastUpdate;
+        #online = true;
 
         constructor(ip, skipConfig = false) {
             this.#ip = ip;
@@ -1246,6 +1317,18 @@ Acces-Control-Allow-Origin: * -->
             this.#codecs = c;
         }
 
+        setStatus(o) {
+            this.#online = o;
+            let node = document.getElementById(this.mac);
+            if (node.classList.contains("selected")) {
+                let status = document.querySelector(".selected #status")
+                this.#online? status.style.backgroundColor = "var(--bg-status-green)" : status.style.backgroundColor = "red";
+            } else {
+                let name = node.childNodes[3];
+                this.#online? name.style.color = null : name.style.color = "var(--bg-error-red)";
+            }       
+        }
+
         changeShownUni(up){
             up? this.#shownUniverses++ : this.#shownUniverses--;
         }
@@ -1277,11 +1360,53 @@ Acces-Control-Allow-Origin: * -->
             }
         }
 
-        updateFps() {
-            // console.log(`updating ${this.name} fps`);
+        async updateFps() {
+            if (this.mac !== "7B:A6:80:7F:EC:7D") {
+                try {
+                    const response = await fetch(`http://${this.ip}/xart`, {signal: AbortSignal.timeout(2000)});
+                    if (!response.ok) {
+                        throw new Error(`Response status: ${response.status}`);
+                    }
+                    const xmlText = await response.text();
+                    const parser = new DOMParser();
+                    const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
+                    let parsedXart = Configuration.parseConfig(xmlDoc);
+                    let newTime = new Date().getTime();
+                    if (this.#lastUpdate > 0) {
+                        let delta = newTime - this.#lastUpdate;
+                        for (let uni = 0; uni < this.universes.length; uni++) {
+                            let fps = 0;
+                            let AnIn = parseInt(((parsedXart[`in${uni}`]).split(" "))[0])
+                            let AnOut = (parseInt(this.universes[uni]["framecounter"]))
+                            fps = (AnIn + 8192 - AnOut)%8192;
+                            fps = Math.trunc(Math.round(fps/(delta/10000))/10);
+                            let fpsElement = document.querySelector(`#accolade-${uni+1} h3`);
+                            if (fpsElement != null) {
+                                fpsElement.innerHTML = `${fps} fps`;
+                            }                        
+                            // Updating the universes with the latest received framecounter
+                            this.universes[uni]["framecounter"] = ((parsedXart[`in${uni}`]).split(" "))[0]
+                        }
+                    }
+                this.#lastUpdate = newTime;
+                await this.setStatus(true);
 
+            } 
+                catch (error) {
+                    if (error.name === "TimeoutError") {
+                        console.error("Request timed out");
+                        await this.setStatus(false);
+
+                    } else if (error.name === "AbortError") {
+                        console.error("Fetch aborted by user");
+                    } else if (error.name === "TypeError") {
+                        console.error("AbortSignal.timeout() method is not supported");
+                    } else {
+                        console.error("Failed to update fps:", error.message);
+                    }
+                }
+            }        
         }
-
     }
 
 
@@ -1327,6 +1452,10 @@ Acces-Control-Allow-Origin: * -->
 
         get framecounter() {
             return this.#framecounter
+        }
+
+        set framecounter(f) {
+            this.#framecounter = f;
         }
     }
 
@@ -1375,14 +1504,14 @@ Acces-Control-Allow-Origin: * -->
         constructor(ip){
             return( async () => {
                 this.#xmlConfig = await this.fetchXmlConfig(ip);
-                this.#configObject = this.parseConfig(this.#xmlConfig);
+                this.#configObject = Configuration.parseConfig(this.#xmlConfig);
                 return this;
             })();
         }
 
         async fetchXmlConfig(ip) {
             try {
-                const response = await fetch(`http://${ip}/xml`);
+                const response = await fetch(`http://${ip}/xml`, {signal: AbortSignal.timeout(2000)});
                 if (!response.ok) {
                     throw new Error(`Response status: ${response.status}`);
                 }
@@ -1392,8 +1521,15 @@ Acces-Control-Allow-Origin: * -->
                 return xmlDoc;
             } 
             catch (error) {
-                console.error("Failed to fetch XML configuration:", error.message);
-                throw error; // Rethrow the error after logging it
+                if (error.name === "TimeoutError") {
+                    console.error("Request timed out");
+                } else if (error.name === "AbortError") {
+                    console.error("Fetch aborted by user");
+                } else if (error.name === "TypeError") {
+                    console.error("AbortSignal.timeout() method is not supported");
+                } else {
+                    console.error("Failed to fetch XML configuration:", error.message);
+                }
             }
         }
 
@@ -1449,7 +1585,7 @@ Acces-Control-Allow-Origin: * -->
             return convertedObject;
         }
 
-        parseConfig(xmlObj) {
+        static parseConfig(xmlObj) {
         let config = {};
         
         // Recursieve functie die over all nodes gaat en het config object vult
