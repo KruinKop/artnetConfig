@@ -312,6 +312,10 @@ Acces-Control-Allow-Origin: *
         color: var(--bg-coal);
     }
 
+    .node.disconnected span {
+        opacity: 25%;
+    }
+
     .node:hover {
         cursor: pointer;
     }
@@ -319,7 +323,6 @@ Acces-Control-Allow-Origin: *
     .info {
         display: none;
         font-size: var(--font-size-small);
-        padding-top: 0.5rem;
     }
 
     .node-list #status {
@@ -353,6 +356,10 @@ Acces-Control-Allow-Origin: *
         background-color: #363633;
         color: var(--ll-yellow);
         z-index: -1;
+    }
+
+    .node.selected.disconnected span {
+        opacity: 100%;
     }
 
     .node.selected.light {
@@ -435,6 +442,10 @@ Acces-Control-Allow-Origin: *
         border-radius: 50%;
         background-color: var(--bg-status-green);
     }
+    
+    .node.disconnected #status{
+        background-color: red;
+    }
 
     /* ============= Center configuration ============== */
 
@@ -442,7 +453,7 @@ Acces-Control-Allow-Origin: *
         display: grid;
         grid-column: 2/3;
         grid-row: 2/3;
-        grid-template-columns: calc(40px - var(--padding-medium)) calc(2*var(--padding-medium) + 50px)  calc(3*var(--padding-medium)) repeat(6,2fr);
+        grid-template-columns: calc(40px - var(--padding-medium)) calc(2*var(--padding-medium) + 50px) calc(3*var(--padding-medium)) repeat(6,2fr); 
         margin: var(--padding-large) var(--padding-small) 0;
         min-width: 570px;
     }
@@ -598,7 +609,7 @@ Acces-Control-Allow-Origin: *
     }
 
     #accolades {
-        position: relative;
+        /* position: relative; */
         display: grid;
         grid-column: 3/10;
         grid-row: 1/11;
@@ -607,8 +618,8 @@ Acces-Control-Allow-Origin: *
     }
 
     #accolades div {
-        position: relative;
-        left: -20px;
+        /* position: relative; */
+        /* left: -40px; */
         height: 104%;
         display: grid;
         grid-template-columns: subgrid;
@@ -618,12 +629,15 @@ Acces-Control-Allow-Origin: *
 
     .accolade {position: relative; grid-column: 1/8;overflow: hidden;}
 
-    #accolades h3 { 
+    .accolade .info {
         display: block;
-        position: absolute;
-        bottom: -10px;
-        left: 55px;
-        height: 100%;
+        fill: var(--ll-yellow);
+        font-family: var(--font-regular);
+        font-size: var(--font-size-xs);
+    }
+
+    .accolade .info.light {
+        fill: black;
     }
 
     #fieldbusses{
@@ -644,7 +658,6 @@ Acces-Control-Allow-Origin: *
         max-width: 125px;
         min-width: 50px;
         border-radius: 25px;
-        /* background-color: var(--bg-card-grey); */
         box-shadow: 0px 10px 15px 2px rgba(0,0,0,0.5);
         color: var(--ll-yellow);
         font-family: var(--font-regular);
@@ -682,9 +695,16 @@ Acces-Control-Allow-Origin: *
     .address.range div {
         position: relative;
         background-color: var(--bg-coal);
-        border-radius: 25px;
+        border-radius: 15px;
         outline: 3px solid var(--ll-yellow);
         outline-offset: -2px;
+    }
+
+    .address.range div.overflow {
+        height: 100%;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
     }
 
     .address.range div.light{
@@ -696,7 +716,7 @@ Acces-Control-Allow-Origin: *
         font-size: clamp(var(--font-size-small), 2vw, var(--font-size-medium));
         font-weight: lighter;
         position: absolute;
-        bottom: 15%;
+        bottom: 7%;
         text-align: center;
         width: 100%;
     }
@@ -705,9 +725,25 @@ Acces-Control-Allow-Origin: *
         position: absolute;
         width: 65%;
         left: 25%;
-        top: 10%;
+        top: 7%;
         font-size: clamp(var(--font-size-xs), 1vw, var(--font-size-small));
         font-weight: lighter;
+    }
+
+    .address.range .overflow h3 {
+        top: -25px;
+    }
+
+    .address.range .overflow h2 {
+        position: relative;
+        display: flex;
+        justify-content: center;
+        bottom: 0%;
+    }
+
+    .address.range .overflow.extreme h2 {
+        position: absolute;
+        bottom: -25px;
     }
 
     .fb-protocol.info {
@@ -805,11 +841,20 @@ Acces-Control-Allow-Origin: *
         }
     }
 
+    @media screen and (min-height: 1000px) {
+        #accolades h3 {
+            left: 20px;
+            bottom: -4vh
+        }
+    }
+
     @media screen and (max-height: 768px) {
         body {
             grid-template-rows: var(--banner-height) calc(768px - var(--banner-height) - var(--padding-small));
         }
     }
+
+
 </style>
 <script>
     let nodeIp = "http://10.20.24.124"
@@ -823,6 +868,8 @@ Acces-Control-Allow-Origin: *
         #nodes = [];
         #activeNode;
         #lightMode = false;
+
+        #accMargin = -55;
 
         // Immediately Invoked Async Function Expression zorgt ervoor dat we de nodes kunnen ophalen en nieuwe
         // object instanties kunnen aanmaken zonder then-chaining of extra async functies te gebruiken 
@@ -882,7 +929,7 @@ Acces-Control-Allow-Origin: *
                 universes.push(new Universe(`inp${i+1}`, i, 512, 0));
             }
             for (let i=0; i<6; i++){
-                fieldbusses.push(new Fieldbus(`out${i+1}`, 2, i == 0? 1 : (i*512)+1, 512, 0));
+                fieldbusses.push(new Fieldbus(`out${i+1}`, 2, i == 0? 1 : (i*512)+1, 150, 0));
             }
             this.#nodes.push(new NodeTemplate("127.0.0.1", "Demo", "7b:a6:80:7f:ec:7d", {}, "255.255.255.0", universes, fieldbusses, ["Disabled", "Used-by-previous-channel", "DMX-512", "DMX-RDM"], "v3.1"))           
         }
@@ -893,7 +940,6 @@ Acces-Control-Allow-Origin: *
             let navBar = document.getElementById("node-list");
             this.#nodes.forEach(node => {
                 let nodeElement = document.createElement("li")
-                
                 nodeElement.classList.add("node");
                 nodeElement.id = node.mac;
                 // check if the webpage address corresponds to one of the nodes in the lists,
@@ -912,20 +958,23 @@ Acces-Control-Allow-Origin: *
                 nodeElement.addEventListener("click", (ev) => {
                     let nodes = document.getElementsByClassName("node");
                     for (let n of nodes) {
-                        n.childNodes[3].style.color = "var(--bg-coal)";
+                        // resetting the inactive nodes to their original state
+                        
+                        n.children[3].style.color = "var(--bg-coal)";
                         n.classList.remove("selected");
                     }
                     if (!nodeElement.classList.contains("selected")) {
                         nodeElement.classList.add("selected");
                         if (this.#lightMode) nodeElement.classList.add("light")
-                        let name = nodeElement.childNodes[3];
-                        name.style.color = "var(--ll-yellow)"
+                        // let name = nodeElement.childNodes[3];
+                        // name.style.color = "var(--ll-yellow)"
                         this.#activeNode = node;
                 }
                 this.showActiveNode();
             })
             navBar.appendChild(nodeElement);
-        });
+            });
+
             const fpsInterval = setInterval(() => this.#activeNode.updateFps(), 1000);
             const statusInterval = setInterval(async () => {
                 for (const node of this.nodes) {
@@ -962,11 +1011,12 @@ Acces-Control-Allow-Origin: *
             let firmwareVersion = document.querySelector("#firmware span");
             let configVersion = document.querySelector("#config span");
             firmwareVersion.innerHTML = this.#activeNode.firmware;
-            // Universes en hun accolades
+            // Universes and their braces
             let universesElement = document.getElementById("universes");
             let accoladesElement = document.getElementById("accolades")
             universesElement.innerHTML = '';    
             accoladesElement.innerHTML = '';
+
             let counter = 1;
             this.#activeNode.universes.forEach(un => {
                 if (counter <= this.#activeNode.shownUniverses) {
@@ -975,12 +1025,17 @@ Acces-Control-Allow-Origin: *
                     if (this.#lightMode) u.classList.add("light");
                     u.innerHTML = `${un.universe}<span class="range ${lm}">${un.keep}</span>`                  
                     let a = document.createElement("div");
+                    a.style.marginLeft = `${this.#accMargin}px`
                     a.id = `accolade-${counter}`;
                     a.classList.add("accolade");
-                    a.innerHTML = ` <h3 class="info ${lm}"></h3>
-                                    <svg height="100%" viewBox="0 0 2000 72">  
-                                        <use xlink:href="#accolade"/>
-                                    </svg>`
+                    // <h3 class="info ${lm}">60fps</h3>
+                    a.innerHTML = `
+                    <svg height="100%" viewBox="0 0 1024 72" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M61.4318 1.72424H2637.06" stroke="#FFF200" stroke-width="2"/>
+                        <path d="M61.4318 70.7244H2637.06" stroke="#FFF200" stroke-width="2"/>
+                        <path d="M46.4779 36.2288C51.7241 36.3106 59.3583 35.2166 56.7341 28.1965C55.0324 23.6442 50.049 20.9121 50.049 12.6052C50.049 5.20797 54.2605 1.72424 61.4318 1.72424M46.4779 36.2288C51.7241 36.1469 59.3583 37.2492 56.7341 44.2693C55.0324 48.8216 50.049 51.5537 50.049 59.8606C50.049 67.2579 54.2605 70.7416 61.4318 70.7416M46.4779 36.2288H5" fill="none" stroke="#FFF200" stroke-width="2"/>
+                        <text class="info" x="60" y="40"></text>
+                    </svg>`
                     accoladesElement.appendChild(a);
                     universesElement.appendChild(u);
                 }
@@ -1020,7 +1075,13 @@ Acces-Control-Allow-Origin: *
                 }         
                 // height komt overeen met streamlength, top is startadres
                 let start = String((fb.startAddress/(512*this.#activeNode.shownUniverses))*100)+"%";
-                let stream = String((fb.streamLength/(512*this.#activeNode.shownUniverses))*100)+"%"
+                let stream = String((fb.streamLength/(512*this.#activeNode.shownUniverses))*100)+"%";
+                if (fb.streamLength <= 220) {
+                    addressBlock.classList.add("overflow");
+                }
+                if (fb.streamLength <= 120) {
+                    addressBlock.classList.add("extreme")
+                }
                 addressBlock.style.height = stream;
                 addressBlock.style.top = start;
                 if (counter > this.#activeNode.shownUniverses) {
@@ -1086,6 +1147,7 @@ Acces-Control-Allow-Origin: *
                     if (button.id === "increment") {
                         if (this.#activeNode.shownUniverses < this.#activeNode.maxShownUniverses) {
                             this.#activeNode.changeShownUni(true);
+                            this.#accMargin += 5;
                         }
                     } else if (button.id === "decrement") {
                         if (this.#activeNode.shownUniverses > this.#activeNode.minShownUniverses) {
@@ -1097,7 +1159,9 @@ Acces-Control-Allow-Origin: *
                             }
                             if (!overLap) {
                                 this.#activeNode.changeShownUni(false);
+                                this.#accMargin -= 5;
                             }
+                            
                         }
                     }
                     this.showActiveNode();
@@ -1132,7 +1196,7 @@ Acces-Control-Allow-Origin: *
         }
 
         switchDarkMode(sw) {
-            let accolades = document.querySelectorAll("#accolade path")
+            let accolades = document.querySelectorAll(".accolade path")
             let lightArr = [];
             lightArr.push(document.querySelector("body"));
             lightArr.push(document.querySelector("header"));
@@ -1177,6 +1241,10 @@ Acces-Control-Allow-Origin: *
         #shownUniverses = 6;
         #lastUpdate;
         #online = true;
+
+        #timestamp;
+        #prevTimestampOff = null;
+        #prevTimestampOn = null;
 
         constructor(ip, skipConfig = false) {
             this.#ip = ip;
@@ -1317,16 +1385,34 @@ Acces-Control-Allow-Origin: *
             this.#codecs = c;
         }
 
+        // setting the status indicator of the disconnected nodes, debounce to make sure there is no
+        // flickering
         setStatus(o) {
-            this.#online = o;
             let node = document.getElementById(this.mac);
-            if (node.classList.contains("selected")) {
-                let status = document.querySelector(".selected #status")
-                this.#online? status.style.backgroundColor = "var(--bg-status-green)" : status.style.backgroundColor = "red";
+            this.#timestamp = new Date().getTime();
+            if (o) {
+                if (this.#prevTimestampOn === null) {
+                    console.log("setting the initial prevTimestampOn")
+                    this.#prevTimestampOn = this.#timestamp;
+                }
+                if ((this.#timestamp-this.#prevTimestampOn) > 1) {
+                    this.#online = o;
+                    node.classList.remove("disconnected");
+                    this.#prevTimestampOn = new Date().getTime;
+                    this.#prevTimestampOff = null;
+                }         
             } else {
-                let name = node.childNodes[3];
-                this.#online? name.style.color = null : name.style.color = "var(--bg-error-red)";
-            }       
+                if (this.#prevTimestampOff === null) {
+                    console.log("setting the initial prevTimestampOff")
+                    this.#prevTimestampOff = this.#timestamp;
+                }
+                if ((this.#timestamp-this.#prevTimestampOff) > 1) {
+                    this.#online = o;
+                    node.classList.add("disconnected");
+                    this.#prevTimestampOff = new Date().getTime;
+                    this.#prevTimestampOn = null;
+                }         
+            }    
         }
 
         changeShownUni(up){
@@ -1361,6 +1447,7 @@ Acces-Control-Allow-Origin: *
         }
 
         async updateFps() {
+            // if not demo
             if (this.mac !== "7B:A6:80:7F:EC:7D") {
                 try {
                     const response = await fetch(`http://${this.ip}/xart`, {signal: AbortSignal.timeout(2000)});
@@ -1380,23 +1467,23 @@ Acces-Control-Allow-Origin: *
                             let AnOut = (parseInt(this.universes[uni]["framecounter"]))
                             fps = (AnIn + 8192 - AnOut)%8192;
                             fps = Math.trunc(Math.round(fps/(delta/10000))/10);
-                            let fpsElement = document.querySelector(`#accolade-${uni+1} h3`);
+                            let fpsElement = document.querySelector(`#accolade-${uni+1} text`);
                             if (fpsElement != null) {
-                                fpsElement.innerHTML = `${fps} fps`;
+                                fpsElement.innerHTML = `${fps}fps`;
                             }                        
                             // Updating the universes with the latest received framecounter
                             this.universes[uni]["framecounter"] = ((parsedXart[`in${uni}`]).split(" "))[0]
                         }
                     }
+                
+                if (!this.#online) this.setStatus(true);
                 this.#lastUpdate = newTime;
-                await this.setStatus(true);
-
+                
             } 
                 catch (error) {
                     if (error.name === "TimeoutError") {
                         console.error("Request timed out");
-                        await this.setStatus(false);
-
+                        if (this.#online) this.setStatus(false);
                     } else if (error.name === "AbortError") {
                         console.error("Fetch aborted by user");
                     } else if (error.name === "TypeError") {
@@ -1408,8 +1495,6 @@ Acces-Control-Allow-Origin: *
             }        
         }
     }
-
-
 
     class NodeTemplate extends Node {
         constructor(ip, name, mac, sw, nm, un, fb, c, fw){
@@ -1725,15 +1810,6 @@ Acces-Control-Allow-Origin: *
             </div>
         </div>
         <!-- svg definition of the accolades -->
-        <svg viewBox="0 0 1024 72" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-                <symbol id="accolade">
-                    <path d="M41.4318 1.72424H2617.06" stroke="#FFF200" stroke-width="2"/>
-                    <path d="M41.4318 70.7244H2617.06" stroke="#FFF200" stroke-width="2"/>
-                    <path d="M26.4779 36.2288C31.7241 36.3106 39.3583 35.2166 36.7341 28.1965C35.0324 23.6442 30.049 20.9121 30.049 12.6052C30.049 5.20797 34.2605 1.72424 41.4318 1.72424M0.437164 36.237H26.4779C31.7241 36.1552 39.3583 37.2492 36.7341 44.2693C35.0324 48.8216 30.049 51.5537 30.049 59.8606C30.049 67.2579 34.2605 70.7416 41.4318 70.7416" fill="none" stroke="#FFF200" stroke-width="2"/>
-                </symbol>
-            </defs>
-        </svg>
         <!-- end of accolade definition -->
         <div id="accolades">
         </div>
