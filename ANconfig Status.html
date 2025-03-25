@@ -1185,13 +1185,13 @@ Acces-Control-Allow-Origin: *
             uni.style.gridRow = fieldbusses.style.gridRow = `1/${this.#activeNode.shownUniverses+3}`
             uniFilter.style.gridRow = `${this.#activeNode.shownUniverses+2}`
             for (const fb of fbC) {
-                fb.style.gridRow        = `1/${this.#activeNode.shownUniverses+3}`
+                fb.style.gridRow = `1/${this.#activeNode.shownUniverses+3}`
             }
             for (const f of fb) {
-                f.style.gridRow         = `1/${this.#activeNode.shownUniverses+1}`
+                f.style.gridRow = `1/${this.#activeNode.shownUniverses+1}`
             }
             for (const p of protos) {
-                p.style.gridRow         = `${this.#activeNode.shownUniverses +2}`
+                p.style.gridRow = `${this.#activeNode.shownUniverses +2}`
             }
         }
 
@@ -1307,44 +1307,14 @@ Acces-Control-Allow-Origin: *
         }
         
         set ip(ip) {
-            console.log(ip);
-            console.log(this.#netmask);
-
-            let reIP = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
-
-            if (!reIP.test(ip)) {
-                console.log("Invalid IP format");
-                return;
-            }
-
-            let ipParts = ip.split('.').map(Number);
-            let maskParts = this.#netmask.split('.').map(Number);
-
-            let broadcastParts = ipParts.map((octet, index) => octet | (255 - maskParts[index]));
-
-            if (ipParts.every((octet, index) => octet === broadcastParts[index])) {
-                console.log("This is a broadcast address and is not allowed.");
-                return;
-            }
-
-            console.log("This is a valid IP address.");
             this.#ip = ip;
         }
 
         set name(name){
-            if (typeof name !== "string" || name.trim().length === 0) {
-                console.log("Invalid name: must be a non-empty string.");
-                return;
-            }
             this.#name = name.trim();
         }
 
         set mac(mac){
-            let reMAC = /^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$/;
-            if (!reMAC.test(mac)) {
-                console.log("Invalid MAC address: must be in the format XX:XX:XX:XX:XX:XX.");
-                return;
-            }
             this.#mac = mac.toUpperCase();
         }
 
@@ -1357,11 +1327,6 @@ Acces-Control-Allow-Origin: *
         }
 
         set netmask(nm){
-            let reNetmask = /^(255|254|252|248|240|224|192|128|0)\.((255|254|252|248|240|224|192|128|0)\.){2}(255|254|252|248|240|224|192|128|0)$/;
-            if (!reNetmask.test(nm)) {
-                console.log("Invalid netmask: must be a valid subnet mask.");
-                return;
-            }
             this.#netmask = nm;
         }
 
@@ -1389,7 +1354,7 @@ Acces-Control-Allow-Origin: *
         // flickering
         setStatus(o) {
             let node = document.getElementById(this.mac);
-            this.#timestamp = new Date().getTime();
+            this.#timestamp = Date.now();
             if (o) {
                 if (this.#prevTimestampOn === null) {
                     console.log("setting the initial prevTimestampOn")
@@ -1398,7 +1363,7 @@ Acces-Control-Allow-Origin: *
                 if ((this.#timestamp-this.#prevTimestampOn) > 1) {
                     this.#online = o;
                     node.classList.remove("disconnected");
-                    this.#prevTimestampOn = new Date().getTime;
+                    this.#prevTimestampOn = Date.now();
                     this.#prevTimestampOff = null;
                 }         
             } else {
@@ -1409,7 +1374,7 @@ Acces-Control-Allow-Origin: *
                 if ((this.#timestamp-this.#prevTimestampOff) > 1) {
                     this.#online = o;
                     node.classList.add("disconnected");
-                    this.#prevTimestampOff = new Date().getTime;
+                    this.#prevTimestampOff = Date.now();
                     this.#prevTimestampOn = null;
                 }         
             }    
