@@ -1646,7 +1646,6 @@ Acces-Control-Allow-Origin: *
 
         addHandleEvents(unis) {
             let threshold = 50;
-            let hopped = false;
             let dragRange = document.querySelector(`#fb-${parseInt(this.#id.split("out")[1])+1}`);
             let addressRange = document.querySelector(`#fb-${parseInt(this.#id.split("out")[1])+1} .address.range`);
             let patch = document.querySelector(`#fb-${parseInt(this.#id.split("out")[1])+1} .address.range .patch`);
@@ -1674,18 +1673,18 @@ Acces-Control-Allow-Origin: *
             dragRange.addEventListener("mousemove", (e) => {
                 if (this.topDragStart) {
                     let offsetTop = this.topStart-e.clientY;
-                    // console.log(offsetTop);
+                    console.log("moving top")
                     let newRange = 0;
                     let newStart = 0;
                     newStart = this.#startAddress - (offsetTop*addressesPerPixel);
                     newRange = this.#streamLength + (offsetTop*addressesPerPixel);
-                    console.log(dif);
+                    let dif = 0;
                     for (let i=0; i<= unis; i++) {
                         dif = newStart - (512*i);
                         if (dif > -threshold && dif < threshold) {
                             let hop = (512*i) - newStart;
-                            newStart = 512*i;
-                            newRange = newRange - hop ;
+                            newStart = 512*i+1;
+                            newRange = newRange - hop -1 ;
                             break;
                         }
                     }
