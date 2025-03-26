@@ -1645,18 +1645,34 @@ Acces-Control-Allow-Origin: *
         }
 
         addHandleEvents(unis) {
-            let threshold = 50;
-            let dragRange = document.querySelector(`#fb-${parseInt(this.#id.split("out")[1])+1}`);
-            let addressRange = document.querySelector(`#fb-${parseInt(this.#id.split("out")[1])+1} .address.range`);
-            let patch = document.querySelector(`#fb-${parseInt(this.#id.split("out")[1])+1} .address.range .patch`);
-            let topHandle = document.querySelector(`#fb-${parseInt(this.#id.split("out")[1])+1} .top-handle`);
-            let bottomHandle = document.querySelector(`#fb-${parseInt(this.#id.split("out")[1])+1} .bottom-handle`);
-            let addressesPerPixel = (512*unis)/addressRange.getBoundingClientRect()["height"];
+            const threshold = 50;
+            let newRange = 0;
+            let newStart = 0;
+            let dif = 0;
+            const dragRange = document.querySelector(`#fb-${parseInt(this.#id.split("out")[1])+1}`);
+            const addressRange = document.querySelector(`#fb-${parseInt(this.#id.split("out")[1])+1} .address.range`);
+            const patch = document.querySelector(`#fb-${parseInt(this.#id.split("out")[1])+1} .address.range .patch`);
+            const topHandle = document.querySelector(`#fb-${parseInt(this.#id.split("out")[1])+1} .top-handle`);
+            const bottomHandle = document.querySelector(`#fb-${parseInt(this.#id.split("out")[1])+1} .bottom-handle`);
+            const addressesPerPixel = (512*unis)/addressRange.getBoundingClientRect()["height"];
+
+            const changePatch = (newRange = undefined, newStart = undefined) => {
+                if (newRange !== undefined) {
+                    this.newRange = Math.floor(newRange);
+                    patch.style.height = String((this.newRange/(512*unis))*100)+"%";
+                    patch.children[2].innerHTML = this.newRange;
+                }
+                if (newStart !== undefined) {
+                    this.newStart = Math.floor(newStart);
+                    patch.style.top = String((newStart/(512*unis))*100)+"%";
+                    patch.children[1].children[0].innerHTML = this.newStart;
+                }
+            }
+
             topHandle.addEventListener("mousedown", (e) => {
                 console.log(e);
                 this.topDragStart = true;
                 this.topStart = e.clientY;
-                console.log(this.topStart);
             });
             bottomHandle.addEventListener("mousedown", (e) => {
                 console.log(e);
@@ -1672,13 +1688,9 @@ Acces-Control-Allow-Origin: *
             })
             dragRange.addEventListener("mousemove", (e) => {
                 if (this.topDragStart) {
-                    let offsetTop = this.topStart-e.clientY;
-                    console.log("moving top")
-                    let newRange = 0;
-                    let newStart = 0;
+                    const offsetTop = this.topStart-e.clientY;
                     newStart = this.#startAddress - (offsetTop*addressesPerPixel);
                     newRange = this.#streamLength + (offsetTop*addressesPerPixel);
-                    let dif = 0;
                     for (let i=0; i<= unis; i++) {
                         dif = newStart - (512*i);
                         if (dif > -threshold && dif < threshold) {
@@ -1696,21 +1708,12 @@ Acces-Control-Allow-Origin: *
                         newStart = 1;
                         newRange = this.#startAddress + this.#streamLength -1 ;
                     }
-                    this.newAddress = Math.floor(newRange);
-                    this.newStart = Math.floor(newStart);
-                    let stream = String((this.newAddress/(512*unis))*100)+"%";
-                    let start = String((newStart/(512*unis))*100)+"%";
-                    patch.style.height = stream;
-                    patch.style.top = start;
-                    patch.children[2].innerHTML = this.newAddress;
-                    patch.children[1].children[0].innerHTML = this.newStart;
+                    changePatch(newRange, newStart);
                 }
                 else if (this.bottomDragStart) {
-                    let offsetBottom = this.bottomStart-e.clientY;
-                    let newRange = 0;
+                    const offsetBottom = this.bottomStart-e.clientY;
                     newRange = this.#streamLength - (offsetBottom*addressesPerPixel);
                     // snapping to full universes
-                    let dif=0;
                     for (let i=0; i<= unis; i++) {
                         dif = (512*i-(this.#startAddress+newRange));
                         if (dif < threshold && dif > -threshold){
@@ -1721,17 +1724,11 @@ Acces-Control-Allow-Origin: *
                     // bottom and top limits
                     if (this.startAddress + newRange > 512*unis) newRange = (512*unis)-(this.#startAddress-1);
                     if (newRange < 1) newRange = 1;
-                    this.newAddress = Math.floor(newRange);
-                    let stream = String((this.newAddress/(512*unis))*100)+"%";
-                    patch.style.height = stream;
-                    patch.children[2].innerHTML = this.newAddress;
+                    changePatch(newRange);
                 }
                 else if (this.move) {
-                    let offset = this.moveStart-e.clientY;
-                    let newStart = 0;
+                    const offset = this.moveStart-e.clientY;
                     newStart = this.#startAddress - (offset*addressesPerPixel);
-                    let dif = 0;
-                    let difB = 0;
                     for (let i=0; i<= unis; i++) {
                         dif = newStart - (512*i);
                         if (dif > -threshold && dif < threshold) {
@@ -1739,22 +1736,14 @@ Acces-Control-Allow-Origin: *
                             break;
                         }          
                     }
-                    if (newStart < 1) {
-                        newStart = 1;
-                    }
-                    else if (newStart + this.#streamLength > 512*unis) {
-                        newStart = (512*unis) - this.#streamLength;
-                    }
-                    this.newStart = Math.floor(newStart);
-                    let start = String((newStart/(512*unis))*100)+"%";
-                    patch.style.top = start;
-                    patch.children[1].children[0].innerHTML = this.newStart;
-                    
+                    if (newStart < 1) newStart = 1;
+                    else if (newStart + this.#streamLength > 512*unis) newStart = (512*unis) - this.#streamLength;
+                    changePatch(undefined, newStart)              
                 }
             });
             document.addEventListener("mouseup", () => {
                 this.topDragStart = this.bottomDragStart = this.move = false;         
-                if (this.newAddress !== undefined) this.#streamLength = this.newAddress;
+                if (this.newRange !== undefined) this.#streamLength = this.newRange;
                 if (this.newStart !== undefined) this.#startAddress = this.newStart;
             });   
         }
