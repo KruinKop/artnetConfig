@@ -111,7 +111,7 @@ Acces-Control-Allow-Origin: *
         background-color: var(--bg-light);
     }
 
-    nav, .info, #banner span,  #title{
+    nav, .info, #banner span, #title {
         font-family: var(--font-regular);
     }
 
@@ -287,7 +287,7 @@ Acces-Control-Allow-Origin: *
         font-size: var(--font-size-large);
         text-align: right;
         margin-right: 10px;
-        float: right;
+        /* float: right; */
 
     }
 
@@ -297,9 +297,10 @@ Acces-Control-Allow-Origin: *
     }
 
     /* Art-Net node */
-    /* #title h2:nth-child(2) {
-        z-index: -1;
-    } */
+    #title h2:nth-child(2) {
+        position: relative;
+        z-index: 101;
+    }
 
     #node-list {
         display: flex;
@@ -307,6 +308,8 @@ Acces-Control-Allow-Origin: *
     }
 
     .node {
+        position: relative;
+        z-index: 101;
         font-size: var(--font-size-medium);
         padding: var(--padding-small) 0 var(--padding-small) var(--padding-small);
         color: var(--bg-coal);
@@ -355,7 +358,18 @@ Acces-Control-Allow-Origin: *
         border-radius: 10px 0px 0px 10px;
         background-color: #363633;
         color: var(--ll-yellow);
-        z-index: -1;
+        z-index: 5;
+    }
+
+    .node.selected span {
+        cursor: text;
+        transition: all;
+        transition-duration: 500ms;
+        transition-timing-function: ease;
+    }
+
+    .node.selected span:hover {
+        font-size: larger;
     }
 
     .node.selected.disconnected span {
@@ -369,6 +383,12 @@ Acces-Control-Allow-Origin: *
 
     .node.selected .info {
         display: block;
+    }
+
+    .node.selected .info .IP p:hover,
+    .node.selected .info .netMask p:hover,
+    .node.selected .info .mac p:hover {
+
     }
 
     .node.selected #top-curve {
@@ -468,9 +488,7 @@ Acces-Control-Allow-Origin: *
     }
 
     .card {
-        color: var(--ll-yellow);
         background-color: var(--bg-card-grey);
-        font-family: var(--font-regular);
     }
 
     .card.light {
@@ -661,8 +679,8 @@ Acces-Control-Allow-Origin: *
         min-width: 50px;
         border-radius: 25px;
         box-shadow: 0px 10px 15px 2px rgba(0,0,0,0.5);
-        /* color: var(--ll-yellow); */
-
+        color: var(--ll-yellow);
+        font-family: var(--font-regular);
     }
 
     
@@ -694,12 +712,58 @@ Acces-Control-Allow-Origin: *
     #fb-5 {grid-column: 8/9}
     #fb-6 {grid-column: 9/10}
 
-    .address.range div {
+    .address.range div.patch {
+        cursor: move;
         position: relative;
         background-color: var(--bg-coal);
         border-radius: 15px;
         outline: 3px solid var(--ll-yellow);
         outline-offset: -2px;
+    }
+
+    .address.range div.top-handle {
+        cursor: n-resize;
+        position: absolute;
+        top: -6px;
+        display: flex;
+        justify-content: center;
+        height: 10px;
+        width: 100%; 
+    }
+
+    .address.range div.top-handle.light, .address.range div.bottom-handle.light {
+        background-color: transparent;
+        outline: transparent;
+    }
+
+    .address.range div.top-handle.light:after, .address.range div.bottom-handle.light:after {
+        background-color: var(--bg-card-grey);
+    }
+
+    .address.range div.top-handle:after {
+        content: "";
+        width: 17%;
+        height: 7px;
+        background-color: var(--ll-yellow);
+        border-radius: 5px 5px 0px 0px;
+    }
+
+    .address.range div.bottom-handle {
+        cursor: n-resize;
+        position: absolute;
+        bottom: -9.5px;
+        display: flex;
+        justify-content: center;
+        height: 10px;
+        width: 100%; 
+    }
+
+    .address.range div.bottom-handle:after {
+        content: "";
+        width: 17%;
+        height: 7px;
+        background-color: var(--ll-yellow);
+        border-radius: 0px 0px 5px 5px;
     }
 
     .address.range div.overflow {
@@ -733,7 +797,7 @@ Acces-Control-Allow-Origin: *
     }
 
     .address.range .overflow h3 {
-        top: -25px;
+        top: -30px;
     }
 
     .address.range .overflow h2 {
@@ -745,7 +809,7 @@ Acces-Control-Allow-Origin: *
 
     .address.range .overflow.extreme h2 {
         position: absolute;
-        bottom: -25px;
+        bottom: -27px;
     }
 
     .fb-protocol.info {
@@ -769,23 +833,6 @@ Acces-Control-Allow-Origin: *
         display: flex;
         justify-content: center;
         max-width: 60%;
-    }
-
-    #xml {
-        text-align: center;
-        text-decoration: none;
-        padding: var(--padding-small);
-        cursor: pointer;
-        /* border: 2px solid var(--ll-yellow); */
-        border-radius: var(--padding-small);
-        margin-top: 50px;
-        grid-row: 8;
-        grid-column: 2;
-        box-shadow: 0px 10px 15px 2px rgba(0,0,0,0.5);
-    }
-
-    #xml:active{
-        background-color: var(--bg-coal);
     }
 
     /* ============= Dynamic resizing ============== */
@@ -921,10 +968,12 @@ Acces-Control-Allow-Origin: *
                     let node = await new Node(hexToIP(device));
                     foundNodes.push(node);
                 }
+                foundNodes[0].active = true;
                 return foundNodes;
             } catch (error) {
                 if (error.name === "TimeoutError") {
                     console.error("Request timed out");
+                    return [];
                 } else if (error.name === "AbortError") {
                     console.error("Fetch aborted by user");
                 } else if (error.name === "TypeError") {
@@ -940,13 +989,13 @@ Acces-Control-Allow-Origin: *
             let universes = [];
             let fieldbusses = [];
             for (let i=0; i<10; i++){
-                universes.push(new Universe(`inp${i}`, i, 512, 0));
+                universes.push(new Universe(`inp${i+1}`, i, 512, 0));
             }
             for (let i=0; i<6; i++){
-                fieldbusses.push(new Fieldbus(`out${i}`, 2, i == 0? 1 : (i*512)+1, 150, 0));
+                fieldbusses.push(new Fieldbus(`out${i}`, 2, i == 0? 1 : (i*512)+1, 512, 0));
             }
-            let demoNode = new NodeTemplate("127.0.0.1", "Demo", "7b:a6:80:7f:ec:7d", {}, "255.255.255.0", universes, fieldbusses, ["Disabled", "Used-by-previous-channel", "DMX-512", "DMX-RDM"], "v3.1", new Configuration(null, true));
-            demoNode.configuration.setXmlConfig(demoNode);
+            let demoNode = new NodeTemplate("127.0.0.1", "Demo", "7b:a6:80:7f:ec:7d", {}, "255.255.255.0", universes, fieldbusses, ["Disabled", "Used-by-previous-channel", "DMX-512", "DMX-RDM"], "v3.1")
+            // demoNode.active = true; // Uncomment this line if there are no fysical nodes connected
             this.#nodes.push(demoNode);           
         }
 
@@ -968,37 +1017,44 @@ Acces-Control-Allow-Origin: *
                 nodeElement.innerHTML = `
                 <div id="top-curve"></div>
                 <span><div id="status"></div>${node.name}</span>
-                <ul class="info ${lm}">
-                <li class="IP">IP: <p>${node.ip}</p></li>
-                <li class="netMask">Netmask: <p>${node.netmask}</p></li>
-                <li class="mac">MAC: <p>${node.mac}</p></li>
-                </ul>
+                    <ul class="info ${lm}">
+                        <li class="IP">IP: <p>${node.ip}</p></li>
+                        <li class="netMask">Netmask: <p>${node.netmask}</p></li>
+                        <li class="mac">MAC: <p>${node.mac}</p></li>
+                    </ul>
                 <div id="bottom-curve"></div>
                 `
+
+                // Event listener to switch the active node
                 nodeElement.addEventListener("click", (ev) => {
+                    // resetting the nodes to their inactive state
+                    this.#nodes.map((node) => {node.active = false})
                     let nodes = document.getElementsByClassName("node");
                     for (let n of nodes) {
-                        // resetting the inactive nodes to their original state
-                        this.#nodes.map((node) => {node.active = false})
+                        n.children[1].style.transition = "none";
                         n.children[3].style.color = "var(--bg-coal)";
                         n.classList.remove("selected");
                     }
                     if (!nodeElement.classList.contains("selected")) {
                         nodeElement.classList.add("selected");
                         if (this.#lightMode) nodeElement.classList.add("light")
-                        // let name = nodeElement.childNodes[3];
-                        // name.style.color = "var(--ll-yellow)"
-                        node.active = true;
-                }
-                this.showActiveNode();
-            })
-            navBar.appendChild(nodeElement);
+                        node.active = true;               
+                    }
+                    this.showActiveNode();
+                    setTimeout(() => {
+                        if (node.active) {
+                            nodeElement.children[1].style.transition = "all 500ms";
+                        }
+                    }, 1);
+                })
+                
+                navBar.appendChild(nodeElement);
             });
 
             const fpsInterval = setInterval(() => this.activeNode.updateFps(), 1000);
             const statusInterval = setInterval(async () => {
                 for (const node of this.nodes) {
-                    if (node.mac !== "7B:A6:80:7F:EC:7D" && node.mac !== this.activeNode.mac) {
+                    if (node.mac !== "7B:A6:80:7F:EC:7D" && node.active === false) {
                         try {
                             const response = await fetch(`http://${node.ip}/xart`, {signal: AbortSignal.timeout(2000)});
                             if (!response.ok) {
@@ -1049,12 +1105,12 @@ Acces-Control-Allow-Origin: *
                     a.style.marginLeft = `${this.#accMargin}px`
                     a.id = `accolade-${counter}`;
                     a.classList.add("accolade");
-                    let braceColor = this.#lightMode? "rgb(77,77,77)" : "#FFF200";
+                    // svg definition of the braces
                     a.innerHTML = `
-                    <svg height="100%" viewBox="0 0 10000 72" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M61.4318 1.72424H2637.06" stroke=${braceColor} stroke-width="2"/>
-                        <path d="M61.4318 70.7244H2637.06" stroke=${braceColor} stroke-width="2"/>
-                        <path d="M46.4779 36.2288C51.7241 36.3106 59.3583 35.2166 56.7341 28.1965C55.0324 23.6442 50.049 20.9121 50.049 12.6052C50.049 5.20797 54.2605 1.72424 61.4318 1.72424M46.4779 36.2288C51.7241 36.1469 59.3583 37.2492 56.7341 44.2693C55.0324 48.8216 50.049 51.5537 50.049 59.8606C50.049 67.2579 54.2605 70.7416 61.4318 70.7416M46.4779 36.2288H5" fill="none" stroke=${braceColor} stroke-width="2"/>
+                    <svg height="100%" viewBox="0 0 2000 72" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M61.4318 1.72424H2637.06" stroke="#FFF200" stroke-width="2"/>
+                        <path d="M61.4318 70.7244H2637.06" stroke="#FFF200" stroke-width="2"/>
+                        <path d="M46.4779 36.2288C51.7241 36.3106 59.3583 35.2166 56.7341 28.1965C55.0324 23.6442 50.049 20.9121 50.049 12.6052C50.049 5.20797 54.2605 1.72424 61.4318 1.72424M46.4779 36.2288C51.7241 36.1469 59.3583 37.2492 56.7341 44.2693C55.0324 48.8216 50.049 51.5537 50.049 59.8606C50.049 67.2579 54.2605 70.7416 61.4318 70.7416M46.4779 36.2288H5" fill="none" stroke="#FFF200" stroke-width="2"/>
                         <text class="info" x="60" y="40"></text>
                     </svg>`
                     accoladesElement.appendChild(a);
@@ -1075,9 +1131,11 @@ Acces-Control-Allow-Origin: *
                 fbElement.id = `fb-${counter}`;
                 fbElement.innerHTML = `<div class="address range ${lm}">
                     <h1>FIELDBUS ${counter}</h1>
-                    <div class="${lm}" id="address-block-${counter}">
+                    <div class="patch ${lm}" id="address-block-${counter}">
+                        <div class="top-handle"></div>
                         <h3>start: <span>${fb.startAddress}</span></h3>
                         <h2>${fb.streamLength}</h2>
+                        <div class="bottom-handle"></div>
                     </div>
                     </div>
                     <div class="fb-protocol info ${lm}">
@@ -1145,12 +1203,13 @@ Acces-Control-Allow-Origin: *
                     }
                 }           
             }
-            this.changeGridStyling();
-
-            // attaching configuration to the download button
-            const xmlButton = document.querySelector("#xml");
-                const fileURL = URL.createObjectURL(this.activeNode.configuration.textConfigBlob);
-                xmlButton.href = fileURL;
+            this.changeGridStyling(); // must happen before setting the handlers otherwise the offset
+            // is wrong
+            
+            // setting event listeners to handle the dragging of fieldbus ranges
+            for (const fieldbus of this.activeNode.fieldbusses) {
+                fieldbus.addHandleEvents(this.activeNode.shownUniverses);
+            }     
         }
 
         eventInit() {
@@ -1196,30 +1255,32 @@ Acces-Control-Allow-Origin: *
             }
         }
 
+        animationInit() {
+
+        }
+
         changeGridStyling(){
-            const main            = document.getElementById("main-config");
-            const uniC            = document.querySelector(".universe.card");
-            const uni             = document.getElementById("universes");
-            const uniFilter       = document.querySelector("#universe-filter-container");
-            const fieldbusses     = document.getElementById("fieldbusses");
-            const fbC             = document.querySelectorAll(".fieldbus.card");
-            const fb              = document.querySelectorAll(".address.range");
-            const protos          = document.querySelectorAll(".fb-protocol.info");
-            const configButton    = document.querySelector("#xml");
+            let main            = document.getElementById("main-config");
+            let uniC            = document.querySelector(".universe.card");
+            let uni             = document.getElementById("universes");
+            let uniFilter       = document.querySelector("#universe-filter-container");
+            let fieldbusses     = document.getElementById("fieldbusses");
+            let fbC             = document.querySelectorAll(".fieldbus.card");
+            let fb              = document.querySelectorAll(".address.range");
+            let protos          = document.querySelectorAll(".fb-protocol.info");
 
             main.style.gridTemplateRows = `repeat(${this.activeNode.shownUniverses}, 1fr) 25px 120px`
             uniC.style.gridRow          = `1/${this.activeNode.shownUniverses+2}`
-            uni.style.gridRow           = fieldbusses.style.gridRow = `1/${this.activeNode.shownUniverses+3}`
-            uniFilter.style.gridRow     = `${this.activeNode.shownUniverses+2}`
-            configButton.style.gridRow  = `${this.activeNode.shownUniverses + 2}`
+            uni.style.gridRow = fieldbusses.style.gridRow = `1/${this.activeNode.shownUniverses+3}`
+            uniFilter.style.gridRow = `${this.activeNode.shownUniverses+2}`
             for (const fb of fbC) {
-                fb.style.gridRow        = `1/${this.activeNode.shownUniverses+3}`
+                fb.style.gridRow = `1/${this.activeNode.shownUniverses+3}`
             }
             for (const f of fb) {
-                f.style.gridRow         = `1/${this.activeNode.shownUniverses+1}`
+                f.style.gridRow = `1/${this.activeNode.shownUniverses+1}`
             }
             for (const p of protos) {
-                p.style.gridRow         = `${this.activeNode.shownUniverses+2}`
+                p.style.gridRow = `${this.activeNode.shownUniverses +2}`
             }
         }
 
@@ -1254,8 +1315,6 @@ Acces-Control-Allow-Origin: *
     }
 
     class Node {
-        // todo: refactor the node to have an active property
-
         #ip;
         #name;
         #mac;
@@ -1271,6 +1330,7 @@ Acces-Control-Allow-Origin: *
         #shownUniverses = 6;
         #lastUpdate;
         #online = true;
+        #active = false;
 
         #timestamp;
         #prevTimestampOff = null;
@@ -1336,15 +1396,49 @@ Acces-Control-Allow-Origin: *
             return this.#minShownUniverses;
         }
         
+        get active() {
+            return this.#active;
+        }
+        
         set ip(ip) {
+            console.log(ip);
+            console.log(this.#netmask);
+
+            let reIP = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+
+            if (!reIP.test(ip)) {
+                console.log("Invalid IP format");
+                return;
+            }
+
+            let ipParts = ip.split('.').map(Number);
+            let maskParts = this.#netmask.split('.').map(Number);
+
+            let broadcastParts = ipParts.map((octet, index) => octet | (255 - maskParts[index]));
+
+            if (ipParts.every((octet, index) => octet === broadcastParts[index])) {
+                console.log("This is a broadcast address and is not allowed.");
+                return;
+            }
+
+            console.log("This is a valid IP address.");
             this.#ip = ip;
         }
 
         set name(name){
+            if (typeof name !== "string" || name.trim().length === 0) {
+                console.log("Invalid name: must be a non-empty string.");
+                return;
+            }
             this.#name = name.trim();
         }
 
         set mac(mac){
+            let reMAC = /^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$/;
+            if (!reMAC.test(mac)) {
+                console.log("Invalid MAC address: must be in the format XX:XX:XX:XX:XX:XX.");
+                return;
+            }
             this.#mac = mac.toUpperCase();
         }
 
@@ -1357,6 +1451,11 @@ Acces-Control-Allow-Origin: *
         }
 
         set netmask(nm){
+            let reNetmask = /^(255|254|252|248|240|224|192|128|0)\.((255|254|252|248|240|224|192|128|0)\.){2}(255|254|252|248|240|224|192|128|0)$/;
+            if (!reNetmask.test(nm)) {
+                console.log("Invalid netmask: must be a valid subnet mask.");
+                return;
+            }
             this.#netmask = nm;
         }
 
@@ -1380,8 +1479,8 @@ Acces-Control-Allow-Origin: *
             this.#codecs = c;
         }
 
-        set configuration(c) {
-            this.#configuration = c;
+        set active(a) {
+            this.#active = a;
         }
 
         // setting the status indicator of the disconnected nodes, debounce to make sure there is no
@@ -1496,7 +1595,7 @@ Acces-Control-Allow-Origin: *
     }
 
     class NodeTemplate extends Node {
-        constructor(ip, name, mac, sw, nm, un, fb, c, fw, config){
+        constructor(ip, name, mac, sw, nm, un, fb, c, fw){
             super(ip, true);
             this.name = name;
             this.mac = mac;
@@ -1506,7 +1605,6 @@ Acces-Control-Allow-Origin: *
             this.fieldbusses = fb;
             this.codecs = c;
             this.firmware = fw;
-            this.configuration = config;
         }
     }
 
@@ -1579,25 +1677,121 @@ Acces-Control-Allow-Origin: *
             return this.#finetuningParams;
         }
 
+        addHandleEvents(unis) {
+            const threshold = 50;
+            let newRange = 0;
+            let newStart = 0;
+            let dif = 0;
+            const dragRange = document.querySelector(`#fb-${parseInt(this.#id.split("out")[1])+1}`);
+            const addressRange = document.querySelector(`#fb-${parseInt(this.#id.split("out")[1])+1} .address.range`);
+            const patch = document.querySelector(`#fb-${parseInt(this.#id.split("out")[1])+1} .address.range .patch`);
+            const topHandle = document.querySelector(`#fb-${parseInt(this.#id.split("out")[1])+1} .top-handle`);
+            const bottomHandle = document.querySelector(`#fb-${parseInt(this.#id.split("out")[1])+1} .bottom-handle`);
+            const addressesPerPixel = (512*unis)/addressRange.getBoundingClientRect()["height"];
 
+            const changePatch = (newRange = undefined, newStart = undefined) => {
+                if (newRange !== undefined) {
+                    this.newRange = Math.floor(newRange);
+                    patch.style.height = String((this.newRange/(512*unis))*100)+"%";
+                    patch.children[2].innerHTML = this.newRange;
+                }
+                if (newStart !== undefined) {
+                    this.newStart = Math.floor(newStart);
+                    patch.style.top = String((newStart/(512*unis))*100)+"%";
+                    patch.children[1].children[0].innerHTML = this.newStart;
+                }
+            }
+
+            topHandle.addEventListener("mousedown", (e) => {
+                e.preventDefault();
+                this.topDragStart = true;
+                this.topStart = e.clientY;
+            });
+            bottomHandle.addEventListener("mousedown", (e) => {
+                e.preventDefault();
+                this.bottomDragStart = true;
+                this.bottomStart = e.clientY;
+                console.log(this.bottomStart);
+            });
+
+            patch.addEventListener("mousedown", (e) => {
+                e.preventDefault();
+                this.move = true;
+                this.moveStart = e.clientY
+            })
+            dragRange.addEventListener("mousemove", (e) => {
+                if (this.topDragStart) {
+                    const offsetTop = this.topStart-e.clientY;
+                    newStart = this.#startAddress - (offsetTop*addressesPerPixel);
+                    newRange = this.#streamLength + (offsetTop*addressesPerPixel);
+                    for (let i=0; i<= unis; i++) {
+                        dif = newStart - (512*i);
+                        if (dif > -threshold && dif < threshold) {
+                            let hop = (512*i) - newStart;
+                            newStart = 512*i+1;
+                            newRange = newRange - hop -1 ;
+                            break;
+                        }
+                    }
+                    if (newRange < 1) {
+                        newRange = 1;
+                        newStart = this.#startAddress + this.#streamLength - 2;
+                    }
+                    if (newStart < 1) {
+                        newStart = 1;
+                        newRange = this.#startAddress + this.#streamLength -1 ;
+                    }
+                    changePatch(newRange, newStart);
+                }
+                else if (this.bottomDragStart) {
+                    const offsetBottom = this.bottomStart-e.clientY;
+                    newRange = this.#streamLength - (offsetBottom*addressesPerPixel);
+                    // snapping to full universes
+                    for (let i=0; i<= unis; i++) {
+                        dif = (512*i-(this.#startAddress+newRange));
+                        if (dif < threshold && dif > -threshold){
+                            newRange = (512*i)-(this.#startAddress-1)
+                            break;
+                        }
+                    }
+                    // bottom and top limits
+                    if (this.startAddress + newRange > 512*unis) newRange = (512*unis)-(this.#startAddress-1);
+                    if (newRange < 1) newRange = 1;
+                    changePatch(newRange);
+                }
+                else if (this.move) {
+                    const offset = this.moveStart-e.clientY;
+                    newStart = this.#startAddress - (offset*addressesPerPixel);
+                    for (let i=0; i<= unis; i++) {
+                        dif = newStart - (512*i);
+                        if (dif > -threshold && dif < threshold) {
+                            newStart = (512*i) + 1;
+                            break;
+                        }          
+                    }
+                    if (newStart < 1) newStart = 1;
+                    else if (newStart + this.#streamLength > 512*unis) newStart = (512*unis) - this.#streamLength;
+                    changePatch(undefined, newStart)              
+                }
+            });
+            document.addEventListener("mouseup", () => {
+                this.topDragStart = this.bottomDragStart = this.move = false;         
+                if (this.newRange !== undefined) this.#streamLength = this.newRange;
+                if (this.newStart !== undefined) this.#startAddress = this.newStart;
+            });   
+        }
     }
 
     class Configuration {
         #xmlConfig;
         #configObject;
-        #proposedConfigObject;
-        #textConfigBlob;
 
-        constructor(ip, skipConfig = false){
-            if (!skipConfig) {
-                return( async () => {
-                    this.#xmlConfig = await this.fetchXmlConfig(ip);
-                    this.#configObject = Configuration.parseConfig(this.#xmlConfig);
-                    // filling a text config blob for download with XML button
-                    this.#textConfigBlob = new Blob([this.generateTextConfig()], {type: 'text/plain'});    
-                    return this;
-                })();
-            }           
+        constructor(ip){
+            return( async () => {
+                this.#xmlConfig = await this.fetchXmlConfig(ip);
+                this.#configObject = Configuration.parseConfig(this.#xmlConfig);
+                return this;
+            })();
         }
 
         async fetchXmlConfig(ip) {
@@ -1664,10 +1858,6 @@ Acces-Control-Allow-Origin: *
             return this.#configObject["sys"]["fw"];
         }
 
-        get textConfigBlob() {
-            return this.#textConfigBlob;
-        }
-
         convertObjectAndMap(mapParams, tag) {
             let convertedObject = {};
             for (const [key,value] of Object.entries(dig(this.#configObject, tag))){
@@ -1701,53 +1891,7 @@ Acces-Control-Allow-Origin: *
         }
 
         traverseConfig(xmlObj.documentElement, config);
-        return config;
-        }
-
-        generateTextConfig() {
-            let xmlText = "<node>\n";
-            console.log(this.#configObject);
-            // Filling the textConfig with information from the fetched object
-            function traverseObject(configObject, lvl = 1) {
-                if (configObject !== null && typeof configObject === 'object') {
-                    for (const [key, value] of Object.entries(configObject)) {
-                        if (typeof value === 'object') {
-                            xmlText += `${'  '.repeat(lvl)}<${key}>\n`;
-                            traverseObject(value, lvl + 1);
-                            xmlText += `${'  '.repeat(lvl)}</${key}>\n`;
-                        } else {
-                            xmlText += `${'  '.repeat(lvl)}<${key}>${value}</${key}>\n`;
-                        }
-                    }
-                }
-            }
-        
-            traverseObject(this.#configObject);
-            xmlText += "</node>";
-            return xmlText;
-        }
-
-        setXmlConfig(node) {
-            console.log(node);
-            let xmlText = '<node>\n'
-            xmlText += `\t<sys>\n`
-            xmlText += `\t\t<ip>${ipToHex(node.ip)}</ip>\n`
-            xmlText += `\t\t<mask>${ipToHex(node.netmask)}</mask>\n`
-            xmlText += `\t\t<mac>${macToHex(node.mac)}</mac>\n`
-            xmlText += `\t\t<name>${node.name}</name>\n`
-            xmlText += `\t</sys>\n`
-            xmlText += '\t<artnet>\n'
-            node.universes.forEach((uni) => {
-                xmlText += `\t\t<${uni.id}>${hexConverter(uni.universe, uni.keep, uni.framecounter)}</${uni.id}>\n`
-            })
-            xmlText += '\t</artnet>\n'
-            xmlText += '\t<fieldbus>\n'
-            node.fieldbusses.forEach((fieldbus) => {
-                xmlText += `\t\t<${fieldbus.id}>${hexConverter(fieldbus.codec, fieldbus.startAddress, fieldbus.streamLength)}</${fieldbus.id}>\n`
-            })
-            xmlText += '\t</fieldbus>\n'
-            xmlText += '<node>'
-            this.#textConfigBlob = new Blob([xmlText], {type: 'text/plain'});
+            return config;
         }
     }
 
@@ -1770,19 +1914,6 @@ Acces-Control-Allow-Origin: *
         return ip;
     }
 
-    function ipToHex(ip) {
-        let hex = "";
-        const octets = ip.split('.');
-        for (let i = 0; i < octets.length; i++) {
-            let hexValue = parseInt(octets[i]).toString(16).toUpperCase();
-            if (hexValue.length < 2) {
-                hexValue = '0' + hexValue; // Ensure two-character hexadecimal
-            }
-            hex += hexValue;
-        }
-        return hex;
-    }
-
     function hexToMac(mac){
         let macAddress = "";
         for(let i = 0; i < mac.length; i+=2){
@@ -1794,21 +1925,9 @@ Acces-Control-Allow-Origin: *
         return macAddress;
     }
 
-    function macToHex(mac) {
-        let hex = "";
-        const parts = mac.split(':');
-        for (let i = 0; i < parts.length; i++) {
-            hex += parts[i].toUpperCase();
-        }
-        return hex;
-    }
-
-    function hexConverter(...params) {
-        return params.map(param => param.toString(16).toUpperCase()).join(' ');
-    }
-
     document.addEventListener("DOMContentLoaded", async () => {
         let installation = await new Installation("Lux-Lumen");
+        console.log(installation);
         installation.updateNav();
         installation.eventInit();
     });
@@ -1874,7 +1993,7 @@ Acces-Control-Allow-Origin: *
             </ul>
         </nav>
         <div class="info config">
-            <h3 id="firmware">firmware: <span>v03.3</span></h3>
+            <h3 id="firmware">firmware: <span></span></h3>
             <h3 id="config">config: <span>V0.01</span></h3>
         </div>
     </div>
@@ -1890,9 +2009,13 @@ Acces-Control-Allow-Origin: *
                 </div>
             </div>
         </div>
-        <div id="accolades"></div>
-        <div id="fieldbusses"></div>
-        <a id="xml" class="card" download="XML.conf" href="">XML config</a>
+        <!-- svg definition of the accolades -->
+        <!-- end of accolade definition -->
+        <div id="accolades">
+        </div>
+        <div id="fieldbusses">
+        </div>
+        </div>
     </div>
 </body>
 </html>
