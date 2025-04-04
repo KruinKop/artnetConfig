@@ -174,6 +174,10 @@ Acces-Control-Allow-Origin: *
         font-weight: lighter;
     }
 
+    h3 {
+        font-weight: 100;
+    }
+
     /* ============= Dark mode switch ============== */
 
     #dark-mode-switch {
@@ -357,14 +361,14 @@ Acces-Control-Allow-Origin: *
     }
 
     .node {
-        position: relative;
+        /* position: relative; */
         z-index: 101;
         font-size: var(--font-size-medium);
         padding: var(--padding-small) 0 var(--padding-small) var(--padding-small);
         color: var(--bg-coal);
     }
 
-    .node.disconnected span {
+    .node.disconnected h3 {
         opacity: 25%;
     }
 
@@ -410,7 +414,11 @@ Acces-Control-Allow-Origin: *
         z-index: 5;
     }
 
-    .node.selected.disconnected span {
+    .node h2 {
+        font-weight: 200;
+    }
+
+    .node.selected.disconnected h2 {
         opacity: 100%;
     }
 
@@ -487,9 +495,9 @@ Acces-Control-Allow-Origin: *
     }
 
     .node.selected #status{
-        display: inline-block;  
-        margin-right: 7px;
-        margin-bottom: 4px;
+        float: left;
+        margin-top: 9px;
+        margin-right: 5px;
         width: 7px;
         height: 7px;
         border-radius: 50%;
@@ -498,6 +506,43 @@ Acces-Control-Allow-Origin: *
     
     .node.disconnected #status{
         background-color: red;
+    }
+
+    .node form {
+        /* margin-top: -20px; */
+        min-width: 90px;
+        height: 100%;
+    }
+
+    .node .form-label {
+        font-size: var(--font-size-small);
+    }
+
+    .node input {
+        color: (var(--ll-yellow));
+        border: 2px solid var(--ll-yellow);
+        border-radius: 5px;
+        background-color: var(--bg-grey);
+        margin-top: calc(var(--padding-small)/3);
+        margin-bottom: calc(var(--padding-small)/2);
+        width: calc(var(--grid-nav-width) - 3*var(--padding-small)) ;
+        min-width: 95px;
+    }
+
+    #submit-wrapper {
+        margin-top: var(--padding-small);
+        text-align: center;
+    }
+
+    #submit-wrapper input {
+        margin-top: 0;
+        width: 90px;
+        border: none;
+    }
+
+    input::placeholder {
+        color: var(--ll-yellow);
+        opacity: 70%;
     }
 
     /* ============= Center configuration ============== */
@@ -869,20 +914,24 @@ Acces-Control-Allow-Origin: *
             margin-top: 15px;
         }
         
-        .node{
+        .node {
             font-size: var(--font-size-small);
-            padding: calc(var(--padding-small) / 2);
+            padding: calc(var(--padding-small) / 2) 0 calc(var(--padding-small) / 2) calc(var(--padding-small) / 2);
         } 
 
         .node.selected .info {
             display: none;
         } 
 
-        .node.selected #status{
-            left: -10px;
-            bottom: 6px;
+        .node.selected #status {
+            margin-top: 6px;
+            margin-right: 3px;
             width: 5px;
             height: 5px;
+        }
+
+        .node.selected #status.config {
+            top: 7px
         }
 
         .node.selected #top-curve:before{
@@ -903,6 +952,10 @@ Acces-Control-Allow-Origin: *
         .node.selected #bottom-curve:after {
             left: calc(var(--grid-nav-width) - 97.5px);
             top: 7.5px;
+        }
+
+        .node input {
+            width: calc(var(--grid-nav-width) - 3*var(--padding-small) + 5px) ;
         }
     }
 
@@ -1012,15 +1065,15 @@ Acces-Control-Allow-Origin: *
             this.#nodes.push(demoNode);           
         }
 
-        generateNode(node, lm, config) {
+        generateNode(node, lm) {
             let nodeElement = document.createElement("li");
             nodeElement.classList.add("node");
             nodeElement.id = node.mac;
-            if (!config) {
+            if (!this.config) {
                 nodeElement.innerHTML = `
                 <div id="top-curve"></div>
                 <div id="status"></div>
-                <span id="name">${node.name}</span>
+                <h3 id="name">${node.name}</h3>
                     <ul class="info ${lm} configurable">
                         <li class="IP">IP: <p>${node.ip}</p></li>
                         <li class="netMask">Netmask: <p>${node.netmask}</p></li>
@@ -1032,28 +1085,30 @@ Acces-Control-Allow-Origin: *
             } else {
                 nodeElement.innerHTML = `
                 <div id="top-curve"></div>
-                <div id="status"></div>
-                <span id="name">${node.name}</span>
-                <form>
-                    <label for="name"> Name:</label><br>
-                    <input type="text" id="name" placeholder=${node.name}><br>
-                    <label for="ip"> IP:</label><br>
-                    <input type="text" id="ip" placeholder=${node.ip}><br>
-                    <label for="mask"> Netmask:</label><br>
-                    <input type="text" id="mask" placeholder=${node.netmask}><br>
-                    <input type="submit" value="Push to node">
+                <div class="config" id="status"></div>
+                <h3 id="name">${node.name}</h3>
+                <form id="node-form">
+                    <label for="new-name"> Name:</label><br>
+                    <input type="text" id="new-name" placeholder=${node.name}><br>
+                    <label class="form-label" for="new-ip"> IP:</label><br>
+                    <input type="text" id="new-ip" placeholder=${node.ip}><br>
+                    <label class="form-label" for="new-mask"> Netmask:</label><br>
+                    <input type="text" id="new-mask" placeholder=${node.netmask}><br>
+                    <div id="submit-wrapper">
+                        <input type="submit" value="Push to node">
+                    </div>
                 </form>
                 <div id="bottom-curve"></div>`
             }
             return nodeElement;
         }
 
-        updateNav(init, config=false){
+        updateNav(init){
             // if (this.#lightMode) this.lm="light";
             let navBar = document.getElementById("node-list");
             navBar.innerHTML="";
             this.#nodes.forEach(node => {
-                let nodeElement = this.generateNode(node, this.lm, config);
+                let nodeElement = this.generateNode(node, this.lm);
                 if (this.lm) nodeElement.classList.add("light");
                 // check if the webpage address corresponds to one of the nodes in the lists,
                 // make this the selected node if match is found.
@@ -1066,39 +1121,12 @@ Acces-Control-Allow-Origin: *
                 } else {
                     if (node.active) {
                         nodeElement.classList.add("selected");
-                        if (config) nodeElement.children[2].hidden = true;
+                        if (this.config) nodeElement.children[2].hidden = true;
                     }
                     else {
                         nodeElement.children[3].hidden = true;
                     }
                 }
-                
-                // Event listener to switch the active node
-                nodeElement.addEventListener("click", (ev) => {
-                    // resetting the nodes to their inactive state
-                    this.#nodes.map((node) => {node.active = false})
-                    let nodes = document.getElementsByClassName("node");
-                    for (let n of nodes) {
-                        // n.children[2].style.color = "var(--bg-coal)";
-                        if (config) {
-                            n.children[3].hidden = true;
-                            n.children[2].hidden = false;
-                        }
-                        n.classList.remove("selected");
-                        console.log(nodeElement.children[1]);
-                    }
-                    if (!nodeElement.classList.contains("selected")) {
-                        nodeElement.classList.add("selected");
-                        if (config) {
-                            nodeElement.children[3].hidden = false;
-                            nodeElement.children[2].hidden = true;
-                        }
-                        if (this.lm) nodeElement.classList.add("light");
-                        node.active = true;               
-                    }
-                    this.showActiveNode();
-                })
-                
                 navBar.appendChild(nodeElement);
             });
 
@@ -1311,11 +1339,64 @@ Acces-Control-Allow-Origin: *
                 const checkBox = document.querySelector("#edit-switch");
                 if (checkBox.checked) {
                     console.log("attaching");
-                    this.updateNav(false, true)
+                    this.config = true;
+                    this.updateNav(false)
                 } else {
+                    this.config = false;
                     this.updateNav();
-                }      
+                }  
+                this.navSwitcher();    
             })
+        }
+
+        handleNavClick = (e) => {
+            // resetting the nodes to their inactive state
+            e.preventDefault();
+            e.stopPropagation();
+            let nodeElement = e.currentTarget;
+            console.log(nodeElement);
+            this.#nodes.map((node) => {node.active = false})
+                let nodes = document.getElementsByClassName("node");
+                for (let n of nodes) {
+                    // n.children[2].style.color = "var(--bg-coal)";
+                    if (this.config) {
+                        n.children[3].hidden = true;
+                        n.children[2].hidden = false;
+                    }
+                    n.classList.remove("selected");
+                }
+                if (!nodeElement.classList.contains("selected")) {
+                    nodeElement.classList.add("selected");
+                    let node = this.#nodes.filter((n) => n.mac === nodeElement.id)[0];
+                    console.log(node);
+                    if (this.config) {
+                        nodeElement.children[3].hidden = false;
+                        nodeElement.children[2].hidden = true;
+                        // add event listener for the submit form
+                        let form = document.querySelector("#node-form");
+                        form.addEventListener("submit", (e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            node.processForm(e);
+                        })
+                    }
+                    if (this.lm) nodeElement.classList.add("light");
+                    node.active = true;               
+                }
+                this.showActiveNode();
+                this.navSwitcher();
+            }
+
+        navSwitcher() {
+            let nodes = document.querySelectorAll(".node");
+            // removing all the previously attached event Listeners
+            nodes.forEach((node) => node.removeEventListener("click", this.handleNavClick));
+            let inactiveNodes = Array.from(nodes).filter((node) => !node.classList.contains("selected"));
+            
+            inactiveNodes.forEach((nodeElement) => {
+                // Event listener to switch the active node
+                nodeElement.addEventListener("click", this.handleNavClick);
+            })       
         }
 
         changeGridStyling(){
@@ -1656,6 +1737,11 @@ Acces-Control-Allow-Origin: *
                 }
             }        
         }
+
+        processForm(e) {
+            let name = document.getElementById("new-name");
+            console.log(name.value);
+        }
     }
 
     class NodeTemplate extends Node {
@@ -1994,6 +2080,7 @@ Acces-Control-Allow-Origin: *
         let installation = await new Installation("Lux-Lumen");
         console.log(installation);
         installation.updateNav(true);
+        installation.navSwitcher();
         installation.eventInit();
     });
 
