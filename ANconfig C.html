@@ -529,6 +529,15 @@ Acces-Control-Allow-Origin: *
         min-width: 95px;
     }
 
+    .node.light form input {
+        border-color: black;
+        background-color: var(--bg-light-grey);
+    }
+
+    .node.light form input::placeholder {
+        color: black;
+    }
+
     #submit-wrapper {
         margin-top: var(--padding-small);
         text-align: center;
@@ -794,9 +803,9 @@ Acces-Control-Allow-Origin: *
         outline: transparent;
     }
 
-    .address.range div.top-handle.light:after, .address.range div.bottom-handle.light:after {
+    /* .address.range div.top-handle.light:after, .address.range div.bottom-handle.light:after {
         background-color: var(--bg-card-grey);
-    }
+    } */
 
     .address.range div.top-handle:after {
         content: "";
@@ -824,50 +833,54 @@ Acces-Control-Allow-Origin: *
         border-radius: 0px 0px 5px 5px;
     }
 
-    .address.range div.overflow {
+    #address-container {
         height: 100%;
-        display: flex;
-        flex-direction: row;
-        align-items: center;
+        display: grid;
+        grid-template-rows: repeat(3, 1fr);
+    }
+
+    .address.range .patch.extreme.overflow #address-container {
+        display: block;
+    }
+
+    .address.range .patch.extreme.overflow h3 {
+        position: absolute;
+    }
+
+    .address.range .patch.overflow h3 {
+        margin-top: -30px;
+    }
+
+    .address.range .patch.overflow.extreme h2 {
+        position: absolute;
+        bottom: -35px;
+        width: 100%;
+        text-align: center;
     }
 
     .address.range div.light{
         background-color: var(--bg-light-grey);
-        outline: 3px solid var(--bg-card-grey)
+        outline: 3px solid var(--bg-card-grey);
+    }
+    
+    .address.range div.light div:after{
+        background-color: var(--bg-card-grey);
     }
 
     .address.range h2 {
         font-size: clamp(var(--font-size-small), 2vw, var(--font-size-medium));
         font-weight: lighter;
-        position: absolute;
-        bottom: 7%;
-        text-align: center;
-        width: 100%;
+        align-self: center;
+        margin-left: auto;
+        margin-right: auto;
     }
 
     .address.range h3 {
-        position: absolute;
-        width: 65%;
-        left: 25%;
-        top: 7%;
+        width: 80%;
+        margin-top: 5px;
+        margin-left:5px;
         font-size: clamp(var(--font-size-xs), 1vw, var(--font-size-small));
         font-weight: lighter;
-    }
-
-    .address.range .overflow h3 {
-        top: -30px;
-    }
-
-    .address.range .overflow h2 {
-        position: relative;
-        display: flex;
-        justify-content: center;
-        bottom: 0%;
-    }
-
-    .address.range .overflow.extreme h2 {
-        position: absolute;
-        bottom: -27px;
     }
 
     .fb-protocol.info {
@@ -1212,10 +1225,12 @@ Acces-Control-Allow-Origin: *
                 fbElement.innerHTML = `<div class="address range ${this.lm}">
                     <h1>FIELDBUS ${counter}</h1>
                     <div class="patch ${this.lm}" id="address-block-${counter}">
-                        <div class="top-handle ${this.lm}"></div>
-                        <h3>start: <span>${fb.startAddress}</span></h3>
-                        <h2>${fb.streamLength}</h2>
-                        <div class="bottom-handle ${this.lm}"></div>
+                        <div class="top-handle"></div>
+                        <div class="move" id="address-container">
+                            <h3 class="move">start: <span>${fb.startAddress}</span></h3>
+                            <h2 class="move">${fb.streamLength}</h2>
+                        </div>
+                        <div class="bottom-handle"></div>
                     </div>
                     </div>
                     <div class="fb-protocol info ${this.lm}">
@@ -1235,9 +1250,9 @@ Acces-Control-Allow-Origin: *
                 // height komt overeen met streamlength, top is startadres
                 let start = String((fb.startAddress/(512*this.activeNode.shownUniverses))*100)+"%";
                 let stream = String((fb.streamLength/(512*this.activeNode.shownUniverses))*100)+"%";
-                if (fb.streamLength <= 220) {
+                if (fb.streamLength <= 280) {
                     addressBlock.classList.add("overflow");
-                }
+                } 
                 if (fb.streamLength <= 120) {
                     addressBlock.classList.add("extreme")
                 }
@@ -1289,7 +1304,7 @@ Acces-Control-Allow-Origin: *
             // setting event listeners to handle the dragging of fieldbus ranges
             for (const fieldbus of this.activeNode.fieldbusses) {
                 fieldbus.addHandleEvents(this.activeNode.shownUniverses);
-            }     
+            }  
         }
 
         eventInit() {
@@ -1347,6 +1362,8 @@ Acces-Control-Allow-Origin: *
                 }  
                 this.navSwitcher();    
             })
+
+            
         }
 
         handleNavClick = (e) => {
@@ -1435,7 +1452,7 @@ Acces-Control-Allow-Origin: *
             lightArr.push(...document.querySelectorAll(".info"));
             lightArr.push(...document.querySelectorAll(".card"));
             lightArr.push(...document.querySelectorAll(".range"));
-            lightArr.push(...document.querySelectorAll(".address.range div"));
+            lightArr.push(...document.querySelectorAll(".address.range div.patch"));
             lightArr.push(...document.querySelectorAll(".e-button"));
             if (sw.checked === true) {
                 this.lm = "light";
@@ -1827,54 +1844,64 @@ Acces-Control-Allow-Origin: *
             return this.#finetuningParams;
         }
 
-        addHandleEvents(unis) {
+        setStart = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log(e);
+            switch (e.target.classList[0]) {
+                case "top-handle": 
+                    this.start = "top"
+                    break;
+                case "move":
+                    this.start = "patch"
+                    break;
+                case "bottom-handle":
+                    this.start = "bottom"
+                    break;
+            }
+            this.startCoord = e.clientY;
+        }
+
+        setMove = (e) => {
+            let changePatch = (newRange = undefined, newStart = undefined) => {
+                let patch = document.querySelector(`#fb-${parseInt(this.#id.split("out")[1])+1} .address.range .patch`);
+                if (newRange !== undefined) {
+                    this.newRange = Math.floor(newRange);
+                    patch.style.height = String((this.newRange/(512*this.unis))*100)+"%";
+                    const RANGE = document.querySelector(`#${e.currentTarget.id} #address-container h2`);
+                    RANGE.innerHTML = this.newRange;
+                    if (this.newRange <= 280) {
+                        RANGE.parentElement.parentElement.classList.add("overflow");
+                    } else {
+                        if (RANGE.parentElement.parentElement.classList.contains("overflow")) RANGE.parentElement.parentElement.classList.remove("overflow");
+                    }
+                    if (this.newRange <= 120) {
+                        RANGE.parentElement.parentElement.classList.add("extreme");
+                    } else {
+                        if (RANGE.parentElement.parentElement.classList.contains("extreme")) RANGE.parentElement.parentElement.classList.remove("extreme");
+                    }
+                }
+                if (newStart !== undefined) {
+                    this.newStart = Math.floor(newStart);
+                    patch.style.top = String((newStart/(512*this.unis))*100)+"%";
+                    const START = document.querySelector(`#${e.currentTarget.id} #address-container h3 span`);
+                    START.innerHTML = this.newStart;
+                }
+            }
+
             const threshold = 50;
             let newRange = 0;
             let newStart = 0;
             let dif = 0;
-            const dragRange = document.querySelector(`#fb-${parseInt(this.#id.split("out")[1])+1}`);
             const addressRange = document.querySelector(`#fb-${parseInt(this.#id.split("out")[1])+1} .address.range`);
-            const patch = document.querySelector(`#fb-${parseInt(this.#id.split("out")[1])+1} .address.range .patch`);
-            const topHandle = document.querySelector(`#fb-${parseInt(this.#id.split("out")[1])+1} .top-handle`);
-            const bottomHandle = document.querySelector(`#fb-${parseInt(this.#id.split("out")[1])+1} .bottom-handle`);
-            const addressesPerPixel = (512*unis)/addressRange.getBoundingClientRect()["height"];
+            const addressesPerPixel = (512*this.unis)/addressRange.getBoundingClientRect()["height"];
 
-            const changePatch = (newRange = undefined, newStart = undefined) => {
-                if (newRange !== undefined) {
-                    this.newRange = Math.floor(newRange);
-                    patch.style.height = String((this.newRange/(512*unis))*100)+"%";
-                    patch.children[2].innerHTML = this.newRange;
-                }
-                if (newStart !== undefined) {
-                    this.newStart = Math.floor(newStart);
-                    patch.style.top = String((newStart/(512*unis))*100)+"%";
-                    patch.children[1].children[0].innerHTML = this.newStart;
-                }
-            }
-
-            topHandle.addEventListener("mousedown", (e) => {
-                e.preventDefault();
-                this.topDragStart = true;
-                this.topStart = e.clientY;
-            });
-            bottomHandle.addEventListener("mousedown", (e) => {
-                e.preventDefault();
-                this.bottomDragStart = true;
-                this.bottomStart = e.clientY;
-                console.log(this.bottomStart);
-            });
-
-            patch.addEventListener("mousedown", (e) => {
-                e.preventDefault();
-                this.move = true;
-                this.moveStart = e.clientY
-            })
-            dragRange.addEventListener("mousemove", (e) => {
-                if (this.topDragStart) {
-                    const offsetTop = this.topStart-e.clientY;
+            switch (this.start) {
+                case "top":
+                    const offsetTop = this.startCoord-e.clientY;
                     newStart = this.#startAddress - (offsetTop*addressesPerPixel);
                     newRange = this.#streamLength + (offsetTop*addressesPerPixel);
-                    for (let i=0; i<= unis; i++) {
+                    for (let i=0; i<= this.unis; i++) {
                         dif = newStart - (512*i);
                         if (dif > -threshold && dif < threshold) {
                             let hop = (512*i) - newStart;
@@ -1892,12 +1919,12 @@ Acces-Control-Allow-Origin: *
                         newRange = this.#startAddress + this.#streamLength -1 ;
                     }
                     changePatch(newRange, newStart);
-                }
-                else if (this.bottomDragStart) {
-                    const offsetBottom = this.bottomStart-e.clientY;
+                    break;
+                case "bottom":
+                    const offsetBottom = this.startCoord-e.clientY;
                     newRange = this.#streamLength - (offsetBottom*addressesPerPixel);
                     // snapping to full universes
-                    for (let i=0; i<= unis; i++) {
+                    for (let i=0; i<= this.unis; i++) {
                         dif = (512*i-(this.#startAddress+newRange));
                         if (dif < threshold && dif > -threshold){
                             newRange = (512*i)-(this.#startAddress-1)
@@ -1905,14 +1932,14 @@ Acces-Control-Allow-Origin: *
                         }
                     }
                     // bottom and top limits
-                    if (this.startAddress + newRange > 512*unis) newRange = (512*unis)-(this.#startAddress-1);
+                    if (this.startAddress + newRange > 512*this.unis) newRange = (512*this.unis)-(this.#startAddress-1);
                     if (newRange < 1) newRange = 1;
                     changePatch(newRange);
-                }
-                else if (this.move) {
-                    const offset = this.moveStart-e.clientY;
+                    break;  
+                case "patch":
+                    const offset = this.startCoord-e.clientY;
                     newStart = this.#startAddress - (offset*addressesPerPixel);
-                    for (let i=0; i<= unis; i++) {
+                    for (let i=0; i<= this.unis; i++) {
                         dif = newStart - (512*i);
                         if (dif > -threshold && dif < threshold) {
                             newStart = (512*i) + 1;
@@ -1920,16 +1947,41 @@ Acces-Control-Allow-Origin: *
                         }          
                     }
                     if (newStart < 1) newStart = 1;
-                    else if (newStart + this.#streamLength > 512*unis) newStart = (512*unis) - this.#streamLength;
-                    changePatch(undefined, newStart)              
-                }
-            });
+                    else if (newStart + this.#streamLength > 512*this.unis) newStart = (512*this.unis) - this.#streamLength;
+                    changePatch(undefined, newStart);
+                    break
+                default:
+                    break;           
+            }
+        }
 
-            document.addEventListener("mouseup", () => {
-                this.topDragStart = this.bottomDragStart = this.move = false;         
-                if (this.newRange !== undefined) this.#streamLength = this.newRange;
-                if (this.newStart !== undefined) this.#startAddress = this.newStart;
-            });   
+        updateValues = (e) => {
+            // this.topDragStart = this.bottomDragStart = this.move = false;
+            this.start = '';         
+            if (this.newRange !== undefined) this.#streamLength = this.newRange;
+            if (this.newStart !== undefined) this.#startAddress = this.newStart;
+            // console.log(e);
+        }
+
+        addHandleEvents = (unis) => {
+            this.unis = unis;
+            const topHandle = document.querySelector(`#fb-${parseInt(this.#id.split("out")[1])+1} .top-handle`);
+            const patch = document.querySelector(`#fb-${parseInt(this.#id.split("out")[1])+1} #address-container`);
+            const bottomHandle = document.querySelector(`#fb-${parseInt(this.#id.split("out")[1])+1} .bottom-handle`);
+            const dragRange = document.querySelector(`#fb-${parseInt(this.#id.split("out")[1])+1}`);
+            
+            // removing all the event listeners first
+            topHandle.removeEventListener("mousedown", this.setStart);
+            bottomHandle.removeEventListener("mousedown", this.setStart);
+            patch.removeEventListener("mousedown", this.setStart);
+            dragRange.removeEventListener("mousemove", this.setMove);
+            document.removeEventListener("mouseup", this.updateValues);
+
+            topHandle.addEventListener("mousedown", this.setStart);
+            bottomHandle.addEventListener("mousedown", this.setStart);
+            patch.addEventListener("mousedown", this.setStart);
+            dragRange.addEventListener("mousemove", this.setMove);
+            document.addEventListener("mouseup", this.updateValues);   
         }
     }
 
