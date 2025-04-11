@@ -1310,8 +1310,22 @@ Acces-Control-Allow-Origin: *
                 fbElement.classList.add("card");
                 if (this.lm) fbElement.classList.add("light");
                 fbElement.id = `fb-${counter}`;
-                const START = `start: <span>${fb.startAddress}</span>`
-                const STARTFORM = `<label for="start-address">start: <input id="start-address" type="number" min="1" max="5119" value="${fb.startAddress}"></label>`
+                let startElement;
+                let streamElement;
+                if (this.config) {
+                    startElement    =  generateDomTree("h3", null, null, [
+                                           generateDomTree("label", "start: ", {for: "start-address"}, [
+                                               generateDomTree("input", null, {id: "start-address", type: "number", min: "1", max: "5119", value: `${fb.startAddress}`})])]);
+                    streamElement   =   generateDomTree("h2", null, null, [
+                                            generateDomTree("label", null, {for: "stream-address"}, [
+                                                generateDomTree("input", null, {id: "stream-length", type: "number", min: "1", max: "1024", value: `${fb.streamLength}`})])]);
+                } else {
+                    startElement    =   generateDomTree("h3", "start: ", {class: "move"}, [
+                                            generateDomTree("span", fb.startAddress)]);
+                    streamElement   =   generateDomTree("h2", fb.streamLength, {class: "move"});
+                }
+
+                // const STARTFORM = `<label for="start-address">start: <input id="start-address" type="number" min="1" max="5119" value="${fb.startAddress}"></label>`
                 const STREAMFORM = `<label for="stream-address"><input id="stream-length" type="number"  min="1" max="1024" value="${fb.streamLength}"></label>`
                 const ACTIVECODEC = this.activeNode.codecs[fb.codec].split(" ")[0];
                 const LABEL = document.createElement("label", {for: "codec"});
@@ -1332,8 +1346,6 @@ Acces-Control-Allow-Origin: *
                     <div class="patch ${this.lm} ${this.config? "config" : ""}" id="address-block-${counter}">
                         <div class="top-handle"></div>
                         <div class="move" id="address-container">
-                            <h3 class="move">${this.config? STARTFORM : START}</h3>
-                            <h2 class="move">${this.config? STREAMFORM : fb.streamLength}</h2>
                         </div>
                         <div class="bottom-handle"></div>
                     </div>
@@ -1345,9 +1357,12 @@ Acces-Control-Allow-Origin: *
                             </svg>
                         </div>
                     </div>`;
-                fieldbussesElement.appendChild(fbElement);
+                    fieldbussesElement.appendChild(fbElement);
+
+                const ADDRESSCONTAINER = document.querySelector(`#fb-${counter} #address-container`);
+                ADDRESSCONTAINER.appendChild(startElement);
+                ADDRESSCONTAINER.appendChild(streamElement);
                 const CODECCONTAINER = document.querySelector(`#fb-${counter} .fb-protocol`);
-                console.log(CODECCONTAINER);
                 if (this.config) {
                     CODECCONTAINER.insertBefore(LABEL, CODECCONTAINER.children[0]);
                 } else {
@@ -1358,6 +1373,7 @@ Acces-Control-Allow-Origin: *
                     CODECCONTAINER.insertBefore(H2, CODECCONTAINER.children[0]);
                     CODECCONTAINER.insertBefore(H3, CODECCONTAINER.children[1]);
                 }
+
                 
                 let addressBlock = document.getElementById(`address-block-${counter}`);
                 if (this.activeNode.codecs[fb.codec].split(" ")[0] === "disabled") {
@@ -2253,6 +2269,25 @@ Acces-Control-Allow-Origin: *
             }
         }
         return macAddress;
+    }
+
+    function generateDomTree(tag, value=null, attributes=null, children=null, listeners=null) {
+        let root = document.createElement(tag);
+        value? root.textContent = value : root.textContent = "";
+        if (attributes) {
+            for (const [key, value] of Object.entries(attributes)) {
+                root.setAttribute(key, value);
+            }
+        }
+        if (children) {
+            Array.from(children).forEach((childNode) => root.appendChild(childNode));
+        }
+        if (listeners) {
+            for (const [e, f] of Object.entries(listeners)) {
+            root.addEventListener((e), f);
+            }
+        }
+        return root;
     }
 
     document.addEventListener("DOMContentLoaded", async () => {
