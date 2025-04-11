@@ -518,7 +518,7 @@ Acces-Control-Allow-Origin: *
         font-size: var(--font-size-small);
     }
 
-    input {
+    input, select {
         color: (var(--ll-yellow));
         border: 2px solid var(--ll-yellow);
         border-radius: 5px;
@@ -532,7 +532,7 @@ Acces-Control-Allow-Origin: *
         min-width: 95px;
     }
 
-    .light input {
+    .light input, .light select {
         border-color: black;
         background-color: var(--bg-light-grey);
     }
@@ -671,7 +671,7 @@ Acces-Control-Allow-Origin: *
 
     #universes li input {
         position: relative;
-        min-width: 110%;
+        min-width: 90%;
         height: 110%;
         font-size: var(--font-size-medium);
         text-align: center;
@@ -682,7 +682,7 @@ Acces-Control-Allow-Origin: *
         min-width: 60%;
         height: 60%;
         width: 70%;
-        top: 33px;
+        top: 40px;
         left: 40px;
         font-size: var(--font-size-small);
         z-index: 1000;
@@ -761,11 +761,6 @@ Acces-Control-Allow-Origin: *
         -ms-user-select: none; /* IE 10 and IE 11 */
         user-select: none; /* Standard syntax */
     }
-
-    #fieldbusses input {
-        width: 90%;
-        max-width: 70px;
-    }
     
     .fieldbus.card {
         display: grid;
@@ -816,7 +811,6 @@ Acces-Control-Allow-Origin: *
         border-radius: 15px;
         outline: 3px solid var(--ll-yellow);
         outline-offset: -2px;
-        z-index: 0;
     }
 
     .address.range div.top-handle {
@@ -860,6 +854,18 @@ Acces-Control-Allow-Origin: *
         border-radius: 0px 0px 5px 5px;
     }
 
+    #fieldbusses input {
+        position: relative;
+        font-size: clamp(var(--font-size-xs), 1vw, var(--font-size-small));
+        width: 90%;
+        min-width: 25px;
+    }
+
+    #fieldbusses h2 input {
+        margin-top: 3px;
+        font-size: clamp(var(--font-size-s), 1vw, var(--font-size-medium));
+    }
+
     #address-container {
         height: 100%;
         display: grid;
@@ -870,6 +876,20 @@ Acces-Control-Allow-Origin: *
         display: block;
     }
 
+    .config #address-container h3 {
+        width: 125%;
+        max-width: 85px;
+    }
+
+    .config #address-container h2 {
+        width: 150%;
+        max-width: 85px;
+    }
+
+    .config.overflow #address-container h3 {
+        width: 110%;
+    }
+
     .address.range .patch.extreme.overflow h3 {
         position: absolute;
     }
@@ -877,17 +897,23 @@ Acces-Control-Allow-Origin: *
     .address.range .patch.overflow h3 {
         margin-top: -30px;
         cursor: default;
+        width: 90%;
     }
 
     .address.range .patch.overflow.config h3 {
-        margin-top: -34px;
+        margin-top: -37px;
+        white-space: nowrap;
     }
 
     .address.range .patch.overflow.extreme h2 {
         position: absolute;
-        bottom: -35px;
+        bottom: -30px;
         width: 100%;
         text-align: center;
+    }
+    
+    .address.range .config.patch.overflow.extreme h2  {
+        bottom: -2.2em;
     }
 
     .address.range div.light{
@@ -942,6 +968,14 @@ Acces-Control-Allow-Origin: *
     @media screen and (max-width: 950px) {
         :root {
             --grid-nav-width: 21vw;
+        }
+
+        #address-container h3 {
+            white-space: inherit;
+        }
+
+        #fieldbusses .overflow h3 input {
+            width: 105%;
         }
     }
 
@@ -1277,22 +1311,34 @@ Acces-Control-Allow-Origin: *
                 if (this.lm) fbElement.classList.add("light");
                 fbElement.id = `fb-${counter}`;
                 const START = `start: <span>${fb.startAddress}</span>`
-                const STARTFORM = `<label for="start-address">start: <input id="start-address" type="number" value="${fb.startAddress}"></label>`
-                const STREAM = ``
+                const STARTFORM = `<label for="start-address">start: <input id="start-address" type="number" min="1" max="5119" value="${fb.startAddress}"></label>`
+                const STREAMFORM = `<label for="stream-address"><input id="stream-length" type="number"  min="1" max="1024" value="${fb.streamLength}"></label>`
+                const ACTIVECODEC = this.activeNode.codecs[fb.codec].split(" ")[0];
+                const LABEL = document.createElement("label", {for: "codec"});
+                LABEL.innerHTML = "Codec: "
+                const SELECT = document.createElement("select", {name: "codec", id: "codec"});
+                for (let i=0; i<this.activeNode.codecs.length; i++) {
+                    const OPTION = document.createElement("option", {value: `${this.activeNode.codecs[i].split(" ")[0]}`});
+                    const CONTENT = document.createTextNode(`${this.activeNode.codecs[i].split(" ")[0]}`);
+                    if (this.activeNode.codecs[i].split(" ")[0] === ACTIVECODEC) {
+                        OPTION.selected = true;
+                    }
+                    OPTION.appendChild(CONTENT);
+                    SELECT.appendChild(OPTION);
+                }
+                LABEL.appendChild(SELECT);
                 fbElement.innerHTML = `<div class="address range ${this.lm}">
                     <h1>FIELDBUS ${counter}</h1>
                     <div class="patch ${this.lm} ${this.config? "config" : ""}" id="address-block-${counter}">
                         <div class="top-handle"></div>
                         <div class="move" id="address-container">
-                            <h3 style="${this.config? "white-space:nowrap;" : ""}"class="move">${this.config? STARTFORM : START}</span></h3>
-                            <h2 class="move">${fb.streamLength}</h2>
+                            <h3 class="move">${this.config? STARTFORM : START}</h3>
+                            <h2 class="move">${this.config? STREAMFORM : fb.streamLength}</h2>
                         </div>
                         <div class="bottom-handle"></div>
                     </div>
                     </div>
                     <div class="fb-protocol info ${this.lm}">
-                        <h2>Codec:</h3>
-                        <h2>${this.activeNode.codecs[fb.codec].split(" ")[0]}</h2>
                         <div id="ethernet">
                             <svg width="75%" viewBox="0 0 512 490.43">  
                                 <use href="#ethernet-port"/>
@@ -1300,14 +1346,19 @@ Acces-Control-Allow-Origin: *
                         </div>
                     </div>`;
                 fieldbussesElement.appendChild(fbElement);
-                
+                const CODECCONTAINER = document.querySelector(`#fb-${counter} .fb-protocol`);
+                console.log(CODECCONTAINER);
                 if (this.config) {
-                    let startInput = document.querySelector("#fieldbusses h3 label");
-                    console.log(startInput);
-                    startInput.addEventListener(("click"), (e) => {
-                        startInput.children[0].focus();
-                    })
+                    CODECCONTAINER.insertBefore(LABEL, CODECCONTAINER.children[0]);
+                } else {
+                    const H2 = document.createElement("h2")
+                    H2.innerHTML = "Codec: ";
+                    const H3 = document.createElement("h3")
+                    H3.innerHTML = `${ACTIVECODEC}`;
+                    CODECCONTAINER.insertBefore(H2, CODECCONTAINER.children[0]);
+                    CODECCONTAINER.insertBefore(H3, CODECCONTAINER.children[1]);
                 }
+                
                 let addressBlock = document.getElementById(`address-block-${counter}`);
                 if (this.activeNode.codecs[fb.codec].split(" ")[0] === "disabled") {
                     addressBlock.style.display = "none"
@@ -1315,10 +1366,10 @@ Acces-Control-Allow-Origin: *
                 // height komt overeen met streamlength, top is startadres
                 let start = String((fb.startAddress/(512*this.activeNode.shownUniverses))*100)+"%";
                 let stream = String((fb.streamLength/(512*this.activeNode.shownUniverses))*100)+"%";
-                if (fb.streamLength <= 280) {
+                if (fb.streamLength <= 280 | this.config & fb.streamLength <= 400) {
                     addressBlock.classList.add("overflow");
                 } 
-                if (fb.streamLength <= 120) {
+                if (fb.streamLength <= 120 | this.config & fb.streamLength <= 230) {
                     addressBlock.classList.add("extreme")
                 }
                 addressBlock.style.height = stream;
@@ -1929,25 +1980,39 @@ Acces-Control-Allow-Origin: *
                 let patch = document.querySelector(`#fb-${parseInt(this.#id.split("out")[1])+1} .address.range .patch`);
                 if (newRange !== undefined) {
                     this.newRange = Math.floor(newRange);
-                    patch.style.height = String((this.newRange/(512*this.unis))*100)+"%";
-                    const RANGE = document.querySelector(`#${e.currentTarget.id} #address-container h2`);
-                    RANGE.innerHTML = this.newRange;
-                    if (this.newRange <= 280) {
-                        RANGE.parentElement.parentElement.classList.add("overflow");
+                    let rangeElement;
+                    let status = !document.querySelector(".patch").classList.contains("config");
+                    if (status) {
+                        rangeElement = document.querySelector(`#${e.currentTarget.id} #address-container h2`);
+                        rangeElement.innerHTML = this.newRange;
                     } else {
-                        if (RANGE.parentElement.parentElement.classList.contains("overflow")) RANGE.parentElement.parentElement.classList.remove("overflow");
+                        rangeElement = document.querySelector(`#${e.currentTarget.id} #address-container h2 input`);
+                        rangeElement.value = this.newRange;
                     }
-                    if (this.newRange <= 120) {
-                        RANGE.parentElement.parentElement.classList.add("extreme");
+                    patch.style.height = String((this.newRange/(512*this.unis))*100)+"%";
+                    if (this.newRange <= 280 | !status & this.newRange <= 400) {
+                        patch.classList.add("overflow");
                     } else {
-                        if (RANGE.parentElement.parentElement.classList.contains("extreme")) RANGE.parentElement.parentElement.classList.remove("extreme");
+                        if (patch.classList.contains("overflow")) patch.classList.remove("overflow");
+                    }
+                    if (this.newRange <= 120 | !status & this.newRange <= 230) {
+                        patch.classList.add("extreme");
+                    } else {
+                        if (patch.classList.contains("extreme")) patch.classList.remove("extreme");
                     }
                 }
                 if (newStart !== undefined) {
                     this.newStart = Math.floor(newStart);
                     patch.style.top = String((newStart/(512*this.unis))*100)+"%";
-                    const START = document.querySelector(`#${e.currentTarget.id} #address-container h3 span`);
-                    START.innerHTML = this.newStart;
+                    let startElement;
+                    if (!document.querySelector(".patch").classList.contains("config")) {
+                        startElement = document.querySelector(`#${e.currentTarget.id} #address-container h3 span`);
+                        startElement.innerHTML = this.newStart;
+                    } else {
+                        startElement = document.querySelector(`#${e.currentTarget.id} #address-container h3 input`);
+                        startElement.value = this.newStart;
+                    }
+                    
                 }
             }
 
