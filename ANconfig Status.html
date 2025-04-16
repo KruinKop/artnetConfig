@@ -1549,7 +1549,7 @@ Acces-Control-Allow-Origin: *
         #codec;
         #startAddress;
         #streamLength;
-        #finetuningParams
+        #finetuningParams;
 
         constructor(id, codec, startAddress, streamLength, finetuningParams) {
             this.#id = id;
@@ -1728,7 +1728,6 @@ Acces-Control-Allow-Origin: *
         }
 
         setXmlConfig(node) {
-            console.log(node);
             let xmlText = '<node>\n'
             xmlText += `\t<sys>\n`
             xmlText += `\t\t<ip>${ipToHex(node.ip)}</ip>\n`
@@ -1746,7 +1745,7 @@ Acces-Control-Allow-Origin: *
                 xmlText += `\t\t<${fieldbus.id}>${hexConverter(fieldbus.codec, fieldbus.startAddress, fieldbus.streamLength)}</${fieldbus.id}>\n`
             })
             xmlText += '\t</fieldbus>\n'
-            xmlText += '<node>'
+            xmlText += '</node>'
             this.#textConfigBlob = new Blob([xmlText], {type: 'text/plain'});
         }
     }
