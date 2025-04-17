@@ -1254,10 +1254,11 @@ Acces-Control-Allow-Origin: *
                     }      
                 }, 5000)
             }          
-            this.showActiveNode();
+            this.showActiveNode(init);
         }
 
         showActiveNode() {
+            // console.log("showing active node");
             let handleParamChange = (e) => {
                 e.preventDefault();
                 let target = e.currentTarget;
@@ -1289,7 +1290,7 @@ Acces-Control-Allow-Origin: *
                     default:
                         console.log("can't detect the change");
                 }
-                this.activeNode.configuration.handleInputChange(this.activeNode, targetObj);
+                this.activeNode.configuration.handleInputChange(targetObj);
             }
 
             this.activeNode = this.#nodes.filter((node) => node.active === true)[0];
@@ -1395,7 +1396,7 @@ Acces-Control-Allow-Origin: *
                             </svg>
                         </div>
                     </div>`;
-                    fieldbussesElement.appendChild(fbElement);
+                fieldbussesElement.appendChild(fbElement);
 
                 const ADDRESSCONTAINER = document.querySelector(`#fb-${counter} #address-container`);
                 ADDRESSCONTAINER.appendChild(startElement);
@@ -1417,9 +1418,10 @@ Acces-Control-Allow-Origin: *
 
                 if (this.activeNode.codecs[fb.codec].split(" ")[0] === "disabled") {
                     addressBlock.style.display = "none"
-                }    
-
-                // height komt overeen met streamlength, top is startadres
+                } else {
+                    fb.addHandleEvents(this.activeNode.shownUniverses);
+                }
+                // height = streamlength, top = startaddres
                 let start = String((fb.startAddress/(512*this.activeNode.shownUniverses))*100)+"%";
                 let stream = String((fb.streamLength/(512*this.activeNode.shownUniverses))*100)+"%";
                 if (fb.streamLength <= 280 | this.config & fb.streamLength <= 400) {
@@ -1433,6 +1435,8 @@ Acces-Control-Allow-Origin: *
                 if (counter > this.activeNode.shownUniverses) {
                     addressBlock.style.display = "none";
                 }
+
+                fb.domElement = fbElement;
                 counter++;    
             })
 
@@ -1475,11 +1479,17 @@ Acces-Control-Allow-Origin: *
             this.changeGridStyling(); // must happen before setting the handlers otherwise the offset
             // is wrong
             
-            // setting event listeners to handle the dragging of fieldbus ranges
-            for (const fieldbus of this.activeNode.fieldbusses) {
-                fieldbus.addHandleEvents(this.activeNode.shownUniverses);
+            this.mainConfigElement = document.querySelector("#main-config");
+            let handleMouseUp = (e) => {
+                for (const fb of this.activeNode.fieldbusses) {
+                    fb.updateValues(event);
+                }
             }
 
+            this.mainConfigElement.removeEventListener("mouseup", handleMouseUp, false)
+            this.mainConfigElement.addEventListener("mouseup", handleMouseUp);
+
+    
             if (this.config) {
                 // setting the event listener for the form
                 let forms = document.getElementsByClassName("node-form");
@@ -1740,9 +1750,6 @@ Acces-Control-Allow-Origin: *
         }
         
         set ip(ip) {
-            console.log(ip);
-            console.log(this.#netmask);
-
             let reIP = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
 
             if (!reIP.test(ip)) {
@@ -1938,7 +1945,6 @@ Acces-Control-Allow-Origin: *
         processForm = (e) => {
             e.preventDefault();
             e.stopPropagation();
-            console.log(e.currentTarget.installation)
             let name = document.getElementById("new-name");
             let mask = document.getElementById("new-mask");
             let ip = document.getElementById("new-ip");
@@ -2051,6 +2057,7 @@ Acces-Control-Allow-Origin: *
         }
 
         setStart = (e) => {
+            console.log(e);
             switch (e.target.classList[0]) {
                 case "top-handle": 
                     this.start = "top"
@@ -2175,35 +2182,34 @@ Acces-Control-Allow-Origin: *
         }
 
         updateValues = (e) => {
-            let id1 = parseInt(e.target.offsetParent.id.slice(-1));
-            let id2 = parseInt(this.id.slice(-1))+1;
-            if (id1 === id2) {
-                this.start = '';         
-                if (this.newRange !== undefined) this.#streamLength = this.newRange;
-                if (this.newStart !== undefined) this.#startAddress = this.newStart;
-                installation.activeNode.configuration.handleInputChange(this)
-            }
+            e.stopPropagation();
+            e.preventDefault();
+            this.start = '';   
+            console.log(e.target)      
+            if (this.newRange !== undefined) this.#streamLength = this.newRange;
+            if (this.newStart !== undefined) this.#startAddress = this.newStart;
+            installation.activeNode.configuration.handleInputChange(this);
         }
 
         addHandleEvents = (unis) => {
             this.unis = unis;
-            const topHandle = document.querySelector(`#fb-${parseInt(this.#id.split("out")[1])+1} .top-handle`);
-            const patch = document.querySelector(`#fb-${parseInt(this.#id.split("out")[1])+1} #address-container`);
-            const bottomHandle = document.querySelector(`#fb-${parseInt(this.#id.split("out")[1])+1} .bottom-handle`);
-            const dragRange = document.querySelector(`#fb-${parseInt(this.#id.split("out")[1])+1}`);
+            this.topHandle = document.querySelector(`#fb-${parseInt(this.#id.split("out")[1])+1} .top-handle`);
+            this.patch = document.querySelector(`#fb-${parseInt(this.#id.split("out")[1])+1} #address-container`);
+            this.bottomHandle = document.querySelector(`#fb-${parseInt(this.#id.split("out")[1])+1} .bottom-handle`);
+            this.dragRange = document.querySelector(`#fb-${parseInt(this.#id.split("out")[1])+1}`);
             
             // removing all the event listeners first
-            topHandle.removeEventListener("mousedown", this.setStart);
-            bottomHandle.removeEventListener("mousedown", this.setStart);
-            patch.removeEventListener("mousedown", this.setStart);
-            dragRange.removeEventListener("mousemove", this.setMove);
-            document.removeEventListener("mouseup", this.updateValues);
-
-            topHandle.addEventListener("mousedown", this.setStart);
-            bottomHandle.addEventListener("mousedown", this.setStart);
-            patch.addEventListener("mousedown", this.setStart);
-            dragRange.addEventListener("mousemove", this.setMove);
-            document.addEventListener("mouseup", this.updateValues);   
+            this.topHandle.removeEventListener("mousedown", this.setStart, false);
+            this.bottomHandle.removeEventListener("mousedown", this.setStart, false);
+            this.patch.removeEventListener("mousedown",this.setStart,false);
+            this.dragRange.removeEventListener("mousemove", this.setMove, false);
+            this.dragRange.removeEventListener("mouseup", this.updateValues, false);
+            
+            this.topHandle.addEventListener("mousedown", this.setStart);
+            this.bottomHandle.addEventListener("mousedown", this.setStart);
+            this.patch.addEventListener("mousedown", this.setStart);
+            this.dragRange.addEventListener("mousemove", this.setMove);
+            this.dragRange.addEventListener("mouseup", this.updateValues);    
         }
     }
 
@@ -2310,8 +2316,9 @@ Acces-Control-Allow-Origin: *
                 if (!response.ok) {
                     throw new Error(`Response status: ${response.status}`);
                 }
-
-                await initialise(false);
+                // removing all the configuration event listeners
+                installation.mainConfigElement.removeEventListener("mouseup", installation.activeNode.handleMouseUp, false);
+                intitialise(false);
             }
             
             catch (error) {
@@ -2335,7 +2342,7 @@ Acces-Control-Allow-Origin: *
             xmlText += `\t\t<name>${n.name}</name>\n`
             xmlText += `\t</sys>\n`
             xmlText += '</node>'
-            this.postXmlConfig(n.ip, xmlText);
+            this.postXmlConfig(xmlText);
         }
 
         handleInputChange(io) {
@@ -2447,7 +2454,7 @@ Acces-Control-Allow-Origin: *
                 paddedHex += params[counter].toString(16).toUpperCase().padStart(bytecount, '0');
                 paddedHex += " ";
             } catch (error) {
-                console.log("skipping one parameter while converting to HEX, consider passing a zero if it's in the beginning of the data")
+                // console.log("skipping one parameter while converting to HEX, consider passing a zero if it's in the beginning of the data")
             }
             
             counter++;
@@ -2475,16 +2482,17 @@ Acces-Control-Allow-Origin: *
     }
     
     let installation;
-    
-    async function initialise(setup) {
+
+    async function intitialise(init) {
         installation = await new Installation("Lux-Lumen");
-        installation.updateNav(setup);
+        installation.updateNav(init);
         installation.navSwitcher();
-        installation.eventInit();
+        if (init) installation.eventInit();
+        
     }
-    
+        
     document.addEventListener("DOMContentLoaded", async () => {
-        await initialise(true);
+        intitialise(true);
     });
 
 </script>
