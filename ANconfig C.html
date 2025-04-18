@@ -866,11 +866,14 @@ Acces-Control-Allow-Origin: *
         border-radius: 0px 0px 5px 5px;
     }
 
+    #fieldbusses h3, #fieldbusses h2 {
+        max-width: 50px;
+    }
+
     #fieldbusses input {
         position: relative;
         font-size: clamp(var(--font-size-xs), 1vw, var(--font-size-small));
-        width: 90%;
-        min-width: 25px;
+        width: 140%;
     }
 
     #fieldbusses h2 input {
@@ -878,27 +881,17 @@ Acces-Control-Allow-Origin: *
         font-size: clamp(var(--font-size-s), 1vw, var(--font-size-medium));
     }
 
-    #address-container {
+    .address-container {
         height: 100%;
         display: grid;
         grid-template-rows: repeat(3, 1fr);
     }
 
-    .address.range .patch.extreme.overflow #address-container {
+    .address.range .patch.extreme.overflow .address-container {
         display: block;
     }
 
-    .config #address-container h3 {
-        width: 125%;
-        max-width: 85px;
-    }
-
-    .config #address-container h2 {
-        width: 150%;
-        max-width: 85px;
-    }
-
-    .config.overflow #address-container h3 {
+    .config.overflow .address-container h3 {
         width: 110%;
     }
 
@@ -907,7 +900,7 @@ Acces-Control-Allow-Origin: *
     }
 
     .address.range .patch.overflow h3 {
-        margin-top: -30px;
+        margin-top: -40px;
         cursor: default;
         width: 90%;
     }
@@ -919,7 +912,7 @@ Acces-Control-Allow-Origin: *
 
     .address.range .patch.overflow.extreme h2 {
         position: absolute;
-        bottom: -30px;
+        bottom: -40px;
         width: 100%;
         text-align: center;
     }
@@ -982,7 +975,7 @@ Acces-Control-Allow-Origin: *
             --grid-nav-width: 21vw;
         }
 
-        #address-container h3 {
+        .address-container h3 {
             white-space: inherit;
         }
 
@@ -1086,6 +1079,7 @@ Acces-Control-Allow-Origin: *
     const FIELDBUSPARAMS = ["codec", "startAddress", "streamLength", "finetuningParams"];
 
     class Installation {
+        #prevInstallation
         #customer;
         #nodes = [];
         #lightMode = false;
@@ -1096,11 +1090,16 @@ Acces-Control-Allow-Origin: *
         // Immediately Invoked Async Function Expression zorgt ervoor dat we de nodes kunnen ophalen en nieuwe
         // object instanties kunnen aanmaken zonder then-chaining of extra async functies te gebruiken 
         // https://itnext.io/1-minute-to-become-a-better-developer-4-aeabd6586396
-        constructor(customer){
+        constructor(customer, prevInstallation = null){
             return (async () => {
                 this.#customer = customer;
+                this.#prevInstallation = prevInstallation;
                 this.#nodes = await this.fetchNodes();
-                this.addDemo();
+                if (!prevInstallation) {
+                    this.addDemo();
+                } else {
+                    this.#nodes.push(this.#prevInstallation.nodes.filter((n) => n.mac === "7B:A6:80:7F:EC:7D")[0]);              
+                }   
                 if (localStorage.getItem("configuration") === "enabled") {
                     this.config = true;
                 } else this.config = false;
@@ -1110,6 +1109,10 @@ Acces-Control-Allow-Origin: *
 
         get nodes(){
             return this.#nodes;
+        }
+
+        get prevInstallation() {
+            return this.#prevInstallation;
         }
 
         async fetchNodes() {
@@ -1124,7 +1127,13 @@ Acces-Control-Allow-Origin: *
                 let foundNodes = [];
                 let devices = xmlDoc.getElementsByTagName("dev")[0].innerHTML.split(" ");
                 for (let device of devices) {
-                    let node = await new Node(hexToIP(device));
+                    let ip = hexToIP(device);
+                    let oldNode;
+                    if (this.#prevInstallation !== null) {
+                        oldNode = this.#prevInstallation.nodes.filter((node) => node.ip === ip);
+                        console.log(oldNode[0]);
+                    }
+                    let node = await new Node(ip, oldNode);
                     foundNodes.push(node);
                 }
                 foundNodes[0].active = true;
@@ -1152,7 +1161,7 @@ Acces-Control-Allow-Origin: *
             for (let i=0; i<6; i++){
                 fieldbusses.push(new Fieldbus(`out${i}`, 2, i == 0? 1 : (i*512)+1, 512, 0));
             }
-            let demoNode = new NodeTemplate("127.0.0.1", "Demo", "7b:a6:80:7f:ec:7d", {}, "255.255.255.0", universes, fieldbusses, ["Disabled", "Used-by-previous-channel", "DMX-512", "DMX-RDM"], "v3.1")
+            let demoNode = new NodeTemplate("127.0.0.1", null, "Demo", "7b:a6:80:7f:ec:7d", {}, "255.255.255.0", universes, fieldbusses, ["Disabled", "Used-by-previous-channel", "DMX-512", "DMX-RDM"], "v3.1")
             if (demoNode.mac === localStorage.getItem("activeNode")) {
                 this.nodes.map((node) => node.active = false);
                 demoNode.active = true;
@@ -1161,8 +1170,7 @@ Acces-Control-Allow-Origin: *
             this.#nodes.push(demoNode);           
         }
 
-
-        updateNav(init){
+        updateNav(init, reset){
             let generateNode = (node, lm) => {
                 let nodeElement = document.createElement("li");
                 nodeElement.classList.add("node");
@@ -1212,11 +1220,13 @@ Acces-Control-Allow-Origin: *
                     if (node.ip == (nodeIp.split("http://"))[1]) {
                         nodeElement.classList.add("selected");
                         node.active = true;
+                        this.activeNode = node;
                         if (this.config) nodeElement.children[2].hidden = true;
                     }
                 } else {
                     if (node.active) {
                         nodeElement.classList.add("selected");
+                        this.activeNode = node;
                         if (this.config) nodeElement.children[2].hidden = true;
                     }
                     else {
@@ -1252,74 +1262,23 @@ Acces-Control-Allow-Origin: *
                             }
                         }
                     }      
-                }, 5000)
-            }          
-            this.showActiveNode(init);
+                }, 5000);
+                
+                this.initaliseConfig();
+            } else this.showActiveNode();
+            
         }
 
-        showActiveNode() {
-            // console.log("showing active node");
-            let handleParamChange = (e) => {
-                e.preventDefault();
-                let target = e.currentTarget;
-                let value = target.value;
-                let param;
-                let targetObj;
-                if (target.hasAttribute("universe")) {
-                    param = target.getAttribute("universe")
-                    targetObj = this.activeNode.universes.filter((uni) => uni.id === param)[0];
-                }
-                else if (target.hasAttribute("fieldbus")) {
-                    param = target.getAttribute("fieldbus");
-                    targetObj = this.activeNode.fieldbusses.filter((fb) => fb.id === param)[0];
-                }
-                console.log(target.id);
-                switch (target.id) {
-                    case "uni":
-                        targetObj.universe = parseInt(value);
-                        break;
-                    case "keep":
-                        targetObj.keep = parseInt(value);
-                        break;
-                    case "stream-length":
-                        targetObj.streamLength = parseInt(value);
-                        break;
-                    case "start-address":
-                        targetObj.startAddress= parseInt(value);
-                        break;
-                    default:
-                        console.log("can't detect the change");
-                }
-                this.activeNode.configuration.handleInputChange(targetObj);
-            }
-
-            this.activeNode = this.#nodes.filter((node) => node.active === true)[0];
+        initaliseConfig() {
             this.activeNodeElement = document.getElementById(`${this.activeNode.UID}`);
 
-            let firmwareVersion = document.querySelector("#firmware span");
-            let configVersion = document.querySelector("#config span");
-            firmwareVersion.innerHTML = this.activeNode.firmware;
             // Universes and their braces
-            let universesElement = document.getElementById("universes");
-            let accoladesElement = document.getElementById("accolades")
-            universesElement.innerHTML = '';    
-            accoladesElement.innerHTML = '';
+            this.accoladesElement = document.getElementById("accolades");   
+            this.accoladesElement.innerHTML = '';   
 
             let counter = 1;
             this.activeNode.universes.forEach(un => {
-                if (counter <= this.activeNode.shownUniverses) {
-                    let u = document.createElement("li");
-                    u.classList.add("range");
-                    if (this.lm) u.classList.add("light");
-                    if (this.config) {
-                        // let inputU = document.createElement("input");
-                        let inputU = generateDomTree("input", null, {id: "uni", universe: un.id, type: "number", value: un.universe, min: 1, max: 32468 }, null, {"change": handleParamChange});
-                        let inputK = generateDomTree("input", null, {id: "keep", universe: un.id, type: "number", value: un.keep, min: 1, max: 512}, null, {"change": handleParamChange});
-                        u.appendChild(inputU);
-                        u.appendChild(inputK);
-                    } else {
-                        u.innerHTML = `${un.universe}<span class="range ${this.lm}">${un.keep}</span>`
-                    }              
+                if (counter <= this.activeNode.shownUniverses) {              
                     let a = document.createElement("div");
                     a.style.marginLeft = `${this.#accMargin}px`
                     a.id = `accolade-${counter}`;
@@ -1333,172 +1292,228 @@ Acces-Control-Allow-Origin: *
                         <path d="M46.4779 36.2288C51.7241 36.3106 59.3583 35.2166 56.7341 28.1965C55.0324 23.6442 50.049 20.9121 50.049 12.6052C50.049 5.20797 54.2605 1.72424 61.4318 1.72424M46.4779 36.2288C51.7241 36.1469 59.3583 37.2492 56.7341 44.2693C55.0324 48.8216 50.049 51.5537 50.049 59.8606C50.049 67.2579 54.2605 70.7416 61.4318 70.7416M46.4779 36.2288H5" fill="none" stroke=${braceColor} stroke-width="2"/>
                         <text class="info ${this.lm}" x="60" y="40">0fps</text>
                     </svg>`
-                    accoladesElement.appendChild(a);
-                    universesElement.appendChild(u);
+                    this.accoladesElement.appendChild(a);
                 }
                 counter++;
             })
 
-            // Fieldbusses
             let fieldbussesElement = document.getElementById("fieldbusses");
             fieldbussesElement.innerHTML = '';
             counter = 1;
             this.activeNode.fieldbusses.forEach(fb => {
-                let fbElement = document.createElement("div");
-                fbElement.classList.add("fieldbus");
-                fbElement.classList.add("card");
-                if (this.lm) fbElement.classList.add("light");
-                fbElement.id = `fb-${counter}`;
+                fb.fbElement =  generateDomTree("div", null, { id: `fb-${counter}`, class: "fieldbus card" }, [
+                                    generateDomTree("div", null, { class: "address range" }, [
+                                        generateDomTree("h1", `FIELDBUS ${counter}`),
+                                        generateDomTree("div", null, { id: `address-block-${counter}`, class: "patch" }, [
+                                            generateDomTree("div", null, { class: "top-handle" }),
+                                            generateDomTree("div", null, { class: "move address-container" }, [
+                                                generateDomTree("h3", "start: ", { class: "move" }, [
+                                                    generateDomTree("span")
+                                                ]),
+                                                generateDomTree("h2", null, { class: "move" })]),
+                                            generateDomTree("div", null, { class: "bottom-handle" })
+                                        ])
+                                ]), 
+                                generateDomTree("div", null, { class: "fb-protocol info" })])
+                fieldbussesElement.appendChild(fb.fbElement);
+                counter++;    
+            })
+      
+            this.showActiveNode();
+        }
+
+        // Event listeners for the universes
+        handleUniChange = (e) => {
+                let param = e.target.id;
+                let targetUniverse = this.activeNode.universes.filter((uni) => uni.id === e.target.getAttribute("universe"))[0];
+                targetUniverse[param] = parseInt(e.target.value);
+                this.activeNode.configuration.handleInputChange(targetUniverse);
+            }
+
+        showActiveNode() {
+            try {
+                for (const node of installation.nodes) {
+                    for (const fb of node.fieldbusses) {
+                        fb.removeHandleEvents();
+                    }
+                }
+            } catch (error) {}
+
+            this.activeNodeElement = document.getElementById(`${this.activeNode.UID}`);
+                
+            let firmwareVersion = document.querySelector("#firmware span");
+            let configVersion = document.querySelector("#config span");
+
+            this.universesElement = document.getElementById("universes");
+            this.universesElement.innerHTML = ''; 
+
+            firmwareVersion.innerHTML = this.activeNode.firmware;
+            let counter = 1;
+            this.activeNode.universes.forEach((uni) => {
+                if (counter <= this.activeNode.shownUniverses) {
+                    let u = document.createElement("li");
+                    u.classList.add("range");
+                    if (this.lm) u.classList.add("light");
+                    if (this.config) {
+                        // let inputU = document.createElement("input");
+                        let inputU = generateDomTree("input", null, {id: "universe", universe: uni.id, type: "number", value: uni.universe, min: 1, max: 32468 });
+                        let inputK = generateDomTree("input", null, {id: "keep", universe: uni.id, type: "number", value: uni.keep, min: 1, max: 512});
+                        u.appendChild(inputU);
+                        u.appendChild(inputK);
+                    } else {
+                        u.innerHTML = `${uni.universe}<span class="range ${this.lm}">${uni.keep}</span>`
+                    }
+                    this.universesElement.appendChild(u);
+                }        
+                counter++;
+            })
+
+            this.unilist = document.querySelector("#universes");
+            this.unilist.removeEventListener("change", this.handleUniChange);
+            this.unilist.addEventListener("change", this.handleUniChange);
+
+            counter = 1;
+            this.activeNode.fieldbusses.forEach((fb) => {
+                fb.setHandles();
+                fb.removeHandleEvents();
+                fb.addHandleEvents(this.activeNode.shownUniverses);
+
+                fb.addressBlock = document.getElementById(`address-block-${counter}`);
+                fb.startElement = document.querySelector(`#fb-${counter} .address-container h3`);
+                fb.streamElement = document.querySelector(`#fb-${counter} .address-container h2`);
+                fb.codecElement = document.querySelector(`#fb-${counter} .fb-protocol`);
+                fb.patch = document.querySelector(".patch");
+
+                if (this.activeNode.codecs[fb.codec].split(" ")[0] === "disabled") {
+                    fb.addressBlock.hidden = true;
+                } else fb.addressBlock.hidden = false;
+
+                // Config elements for start and streamlength
                 let startElement;
                 let streamElement;
                 if (this.config) {
-                    startElement    =  generateDomTree("h3", null, null, [
-                                           generateDomTree("label", "start: ", {for: "start-address"}, [
-                                               generateDomTree("input", null, {id: "start-address", fieldbus: fb.id, type: "number", min: "1", max: "5119", value: `${fb.startAddress}`}, null, {"change": handleParamChange})])]);
+                    fb.patch.classList.add("config");
+                    startElement    =   generateDomTree("h3", null, null, [
+                                        generateDomTree("label", "start: ", {for: "start-address"}, [
+                                            generateDomTree("input", null, {id: "start-address", fieldbus: fb.id, type: "number", min: "1", max: "5119", value: `${fb.startAddress}`}, null)])]);
                     streamElement   =   generateDomTree("h2", null, null, [
                                             generateDomTree("label", null, {for: "stream-address"}, [
-                                                generateDomTree("input", null, {id: "stream-length", fieldbus: fb.id, type: "number", min: "1", max: "1024", value: `${fb.streamLength}`}, null, {"change": handleParamChange})])]);
+                                                generateDomTree("input", null, {id: "stream-length", fieldbus: fb.id, type: "number", min: "1", max: "1024", value: `${fb.streamLength}`}, null)])]);
                 } else {
-                    startElement    =   generateDomTree("h3", "start: ", {class: "move"}, [
+                    fb.patch.classList.remove("config");
+                    startElement    =   generateDomTree("h3", "start: ", { class: "move" }, [
                                             generateDomTree("span", fb.startAddress)]);
-                    streamElement   =   generateDomTree("h2", fb.streamLength, {class: "move"});
+                    streamElement   =   generateDomTree("h2", fb.streamLength, { class: "move" });
                 }
 
-                // const STARTFORM = `<label for="start-address">start: <input id="start-address" type="number" min="1" max="5119" value="${fb.startAddress}"></label>`
-                const STREAMFORM = `<label for="stream-address"><input id="stream-length" type="number"  min="1" max="1024" value="${fb.streamLength}"></label>`
-                const ACTIVECODEC = this.activeNode.codecs[fb.codec].split(" ")[0];
-                const LABEL = document.createElement("label", {for: "codec"});
-                LABEL.innerHTML = "Codec: "
-                const SELECT = document.createElement("select", {name: "codec", id: "codec"});
-                for (let i=0; i<this.activeNode.codecs.length; i++) {
-                    const OPTION = document.createElement("option", {value: `${this.activeNode.codecs[i].split(" ")[0]}`});
-                    const CONTENT = document.createTextNode(`${this.activeNode.codecs[i].split(" ")[0]}`);
-                    if (this.activeNode.codecs[i].split(" ")[0] === ACTIVECODEC) {
-                        OPTION.selected = true;
-                    }
-                    OPTION.appendChild(CONTENT);
-                    SELECT.appendChild(OPTION);
-                }
-                LABEL.appendChild(SELECT);
-                fbElement.innerHTML = `<div class="address range ${this.lm}">
-                    <h1>FIELDBUS ${counter}</h1>
-                    <div class="patch ${this.lm} ${this.config? "config" : ""}" id="address-block-${counter}">
-                        <div class="top-handle"></div>
-                        <div class="move" id="address-container">
-                        </div>
-                        <div class="bottom-handle"></div>
-                    </div>
-                    </div>
-                    <div class="fb-protocol info ${this.lm}">
-                        <div id="ethernet">
-                            <svg width="75%" viewBox="0 0 512 490.43">  
-                                <use href="#ethernet-port"/>
-                            </svg>
-                        </div>
-                    </div>`;
-                fieldbussesElement.appendChild(fbElement);
+                fb.startElement.replaceWith(startElement);
+                fb.streamElement.replaceWith(streamElement);
 
-                const ADDRESSCONTAINER = document.querySelector(`#fb-${counter} #address-container`);
-                ADDRESSCONTAINER.appendChild(startElement);
-                ADDRESSCONTAINER.appendChild(streamElement);
-                const CODECCONTAINER = document.querySelector(`#fb-${counter} .fb-protocol`);
-                if (this.config) {
-                    CODECCONTAINER.insertBefore(LABEL, CODECCONTAINER.children[0]);
-                } else {
-                    const H2 = document.createElement("h2")
-                    H2.innerHTML = "Codec: ";
-                    const H3 = document.createElement("h3")
-                    H3.innerHTML = `${ACTIVECODEC}`;
-                    CODECCONTAINER.insertBefore(H2, CODECCONTAINER.children[0]);
-                    CODECCONTAINER.insertBefore(H3, CODECCONTAINER.children[1]);
-                }
-
-                
-                let addressBlock = document.getElementById(`address-block-${counter}`);
-
-                if (this.activeNode.codecs[fb.codec].split(" ")[0] === "disabled") {
-                    addressBlock.style.display = "none"
-                } else {
-                    fb.addHandleEvents(this.activeNode.shownUniverses);
-                }
-                // height = streamlength, top = startaddres
+                // Updating all the fb.addressblock heights and startpositions
+                // Height = streamlength, top = startaddres
                 let start = String((fb.startAddress/(512*this.activeNode.shownUniverses))*100)+"%";
                 let stream = String((fb.streamLength/(512*this.activeNode.shownUniverses))*100)+"%";
+
+                // Updating the styles so that overflow is handled
                 if (fb.streamLength <= 280 | this.config & fb.streamLength <= 400) {
-                    addressBlock.classList.add("overflow");
-                } 
-                if (fb.streamLength <= 120 | this.config & fb.streamLength <= 230) {
-                    addressBlock.classList.add("extreme")
-                }
-                addressBlock.style.height = stream;
-                addressBlock.style.top = start;
+                    fb.addressBlock.classList.add("overflow");
+                } else fb.addressBlock.classList.remove("overflow");
+                if (fb.streamLength <= 120 | this.config & fb.streamLength <= 250) {
+                    fb.addressBlock.classList.add("extreme")
+                } else fb.addressBlock.classList.remove("extreme");
+                
+                fb.addressBlock.style.height = stream;
+                fb.addressBlock.style.top = start;
+
                 if (counter > this.activeNode.shownUniverses) {
-                    addressBlock.style.display = "none";
+                    fb.addressBlock.hidden = "true";
                 }
 
-                fb.domElement = fbElement;
-                counter++;    
-            })
+                const ACTIVECODEC = this.activeNode.codecs[fb.codec].split(" ")[0];
 
-            // mark double universes in red
-            let unis = document.querySelectorAll("#universes li");
-            let uniArr = [];
-            for (const uni of unis) {
-                uniArr.push((uni.innerHTML).split("<")[0]);
-            }
-
-            let dupObj = {};
-            uniArr.forEach((element, index, array) => {
-                dupObj[element] = Array.from(array.entries()).reduce((indices, [i, e]) => {
-                    if (element === e) {
-                        indices.push(i);
+                const LABEL = generateDomTree("label", null,  {for: "codec"});
+                    LABEL.innerHTML = "Codec: "
+                    const SELECT = generateDomTree("select", null, {name: "codec", id: "codec"});
+                    for (let i=0; i<this.activeNode.codecs.length; i++) {
+                        const OPTION = document.createElement("option", {value: `${this.activeNode.codecs[i].split(" ")[0]}`});
+                        const CONTENT = document.createTextNode(`${this.activeNode.codecs[i].split(" ")[0]}`);
+                        if (this.activeNode.codecs[i].split(" ")[0] === ACTIVECODEC) {
+                            OPTION.selected = true;
+                        }
+                        OPTION.appendChild(CONTENT);
+                        SELECT.appendChild(OPTION);
                     }
-                    return indices;
-                }, []);
-            });
-
-            const setDuplicateError = (i) => {
-                if (!this.config) {
-                    let uni = document.querySelector(`#universes li:nth-child(${i+1})`);
-                    let keep = document.querySelector(`#universes li:nth-child(${i+1}) span`)
-                    uni.style.backgroundColor = keep.style.backgroundColor = "var(--bg-error-red)";
-                }
-            }
-
-            for (const duplicates of Object.values(dupObj)){
-                if (duplicates.length === 2) {
-                    setDuplicateError(duplicates[1])
-                }
-                else if (duplicates.length > 2) {
-                    duplicates.shift();
-                    for (const i in duplicates) {
-                        setDuplicateError(duplicates[i])
-                    }
-                }           
-            }
-            this.changeGridStyling(); // must happen before setting the handlers otherwise the offset
-            // is wrong
+                LABEL.appendChild(SELECT);
+                
+                let rj45 = generateDomTree("div", `<svg width="75%" viewBox="0 0 512 490.43">  
+                                            <use href="#ethernet-port"/>
+                                        </svg>`, { id: "ethernet" })
+                
             
-            this.mainConfigElement = document.querySelector("#main-config");
-            let handleMouseUp = (e) => {
-                for (const fb of this.activeNode.fieldbusses) {
-                    fb.updateValues(event);
+                fb.codecElement.innerHTML = '';
+                if (this.config) {
+                    fb.codecElement.appendChild(LABEL);
+                } else {
+                    let h2 = generateDomTree("h2", "Codec: ");
+                    let h3 = generateDomTree("h3", ACTIVECODEC);
+                    fb.codecElement.appendChild(h2);
+                    fb.codecElement.appendChild(h3);
                 }
-            }
+                fb.codecElement.appendChild(rj45);
 
-            this.mainConfigElement.removeEventListener("mouseup", handleMouseUp, false)
-            this.mainConfigElement.addEventListener("mouseup", handleMouseUp);
+                // mark double universes in red
+                let unis = document.querySelectorAll("#universes li");
+                let uniArr = [];
+                for (const uni of unis) {
+                    uniArr.push((uni.innerHTML).split("<")[0]);
+                }
 
-    
-            if (this.config) {
-                // setting the event listener for the form
-                let forms = document.getElementsByClassName("node-form");
-                let form = this.activeNodeElement.children[3];
-                Array.from(forms).forEach((form) => {
-                    form.removeEventListener("submit", this.activeNode.processForm);
-                })
-                form.addEventListener("submit", this.activeNode.processForm);
-            }
+                let dupObj = {};
+                uniArr.forEach((element, index, array) => {
+                    dupObj[element] = Array.from(array.entries()).reduce((indices, [i, e]) => {
+                        if (element === e) {
+                            indices.push(i);
+                        }
+                        return indices;
+                    }, []);
+                });
+
+                const setDuplicateError = (i) => {
+                    if (!this.config) {
+                        let uni = document.querySelector(`#universes li:nth-child(${i+1})`);
+                        let keep = document.querySelector(`#universes li:nth-child(${i+1}) span`)
+                        uni.style.backgroundColor = keep.style.backgroundColor = "var(--bg-error-red)";
+                    }
+                }
+
+                for (const duplicates of Object.values(dupObj)){
+                    if (duplicates.length === 2) {
+                        setDuplicateError(duplicates[1])
+                    }
+                    else if (duplicates.length > 2) {
+                        duplicates.shift();
+                        for (const i in duplicates) {
+                            setDuplicateError(duplicates[i])
+                        }
+                    }           
+                }
+                
+                this.changeGridStyling(); // must happen before setting the handlers otherwise the offset
+                // is wrong
+            
+                if (this.config) {
+                    // setting the event listener for the form
+                    let forms = document.getElementsByClassName("node-form");
+                    let form = this.activeNodeElement.children[3];
+                    Array.from(forms).forEach((form) => {
+                        form.removeEventListener("submit", this.activeNode.processForm);
+                    })
+                    form.addEventListener("submit", this.activeNode.processForm);
+                }
+
+                counter++;
+            })
+            
         }
 
         eventInit() {
@@ -1541,7 +1556,7 @@ Acces-Control-Allow-Origin: *
                             }        
                         }
                     }
-                    this.showActiveNode();
+                    this.initaliseConfig();
                     this.changeGridStyling();
                 })
             }
@@ -1556,7 +1571,7 @@ Acces-Control-Allow-Origin: *
                 } else {
                     this.config = false;
                     localStorage.setItem("configuration", "disabled");
-                    this.updateNav();
+                    this.updateNav(false);
                 }  
                 this.navSwitcher();    
             })
@@ -1580,6 +1595,7 @@ Acces-Control-Allow-Origin: *
                 let node = this.#nodes.filter((n) => n.UID === nodeElement.id)[0];
                 if (this.lm) nodeElement.classList.add("light");
                 node.active = true;
+                this.activeNode = node;
                 localStorage.setItem("activeNode", node.mac)               
             }
 
@@ -1660,6 +1676,7 @@ Acces-Control-Allow-Origin: *
     }
 
     class Node {
+        #oldNode;
         #ip;
         #name;
         #mac;
@@ -1681,12 +1698,15 @@ Acces-Control-Allow-Origin: *
         #prevTimestampOff = null;
         #prevTimestampOn = null;
 
-        constructor(ip, skipConfig = false) {
+        #enableDetector = [[0,1],[0,1],[0,1],[0,1],[0,1],[0,1]]
+
+        constructor(ip, oldSelf, skipConfig = false) {
             this.#ip = ip;
             
             if (!skipConfig) {
                 return (async () => {
                     this.#configuration = await new Configuration(ip);
+                    this.#oldNode = oldSelf;
                     this.initialiseNode();
                     return this;
                 })();
@@ -1836,7 +1856,6 @@ Acces-Control-Allow-Origin: *
             this.#timestamp = new Date().getTime();
             if (o) {
                 if (this.#prevTimestampOn === null) {
-                    console.log("setting the initial prevTimestampOn")
                     this.#prevTimestampOn = this.#timestamp;
                 }
                 if ((this.#timestamp-this.#prevTimestampOn) > 1) {
@@ -1847,7 +1866,6 @@ Acces-Control-Allow-Origin: *
                 }         
             } else {
                 if (this.#prevTimestampOff === null) {
-                    console.log("setting the initial prevTimestampOff")
                     this.#prevTimestampOff = this.#timestamp;
                 }
                 if ((this.#timestamp-this.#prevTimestampOff) > 1) {
@@ -1870,16 +1888,43 @@ Acces-Control-Allow-Origin: *
                 if (localStorage.getItem("activeNode") === this.#mac) {
                     this.#active = true;
                 }
+
                 this.#switch = this.#configuration.switch;
                 this.#netmask = this.#configuration.mask;
                 this.#firmware = this.#configuration.firmware;
+                let counter = 0;
                 for (const [key, value] of Object.entries(this.#configuration.fieldbus)) {
                     let params = [];
                     for (let v of Object.values(value)) {
                         params.push(v);
                     }
+                    this.#enableDetector[counter].push(params[0] > 0? 1 : 0);
+                    this.#enableDetector[counter].shift();
                     this.#fieldbusses.push(new Fieldbus(key, ...params));
+                    counter++;
                 }
+
+                console.log(this.#enableDetector);
+
+                for (let i = 0; i < this.#enableDetector.length; i++) {
+                    if (this.#enableDetector[i][0] === 0 && this.#enableDetector[i][1] === 1) {
+                        console.log(`rising edge detected at fb ${i}`);
+                        if (installation.prevInstallation !== null) {
+                            console.log("prevInstallation detected");
+                            let prevFb = null;
+                            installation.prevInstallation.nodes.forEach((node) => {
+                                node.fieldbusses.forEach((fb) => {
+                                    if (fb.parentNode === this.mac) {
+                                        console.log(`previous config: ${fb.lastConfig.startAddress}, ${fb.lastConfig.streamLength}`)
+                                        this.fieldbusses[i].startAddress = fb.lastConfig.startAddress;
+                                        this.fieldbusses[i].streamLength = fb.lastConfig.streamLength;
+                                    }
+                                })
+                            });
+                        }
+                    }
+                }
+
                 for (const [key, value] of Object.entries(this.#configuration.artnet)) {
                     let params = [];
                     for (let v of Object.values(value)){
@@ -1951,13 +1996,14 @@ Acces-Control-Allow-Origin: *
             this.name = name.value;
             this.netmask = mask.value;
             this.ip = ip.value;
+            console.log(this.name);
             if (this.mac !== "7B:A6:80:7F:EC:7D") this.configuration.handleFormChange(this);
         }
     }
 
     class NodeTemplate extends Node {
-        constructor(ip, name, mac, sw, nm, un, fb, c, fw){
-            super(ip, true);
+        constructor(ip, oldNode, name, mac, sw, nm, un, fb, c, fw){
+            super(ip, oldNode, true);
             this.name = name;
             this.mac = mac;
             this.switch = sw;
@@ -2056,8 +2102,11 @@ Acces-Control-Allow-Origin: *
             this.#startAddress = s;
         }
 
+        set codec(c) {
+            this.#codec = c;
+        }
+
         setStart = (e) => {
-            console.log(e);
             switch (e.target.classList[0]) {
                 case "top-handle": 
                     this.start = "top"
@@ -2081,10 +2130,10 @@ Acces-Control-Allow-Origin: *
                     let rangeElement;
                     let status = !document.querySelector(".patch").classList.contains("config");
                     if (status) {
-                        rangeElement = document.querySelector(`#${e.currentTarget.id} #address-container h2`);
+                        rangeElement = document.querySelector(`#${e.currentTarget.id} .address-container h2`);
                         rangeElement.innerHTML = this.newRange;
                     } else {
-                        rangeElement = document.querySelector(`#${e.currentTarget.id} #address-container h2 input`);
+                        rangeElement = document.querySelector(`#${e.currentTarget.id} .address-container h2 input`);
                         rangeElement.value = this.newRange;
                     }
                     patch.style.height = String((this.newRange/(512*this.unis))*100)+"%";
@@ -2104,10 +2153,10 @@ Acces-Control-Allow-Origin: *
                     patch.style.top = String((newStart/(512*this.unis))*100)+"%";
                     let startElement;
                     if (!document.querySelector(".patch").classList.contains("config")) {
-                        startElement = document.querySelector(`#${e.currentTarget.id} #address-container h3 span`);
+                        startElement = document.querySelector(`#${e.currentTarget.id} .address-container h3 span`);
                         startElement.innerHTML = this.newStart;
                     } else {
-                        startElement = document.querySelector(`#${e.currentTarget.id} #address-container h3 input`);
+                        startElement = document.querySelector(`#${e.currentTarget.id} .address-container h3 input`);
                         startElement.value = this.newStart;
                     }    
                 }
@@ -2182,34 +2231,62 @@ Acces-Control-Allow-Origin: *
         }
 
         updateValues = (e) => {
-            e.stopPropagation();
-            e.preventDefault();
+            if (e.target.tagName === "INPUT" | e.target.tagName === "SELECT" | e.target.tagName === "OPTION") {
+                return;
+            }
             this.start = '';   
-            console.log(e.target)      
             if (this.newRange !== undefined) this.#streamLength = this.newRange;
             if (this.newStart !== undefined) this.#startAddress = this.newStart;
-            installation.activeNode.configuration.handleInputChange(this);
+            
+            if (installation.activeNode.mac !== "7B:A6:80:7F:EC:7D") {
+                installation.activeNode.configuration.handleInputChange(this);
+            }
+        }
+
+        handleParamChange = (e) => {
+                let target = e.target;
+                let value = target.value;
+                console.log(target);
+
+                switch (target.id) {
+                    case "stream-length":
+                        this.streamLength = parseInt(value);
+                        break;
+                    case "start-address":
+                        this.startAddress = parseInt(value);
+                        break;
+                    case "codec":
+                        this.codec = target.selectedIndex;
+                        if (this.codec === 0) {
+                            this.lastConfig = this;
+                            this.parentNode = installation.activeNode.mac;
+                        }
+                        console.log(installation.activeNode);
+                        break;
+                    default:
+                        console.log("can't detect the change");
+                        break;
+                }
+                installation.activeNode.configuration.handleInputChange(this);
+            }
+
+        setHandles = (unis) => {
+            this.dragRange = document.querySelector(`#fb-${parseInt(this.#id.split("out")[1])+1}`);
         }
 
         addHandleEvents = (unis) => {
-            this.unis = unis;
-            this.topHandle = document.querySelector(`#fb-${parseInt(this.#id.split("out")[1])+1} .top-handle`);
-            this.patch = document.querySelector(`#fb-${parseInt(this.#id.split("out")[1])+1} #address-container`);
-            this.bottomHandle = document.querySelector(`#fb-${parseInt(this.#id.split("out")[1])+1} .bottom-handle`);
-            this.dragRange = document.querySelector(`#fb-${parseInt(this.#id.split("out")[1])+1}`);
-            
-            // removing all the event listeners first
-            this.topHandle.removeEventListener("mousedown", this.setStart, false);
-            this.bottomHandle.removeEventListener("mousedown", this.setStart, false);
-            this.patch.removeEventListener("mousedown",this.setStart,false);
-            this.dragRange.removeEventListener("mousemove", this.setMove, false);
-            this.dragRange.removeEventListener("mouseup", this.updateValues, false);
-            
-            this.topHandle.addEventListener("mousedown", this.setStart);
-            this.bottomHandle.addEventListener("mousedown", this.setStart);
-            this.patch.addEventListener("mousedown", this.setStart);
+            this.unis = unis;            
+            this.dragRange.addEventListener("mousedown", this.setStart);
+            this.dragRange.addEventListener("change", this.handleParamChange);
             this.dragRange.addEventListener("mousemove", this.setMove);
             this.dragRange.addEventListener("mouseup", this.updateValues);    
+        }
+
+        removeHandleEvents = () => {
+            this.dragRange.removeEventListener("mousedown",this.setStart);
+            this.dragRange.removeEventListener("change", this.handleParamChange);
+            this.dragRange.removeEventListener("mousemove", this.setMove);
+            this.dragRange.removeEventListener("mouseup", this.updateValues);
         }
     }
 
@@ -2283,7 +2360,7 @@ Acces-Control-Allow-Origin: *
 
         async fetchXmlConfig(ip) {
             try {
-                const response = await fetch(`http://${ip}/xml`, {signal: AbortSignal.timeout(2000)});
+                const response = await fetch(`http://${ip}/xml`, {signal: AbortSignal.timeout(3000)});
                 if (!response.ok) {
                     throw new Error(`Response status: ${response.status}`);
                 }
@@ -2317,7 +2394,15 @@ Acces-Control-Allow-Origin: *
                     throw new Error(`Response status: ${response.status}`);
                 }
                 // removing all the configuration event listeners
-                installation.mainConfigElement.removeEventListener("mouseup", installation.activeNode.handleMouseUp, false);
+                try {
+                    for (const node of installation.nodes) {
+                        for (const fb of node.fieldbusses) {
+                            fb.removeHandleEvents();
+                        }
+                    }
+                } catch (error) {}
+
+                installation.unilist.removeEventListener("change", installation.handleUniChange);
                 intitialise(false);
             }
             
@@ -2335,17 +2420,18 @@ Acces-Control-Allow-Origin: *
         }
 
         handleFormChange(n) {
-            let xmlText = '<node>\n'
-            xmlText += `\t<sys>\n`
-            xmlText += `\t\t<ip>${ipToHex(n.ip)}</ip>\n`
-            xmlText += `\t\t<mask>${ipToHex(n.netmask)}</mask>\n`
-            xmlText += `\t\t<name>${n.name}</name>\n`
-            xmlText += `\t</sys>\n`
-            xmlText += '</node>'
+            let xmlText = '<node>\n';
+            xmlText += `\t<sys>\n`;
+            xmlText += `\t\t<ip>${ipToHex(n.ip)}</ip>\n`;
+            xmlText += `\t\t<mask>${ipToHex(n.netmask)}</mask>\n`;
+            xmlText += `\t\t<name>${n.name}</name>\n`;
+            xmlText += `\t</sys>\n`;
+            xmlText += '</node>';
+            console.log(xmlText);
             this.postXmlConfig(xmlText);
         }
 
-        handleInputChange(io) {
+        handleInputChange(io) {     
             let xmlText = '<node>'
             io.id[0] === "i"? xmlText += '<artnet>' : xmlText += '<fieldbus>';
             xmlText += `<${io.id}>`
@@ -2353,6 +2439,7 @@ Acces-Control-Allow-Origin: *
             xmlText += `</${io.id}>`
             io.id[0] === "i"? xmlText += '</artnet>' : xmlText += '</fieldbus>';
             xmlText += '</node>';
+            console.log(xmlText);
             this.postXmlConfig(xmlText);
         }
 
@@ -2456,15 +2543,15 @@ Acces-Control-Allow-Origin: *
             } catch (error) {
                 // console.log("skipping one parameter while converting to HEX, consider passing a zero if it's in the beginning of the data")
             }
-            
             counter++;
+            
         }
         return paddedHex.trim();
     }
 
     function generateDomTree(tag, value=null, attributes=null, children=null, listeners=null) {
         let root = document.createElement(tag);
-        value? root.textContent = value : root.textContent = "";
+        value? root.innerHTML = value : root.textContent = "";
         if (attributes) {
             for (const [key, value] of Object.entries(attributes)) {
                 root.setAttribute(key, value);
@@ -2484,16 +2571,23 @@ Acces-Control-Allow-Origin: *
     let installation;
 
     async function intitialise(init) {
-        installation = await new Installation("Lux-Lumen");
+        if (init) {
+            installation = await new Installation("Lux-Lumen");
+        }
+        else {
+            installation = await new Installation("Lux-Lumen", installation);
+        } 
         installation.updateNav(init);
         installation.navSwitcher();
-        if (init) installation.eventInit();
-        
+        if (init) installation.eventInit();  
     }
         
     document.addEventListener("DOMContentLoaded", async () => {
-        intitialise(true);
-    });
+        await intitialise(true);
+    })
+    
+    
+
 
 </script>
 <body>

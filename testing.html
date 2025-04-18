@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<style>
+    .child:hover {
+        cursor: pointer;
+    }
+</style>
+<script>
+    // key takeaways:
+    //  stopping propagation only works with handlers of the same event bubbling up on eachother
+    //  event.target = deepest element, currentTarget = element with the handler on it
+    //  better to set one handler on a common ancestor and handle event with the targets.
+    //      elem.closest(selector) can be used to track down the nearest ancestor
+    document.addEventListener("DOMContentLoaded", () => {
+        let root = document.querySelector(".root")
+        let child = document.querySelector(".child");
+        let input = document.querySelector("#stream");
+        let button = document.querySelector(".eremover");
+        
+        let handleChange = (e) => {
+            console.log(input.value);
+            console.log("change event firing");
+            root.style.color = "green";
+            e.stopImmediatePropagation();
+        }
+
+        let handleClick = (e) => {
+            e.stopPropagation();
+            console.log("click event firing");
+            root.style.color = "black";
+
+        }
+
+        child.addEventListener("click", handleClick);
+        input.addEventListener("change", handleChange);
+        button.addEventListener("click", () => {
+            child.removeEventListener("click", handleClick)
+        })
+
+    })
+</script>
+<body>
+    <div class="root"> I'm the root
+        <div class="parent"> I'm the parent
+            <div class="child"> I'm the child
+                <h2> I'm the second header
+                    <input id="stream" type="number">
+                </h2>
+            </div>
+        </div>
+    </div>
+    <button class="eremover">Event remover</button>
+</body>
+</html>

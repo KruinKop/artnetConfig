@@ -1,0 +1,15 @@
+<!doctype html>
+<body>
+Counter: <input type="button" value="1" data-counter data-center data-pussy>
+One more counter: <input type="button" value="2" data-counter>
+
+<script>
+  document.addEventListener('click', function(event) {
+    console.log(event.target)
+    if (event.target.dataset.counter != undefined) { // if the attribute exists...
+      event.target.value++;
+    }
+
+  });
+</script>
+</body>
