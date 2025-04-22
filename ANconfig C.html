@@ -649,6 +649,7 @@ Acces-Control-Allow-Origin: *
         grid-template-rows: subgrid;
         grid-template-columns: subgrid;
         position: relative;
+        font-family: var(--font-regular);
     }
 
     .universe #tab {
@@ -1094,15 +1095,16 @@ Acces-Control-Allow-Origin: *
             return (async () => {
                 this.#customer = customer;
                 this.#prevInstallation = prevInstallation;
-                this.#nodes = await this.fetchNodes();
-                if (!prevInstallation) {
-                    this.addDemo();
-                } else {
-                    this.#nodes.push(this.#prevInstallation.nodes.find((n) => n.mac === "7B:A6:80:7F:EC:7D"));              
-                }   
+                await this.fetchNodes();
+                // if (!prevInstallation) {
+                this.addDemo();
+                // } else {
+                //     this.#nodes.push(this.#prevInstallation.nodes.find((n) => n.mac === "7B:A6:80:7F:EC:7D"));                          
+                // }   
                 if (localStorage.getItem("configuration") === "enabled") {
                     this.config = true;
                 } else this.config = false;
+                this.configElement = document.querySelector("#main-config");
                 return this;
             })();
         }
@@ -1115,7 +1117,7 @@ Acces-Control-Allow-Origin: *
             return this.#prevInstallation;
         }
 
-        async fetchNodes() {
+        async fetchNodes(init) {
             try {
                 const response = await fetch(`${nodeIp}/xdev`, {signal: AbortSignal.timeout(2000)});
                 if (!response.ok) {
@@ -1129,14 +1131,14 @@ Acces-Control-Allow-Origin: *
                 for (let device of devices) {
                     let ip = hexToIP(device);
                     let oldNode;
-                    if (this.#prevInstallation !== null) {
-                        oldNode = this.#prevInstallation.nodes.find((node) => node.ip === ip);
-                    }
+                    // if (this.#prevInstallation !== null) {
+                    //     oldNode = this.#prevInstallation.nodes.find((node) => node.ip === ip);
+                    // }
                     let node = await new Node(ip, oldNode);
                     foundNodes.push(node);
                 }
-                foundNodes[0].active = true;
-                return foundNodes;
+                if (init) foundNodes[0].active = true;
+                this.#nodes = foundNodes;
             } catch (error) {
                 if (error.name === "TimeoutError") {
                     console.error("Request timed out");
@@ -1169,7 +1171,7 @@ Acces-Control-Allow-Origin: *
             this.#nodes.push(demoNode);           
         }
 
-        updateNav(init, reset){
+        updateNav(init){
             let generateNode = (node, lm) => {
                 let nodeElement = document.createElement("li");
                 nodeElement.classList.add("node");
@@ -1296,8 +1298,8 @@ Acces-Control-Allow-Origin: *
                 counter++;
             })
 
-            let fieldbussesElement = document.getElementById("fieldbusses");
-            fieldbussesElement.innerHTML = '';
+            this.fieldbussesElement = document.getElementById("fieldbusses");
+            this.fieldbussesElement.innerHTML = '';
             counter = 1;
             this.activeNode.fieldbusses.forEach(fb => {
                 fb.fbElement =  generateDomTree("div", null, { id: `fb-${counter}`, class: "fieldbus card" }, [
@@ -1314,7 +1316,7 @@ Acces-Control-Allow-Origin: *
                                         ])
                                 ]), 
                                 generateDomTree("div", null, { class: "fb-protocol info" })])
-                fieldbussesElement.appendChild(fb.fbElement);
+                this.fieldbussesElement.appendChild(fb.fbElement);
                 counter++;    
             })
       
@@ -1322,22 +1324,14 @@ Acces-Control-Allow-Origin: *
         }
 
         // Event listeners for the universes
-        handleUniChange = (e) => {
-                let param = e.target.id;
-                let targetUniverse = this.activeNode.universes.find((uni) => uni.id === e.target.getAttribute("universe"));
-                targetUniverse[param] = parseInt(e.target.value);
-                this.activeNode.configuration.handleInputChange(targetUniverse);
-            }
+        // handleUniChange = (e) => {
+        //         let param = e.target.id;
+        //         let targetUniverse = this.activeNode.universes.find((uni) => uni.id === e.target.getAttribute("universe"));
+        //         targetUniverse[param] = parseInt(e.target.value);
+        //         this.activeNode.configuration.handleInputChange(targetUniverse);
+        //     }
 
         showActiveNode() {
-            try {
-                for (const node of installation.nodes) {
-                    for (const fb of node.fieldbusses) {
-                        fb.removeHandleEvents();
-                    }
-                }
-            } catch (error) {}
-
             this.activeNodeElement = document.getElementById(`${this.activeNode.UID}`);
                 
             let firmwareVersion = document.querySelector("#firmware span");
@@ -1367,16 +1361,12 @@ Acces-Control-Allow-Origin: *
                 counter++;
             })
 
-            this.unilist = document.querySelector("#universes");
-            this.unilist.removeEventListener("change", this.handleUniChange);
-            this.unilist.addEventListener("change", this.handleUniChange);
+            // this.unilist = document.querySelector("#universes");
+            // this.unilist.removeEventListener("change", this.handleUniChange);
+            // this.unilist.addEventListener("change", this.handleUniChange);
 
             counter = 1;
             this.activeNode.fieldbusses.forEach((fb) => {
-                fb.setHandles();
-                fb.removeHandleEvents();
-                fb.addHandleEvents(this.activeNode.shownUniverses);
-
                 fb.addressBlock = document.getElementById(`address-block-${counter}`);
                 fb.startElement = document.querySelector(`#fb-${counter} .address-container h3`);
                 fb.streamElement = document.querySelector(`#fb-${counter} .address-container h2`);
@@ -1575,19 +1565,48 @@ Acces-Control-Allow-Origin: *
                 this.navSwitcher();    
             })
 
-            
+            this.addHandleEvents();
+        }
+
+        addHandleEvents = () => {
+            this.configElement.addEventListener("mousedown", this.handleFbEvent);
+            this.configElement.addEventListener("change", this.handleFbEvent);
+            this.configElement.addEventListener("mousemove", this.handleFbEvent);
+            this.configElement.addEventListener("mouseup", this.handleFbEvent);     
+        }
+
+        handleFbEvent = (e) => {
+            if (e.type !== "mousemove") {
+                this.targetFb = e.target.closest(".fieldbus").id.slice(-1)-1;
+                this.targetFb = this.activeNode.fieldbusses.find((fb) => fb.id === `out${this.targetFb}`)
+                console.log(this.targetFb);
+            }
+            if (this.targetFb !== undefined) {
+                switch(e.type) {
+                    case "mousedown":
+                        this.targetFb.setStart(e);
+                        break;
+                    case "change":
+                        console.log("change");
+                        break;
+                    case "mousemove":
+                        this.targetFb.setMove(e);
+                        break;
+                    case "mouseup":
+                        this.targetFb.updateValues(e);
+                        break;
+                    default:
+                        break;
+                }
+            } 
         }
 
         handleNavClick = (e) => {
-            e.preventDefault();
-            e.stopPropagation();
+
             let nodeElement = e.currentTarget;
             // resetting the nodes to their inactive state
             this.#nodes.map((node) => {node.active = false});
-            // removing all the event handlers of the active node's fieldbusses
-            this.activeNode.fieldbusses.forEach((fb) => {
-                fb.removeHandleEvents();
-            })
+
             let nodes = document.getElementsByClassName("node");
             for (let n of nodes) {
                 n.classList.remove("selected");
@@ -1601,9 +1620,9 @@ Acces-Control-Allow-Origin: *
                 this.activeNode = node;
                 localStorage.setItem("activeNode", node.mac)               
             }
-
-            this.updateNav(false)
+            this.updateNav(false);
             this.navSwitcher();
+
         }
 
         navSwitcher() {
@@ -1914,7 +1933,7 @@ Acces-Control-Allow-Origin: *
                     counter++;
                 }
 
-                console.log(this.#enableDetector);
+                // console.log(this.#enableDetector);
 
                 for (let i = 0; i < this.#enableDetector.length; i++) {
                     if (this.#enableDetector[i][0] === 0 && this.#enableDetector[i][1] === 1) {
@@ -2131,114 +2150,119 @@ Acces-Control-Allow-Origin: *
                     this.start = "bottom"
                     break;
             }
+            this.startedDrag = true;
             this.startCoord = e.clientY;
+            this.targetFb = e.target.closest(".fieldbus").id;
+            console.log(this.streamLength);
         }
 
         setMove = (e) => {
-            let changePatch = (newRange = undefined, newStart = undefined) => {
-                let patch = document.querySelector(`#fb-${parseInt(this.#id.split("out")[1])+1} .address.range .patch`);
-                if (newRange !== undefined) {
-                    this.newRange = Math.floor(newRange);
-                    let rangeElement;
-                    let status = !document.querySelector(".patch").classList.contains("config");
-                    if (status) {
-                        rangeElement = document.querySelector(`#${e.currentTarget.id} .address-container h2`);
-                        rangeElement.innerHTML = this.newRange;
-                    } else {
-                        rangeElement = document.querySelector(`#${e.currentTarget.id} .address-container h2 input`);
-                        rangeElement.value = this.newRange;
-                    }
-                    patch.style.height = String((this.newRange/(512*this.unis))*100)+"%";
-                    if (this.newRange <= 280 | !status & this.newRange <= 400) {
-                        patch.classList.add("overflow");
-                    } else {
-                        if (patch.classList.contains("overflow")) patch.classList.remove("overflow");
-                    }
-                    if (this.newRange <= 120 | !status & this.newRange <= 230) {
-                        patch.classList.add("extreme");
-                    } else {
-                        if (patch.classList.contains("extreme")) patch.classList.remove("extreme");
-                    }
-                }
-                if (newStart !== undefined) {
-                    this.newStart = Math.floor(newStart);
-                    patch.style.top = String((newStart/(512*this.unis))*100)+"%";
-                    let startElement;
-                    if (!document.querySelector(".patch").classList.contains("config")) {
-                        startElement = document.querySelector(`#${e.currentTarget.id} .address-container h3 span`);
-                        startElement.innerHTML = this.newStart;
-                    } else {
-                        startElement = document.querySelector(`#${e.currentTarget.id} .address-container h3 input`);
-                        startElement.value = this.newStart;
-                    }    
-                }
-            }
-
-            const threshold = 50;
-            let newRange = 0;
-            let newStart = 0;
-            let dif = 0;
-            const addressRange = document.querySelector(`#fb-${parseInt(this.#id.split("out")[1])+1} .address.range`);
-            const addressesPerPixel = (512*this.unis)/addressRange.getBoundingClientRect()["height"];
-
-            switch (this.start) {
-                case "top":
-                    const offsetTop = this.startCoord-e.clientY;
-                    newStart = this.#startAddress - (offsetTop*addressesPerPixel);
-                    newRange = this.#streamLength + (offsetTop*addressesPerPixel);
-                    for (let i=0; i<= this.unis; i++) {
-                        dif = newStart - (512*i);
-                        if (dif > -threshold && dif < threshold) {
-                            let hop = (512*i) - newStart;
-                            newStart = 512*i+1;
-                            newRange = newRange - hop -1 ;
-                            break;
+            if (this.startedDrag) {
+                let changePatch = (newRange = undefined, newStart = undefined) => {
+                    let patch = document.querySelector(`#fb-${parseInt(this.#id.split("out")[1])+1} .address.range .patch`);
+                    if (newRange !== undefined) {
+                        this.newRange = Math.floor(newRange);
+                        let rangeElement;
+                        let status = !document.querySelector(".patch").classList.contains("config");
+                        if (status) {
+                            rangeElement = document.querySelector(`#${this.targetFb} .address-container h2`);
+                            rangeElement.innerHTML = this.newRange;
+                        } else {
+                            rangeElement = document.querySelector(`#${this.targetFb} .address-container h2 input`);
+                            rangeElement.value = this.newRange;
+                        }
+                        patch.style.height = String((this.newRange/(512*installation.activeNode.shownUniverses))*100)+"%";
+                        if (this.newRange <= 280 | !status & this.newRange <= 400) {
+                            patch.classList.add("overflow");
+                        } else {
+                            if (patch.classList.contains("overflow")) patch.classList.remove("overflow");
+                        }
+                        if (this.newRange <= 120 | !status & this.newRange <= 230) {
+                            patch.classList.add("extreme");
+                        } else {
+                            if (patch.classList.contains("extreme")) patch.classList.remove("extreme");
                         }
                     }
-
-                    if (newRange < 1) {
-                        newRange = 1;
-                        newStart = this.#startAddress + this.#streamLength - 2;
+                    if (newStart !== undefined) {
+                        this.newStart = Math.floor(newStart);
+                        patch.style.top = String((newStart/(512*installation.activeNode.shownUniverses))*100)+"%";
+                        let startElement;
+                        if (!document.querySelector(".patch").classList.contains("config")) {
+                            startElement = document.querySelector(`#${this.targetFb} .address-container h3 span`);
+                            startElement.innerHTML = this.newStart;
+                        } else {
+                            startElement = document.querySelector(`#${this.targetFb} .address-container h3 input`);
+                            startElement.value = this.newStart;
+                        }    
                     }
+                }
 
-                    if (newStart < 1) {
-                        newStart = 1;
-                        newRange = this.#startAddress + this.#streamLength -1 ;
-                    }
-                    changePatch(newRange, newStart);
-                    break;
-                case "bottom":
-                    const offsetBottom = this.startCoord-e.clientY;
-                    newRange = this.#streamLength - (offsetBottom*addressesPerPixel);
-                    // snapping to full universes
-                    for (let i=0; i<= this.unis; i++) {
-                        dif = (512*i-(this.#startAddress+newRange));
-                        if (dif < threshold && dif > -threshold){
-                            newRange = (512*i)-(this.#startAddress-1)
-                            break;
+                const threshold = 50;
+                let newRange = 0;
+                let newStart = 0;
+                let dif = 0;
+                const addressRange = document.querySelector(`#fb-${parseInt(this.#id.split("out")[1])+1} .address.range`);
+                const addressesPerPixel = (512*installation.activeNode.shownUniverses)/addressRange.getBoundingClientRect()["height"];
+
+                switch (this.start) {
+                    case "top":
+                        const offsetTop = this.startCoord-e.clientY;
+                        newStart = this.#startAddress - (offsetTop*addressesPerPixel);
+                        newRange = this.#streamLength + (offsetTop*addressesPerPixel);
+                        for (let i=0; i<= installation.activeNode.shownUniverses; i++) {
+                            dif = newStart - (512*i);
+                            if (dif > -threshold && dif < threshold) {
+                                let hop = (512*i) - newStart;
+                                newStart = 512*i+1;
+                                newRange = newRange - hop -1 ;
+                                break;
+                            }
                         }
-                    }
-                    // bottom and top limits
-                    if (this.startAddress + newRange > 512*this.unis) newRange = (512*this.unis)-(this.#startAddress-1);
-                    if (newRange < 1) newRange = 1;
-                    changePatch(newRange);
-                    break;  
-                case "patch":
-                    const offset = this.startCoord-e.clientY;
-                    newStart = this.#startAddress - (offset*addressesPerPixel);
-                    for (let i=0; i<= this.unis; i++) {
-                        dif = newStart - (512*i);
-                        if (dif > -threshold && dif < threshold) {
-                            newStart = (512*i) + 1;
-                            break;
-                        }          
-                    }
-                    if (newStart < 1) newStart = 1;
-                    else if (newStart + this.#streamLength > 512*this.unis) newStart = (512*this.unis) - this.#streamLength;
-                    changePatch(undefined, newStart);
-                    break
-                default:
-                    break;           
+
+                        if (newRange < 1) {
+                            newRange = 1;
+                            newStart = this.#startAddress + this.#streamLength - 2;
+                        }
+
+                        if (newStart < 1) {
+                            newStart = 1;
+                            newRange = this.#startAddress + this.#streamLength -1 ;
+                        }
+                        changePatch(newRange, newStart);
+                        break;
+                    case "bottom":
+                        const offsetBottom = this.startCoord-e.clientY;
+                        newRange = this.#streamLength - (offsetBottom*addressesPerPixel);
+                        // snapping to full universes
+                        for (let i=0; i<= installation.activeNode.shownUniverses; i++) {
+                            dif = (512*i-(this.#startAddress+newRange));
+                            if (dif < threshold && dif > -threshold){
+                                newRange = (512*i)-(this.#startAddress-1)
+                                break;
+                            }
+                        }
+                        // bottom and top limits
+                        if (this.startAddress + newRange > 512*installation.activeNode.shownUniverses) newRange = (512*installation.activeNode.shownUniverses)-(this.#startAddress-1);
+                        if (newRange < 1) newRange = 1;
+                        changePatch(newRange);
+                        break;  
+                    case "patch":
+                        const offset = this.startCoord-e.clientY;
+                        newStart = this.#startAddress - (offset*addressesPerPixel);
+                        for (let i=0; i<= installation.activeNode.shownUniverses; i++) {
+                            dif = newStart - (512*i);
+                            if (dif > -threshold && dif < threshold) {
+                                newStart = (512*i) + 1;
+                                break;
+                            }          
+                        }
+                        if (newStart < 1) newStart = 1;
+                        else if (newStart + this.#streamLength > 512*installation.activeNode.shownUniverses) newStart = (512*installation.activeNode.shownUniverses) - this.#streamLength;
+                        changePatch(undefined, newStart);
+                        break
+                    default:
+                        break;           
+                }
             }
         }
 
@@ -2246,7 +2270,8 @@ Acces-Control-Allow-Origin: *
             if (e.target.tagName === "INPUT" | e.target.tagName === "SELECT" | e.target.tagName === "OPTION") {
                 return;
             }
-            this.start = '';   
+            this.start = '';
+            this.startedDrag = false;   
             if (this.newRange !== undefined) this.#streamLength = this.newRange;
             if (this.newStart !== undefined) this.#startAddress = this.newStart;
             
@@ -2280,25 +2305,6 @@ Acces-Control-Allow-Origin: *
                 }
                 installation.activeNode.configuration.handleInputChange(this);
             }
-
-        setHandles = (unis) => {
-            this.dragRange = document.querySelector(`#fb-${parseInt(this.#id.split("out")[1])+1}`);
-        }
-
-        addHandleEvents = (unis) => {
-            this.unis = unis;            
-            this.dragRange.addEventListener("mousedown", this.setStart);
-            this.dragRange.addEventListener("change", this.handleParamChange);
-            this.dragRange.addEventListener("mousemove", this.setMove);
-            this.dragRange.addEventListener("mouseup", this.updateValues);    
-        }
-
-        removeHandleEvents = () => {
-            this.dragRange.removeEventListener("mousedown",this.setStart);
-            this.dragRange.removeEventListener("change", this.handleParamChange);
-            this.dragRange.removeEventListener("mousemove", this.setMove);
-            this.dragRange.removeEventListener("mouseup", this.updateValues);
-        }
     }
 
     class Configuration {
@@ -2405,16 +2411,12 @@ Acces-Control-Allow-Origin: *
                     throw new Error(`Response status: ${response.status}`);
                 }
                 // removing all the configuration event listeners
-                try {
-                    for (const node of installation.nodes) {
-                        for (const fb of node.fieldbusses) {
-                            fb.removeHandleEvents();
-                        }
-                    }
-                } catch (error) {}
-
-                installation.unilist.removeEventListener("change", installation.handleUniChange);
-                intitialise(false);
+                // installation.unilist.removeEventListener("change", installation.handleUniChange);
+                let demoNode = installation.nodes.find((node) => node.mac === "7B:A6:80:7F:EC:7D");
+                await installation.fetchNodes(false);
+                installation.nodes.push(demoNode);
+                installation.updateNav(false);
+                installation.navSwitcher();
             }
             
             catch (error) {
@@ -2438,12 +2440,11 @@ Acces-Control-Allow-Origin: *
             xmlText += `\t\t<name>${n.name}</name>\n`;
             xmlText += `\t</sys>\n`;
             xmlText += '</node>';
-            console.log(xmlText);
+            // console.log(xmlText);
             this.postXmlConfig(xmlText);
         }
 
-        handleInputChange(io) {
-            console.log(io);     
+        handleInputChange(io) {   
             let xmlText = '<node>'
             io.id[0] === "i"? xmlText += '<artnet>' : xmlText += '<fieldbus>';
             xmlText += `<${io.id}>`
@@ -2451,7 +2452,7 @@ Acces-Control-Allow-Origin: *
             xmlText += `</${io.id}>`
             io.id[0] === "i"? xmlText += '</artnet>' : xmlText += '</fieldbus>';
             xmlText += '</node>';
-            console.log(xmlText);
+            // console.log(xmlText);
             this.postXmlConfig(xmlText);
         }
 
@@ -2583,12 +2584,7 @@ Acces-Control-Allow-Origin: *
     let installation;
 
     async function intitialise(init) {
-        if (init) {
-            installation = await new Installation("Lux-Lumen");
-        }
-        else {
-            installation = await new Installation("Lux-Lumen", installation);
-        } 
+        installation = await new Installation("Lux-Lumen");
         installation.updateNav(init);
         installation.navSwitcher();
         if (init) installation.eventInit();  
