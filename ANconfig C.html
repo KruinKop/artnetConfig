@@ -1098,7 +1098,7 @@ Acces-Control-Allow-Origin: *
                 if (!prevInstallation) {
                     this.addDemo();
                 } else {
-                    this.#nodes.push(this.#prevInstallation.nodes.filter((n) => n.mac === "7B:A6:80:7F:EC:7D")[0]);              
+                    this.#nodes.push(this.#prevInstallation.nodes.find((n) => n.mac === "7B:A6:80:7F:EC:7D"));              
                 }   
                 if (localStorage.getItem("configuration") === "enabled") {
                     this.config = true;
@@ -1130,8 +1130,7 @@ Acces-Control-Allow-Origin: *
                     let ip = hexToIP(device);
                     let oldNode;
                     if (this.#prevInstallation !== null) {
-                        oldNode = this.#prevInstallation.nodes.filter((node) => node.ip === ip);
-                        console.log(oldNode[0]);
+                        oldNode = this.#prevInstallation.nodes.find((node) => node.ip === ip);
                     }
                     let node = await new Node(ip, oldNode);
                     foundNodes.push(node);
@@ -1325,7 +1324,7 @@ Acces-Control-Allow-Origin: *
         // Event listeners for the universes
         handleUniChange = (e) => {
                 let param = e.target.id;
-                let targetUniverse = this.activeNode.universes.filter((uni) => uni.id === e.target.getAttribute("universe"))[0];
+                let targetUniverse = this.activeNode.universes.find((uni) => uni.id === e.target.getAttribute("universe"));
                 targetUniverse[param] = parseInt(e.target.value);
                 this.activeNode.configuration.handleInputChange(targetUniverse);
             }
@@ -1580,11 +1579,15 @@ Acces-Control-Allow-Origin: *
         }
 
         handleNavClick = (e) => {
-            // resetting the nodes to their inactive state
             e.preventDefault();
             e.stopPropagation();
             let nodeElement = e.currentTarget;
-            this.#nodes.map((node) => {node.active = false})
+            // resetting the nodes to their inactive state
+            this.#nodes.map((node) => {node.active = false});
+            // removing all the event handlers of the active node's fieldbusses
+            this.activeNode.fieldbusses.forEach((fb) => {
+                fb.removeHandleEvents();
+            })
             let nodes = document.getElementsByClassName("node");
             for (let n of nodes) {
                 n.classList.remove("selected");
@@ -1592,7 +1595,7 @@ Acces-Control-Allow-Origin: *
 
             if (!nodeElement.classList.contains("selected")) {
                 nodeElement.classList.add("selected");
-                let node = this.#nodes.filter((n) => n.UID === nodeElement.id)[0];
+                let node = this.#nodes.find((n) => n.UID === nodeElement.id);
                 if (this.lm) nodeElement.classList.add("light");
                 node.active = true;
                 this.activeNode = node;
@@ -1700,13 +1703,16 @@ Acces-Control-Allow-Origin: *
 
         #enableDetector = [[0,1],[0,1],[0,1],[0,1],[0,1],[0,1]]
 
-        constructor(ip, oldSelf, skipConfig = false) {
+        constructor(ip, oldSelf = null, skipConfig = false) {
             this.#ip = ip;
             
             if (!skipConfig) {
                 return (async () => {
                     this.#configuration = await new Configuration(ip);
-                    this.#oldNode = oldSelf;
+                    if (oldSelf !== null) {
+                        this.#oldNode = oldSelf;
+                        this.#enableDetector = this.#oldNode.enableDetector;
+                    }
                     this.initialiseNode();
                     return this;
                 })();
@@ -1767,6 +1773,10 @@ Acces-Control-Allow-Origin: *
         
         get active() {
             return this.#active;
+        }
+
+        get enableDetector() {
+            return this.#enableDetector;
         }
         
         set ip(ip) {
@@ -1916,8 +1926,10 @@ Acces-Control-Allow-Origin: *
                                 node.fieldbusses.forEach((fb) => {
                                     if (fb.parentNode === this.mac) {
                                         console.log(`previous config: ${fb.lastConfig.startAddress}, ${fb.lastConfig.streamLength}`)
-                                        this.fieldbusses[i].startAddress = fb.lastConfig.startAddress;
-                                        this.fieldbusses[i].streamLength = fb.lastConfig.streamLength;
+                                        this.fieldbusses[i].startAddress    = fb.lastConfig.startAddress;
+                                        this.fieldbusses[i].streamLength    = fb.lastConfig.streamLength;
+                                        console.log("restored previous config");
+                                        this.configuration.handleInputChange(this.fieldbusses[i]);
                                     }
                                 })
                             });
@@ -2261,7 +2273,6 @@ Acces-Control-Allow-Origin: *
                             this.lastConfig = this;
                             this.parentNode = installation.activeNode.mac;
                         }
-                        console.log(installation.activeNode);
                         break;
                     default:
                         console.log("can't detect the change");
@@ -2431,7 +2442,8 @@ Acces-Control-Allow-Origin: *
             this.postXmlConfig(xmlText);
         }
 
-        handleInputChange(io) {     
+        handleInputChange(io) {
+            console.log(io);     
             let xmlText = '<node>'
             io.id[0] === "i"? xmlText += '<artnet>' : xmlText += '<fieldbus>';
             xmlText += `<${io.id}>`
