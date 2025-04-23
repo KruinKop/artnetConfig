@@ -1373,9 +1373,9 @@ Acces-Control-Allow-Origin: *
                                                 generateDomTree("input", null, {id: "stream-length", fieldbus: fb.id, type: "number", min: "1", max: "1024", value: `${fb.streamLength}`}, null)])]);
                 } else {
                     fb.patch.classList.remove("config");
-                    startElement    =   generateDomTree("h3", "start: ", { class: "draggable" }, [
+                    startElement    =   generateDomTree("h3", "start: ", { class: "move" }, [
                                             generateDomTree("span", fb.startAddress)]);
-                    streamElement   =   generateDomTree("h2", fb.streamLength, { class: "draggable" });
+                    streamElement   =   generateDomTree("h2", fb.streamLength, { class: "move" });
                 }
 
                 fb.startElement.replaceWith(startElement);
@@ -1564,15 +1564,14 @@ Acces-Control-Allow-Origin: *
             }
 
             if (e.type !== "mousemove") {
-                console.log(e.target.classList);
-                if ((e.target.id === "universe" || e.target.id === "keep") && e.type === "change") {
+                if (e.target.id === "universe" &&) {
                     console.log(e.target)
                     let param = e.target.id;
                     let targetUniverse = this.activeNode.universes.find((uni) => uni.id === e.target.getAttribute("universe"));
                     targetUniverse[param] = parseInt(e.target.value);
                     this.activeNode.configuration.handleInputChange(targetUniverse);
                     return;
-                } else if (e.target.classList.contains("draggable") || e.target.tagName === "SELECT" && e.type === "change" || e.target.tagName === "INPUT" && e.target.hasAttribute("fieldbus")) {
+                } else if (e.target.classList.contains("draggable") || e.target.tagName === "SELECT" && e.type === "change" || e.target.tagName === "INPUT") {
                     this.targetFb = e.target.closest(".fieldbus").id.slice(-1)-1;
                     this.targetFb = this.activeNode.fieldbusses.find((fb) => fb.id === `out${this.targetFb}`)
                 }
@@ -2133,13 +2132,11 @@ Acces-Control-Allow-Origin: *
         }
 
         setStart = (e) => {
-            console.log(e.target.classList[0])
             switch (e.target.classList[0]) {
                 case "top-handle": 
                     this.start = "top"
                     break;
                 case "address-container":
-                case "draggable":
                     if (e.target.offsetParent.classList.contains("overflow") & e.target.tagName === "H3") break;
                     this.start = "patch";
                     break;
