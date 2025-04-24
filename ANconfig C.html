@@ -569,6 +569,10 @@ Acces-Control-Allow-Origin: *
         opacity: 70%;
     }
 
+    input.illegal {
+        opacity: 50%;
+    }
+
     /* ============= Center configuration ============== */
 
     #main-config {
@@ -894,13 +898,17 @@ Acces-Control-Allow-Origin: *
     }
 
     .address.range .patch.overflow h3 {
-        margin-top: -40px;
+        margin-top: -30px;
         cursor: default;
         width: 90%;
     }
 
+    #fieldbusses .patch.overflow h2 input {
+        margin-top: 0px;
+    }
+
     .address.range .patch.overflow.config h3 {
-        margin-top: -37px;
+        margin-top: -34px;
         white-space: nowrap;
     }
 
@@ -1088,7 +1096,8 @@ Acces-Control-Allow-Origin: *
             return (async () => {
                 this.#customer = customer;
                 await this.fetchNodes();
-                this.addDemo();  
+                this.addDemo();
+                this.#prevNodes.push(this.#nodes);  
                 if (localStorage.getItem("configuration") === "enabled") {
                     this.config = true;
                 } else this.config = false;
@@ -1105,7 +1114,7 @@ Acces-Control-Allow-Origin: *
             return this.#prevNodes;
         }
 
-        set prevNodes(pn) {
+        pushPrevNodes(pn) {
             this.#prevNodes.push(pn);
             if (this.#prevNodes.length > 2) this.#prevNodes.shift();
         }
@@ -1123,17 +1132,34 @@ Acces-Control-Allow-Origin: *
                 let devices = xmlDoc.getElementsByTagName("dev")[0].innerHTML.split(" ");
                 for (let device of devices) {
                     let ip = hexToIP(device);
-                    let oldNode;
+                    let oldNodes = [];
                     try {
-                        oldNode = this.#prevNodes[0].find((node) => node.ip === ip);
+                        for (const nodeList of this.#prevNodes) {
+                            let oldNode = nodeList.find((node) => node.ip === ip);
+                            oldNodes.push(oldNode);
+                        }
+                        for (const fieldbus of oldNodes[1].fieldbusses) {
+                            if (fieldbus.codec === 0) {
+                                let prevFb = oldNodes[0].fieldbusses.find((fb) => fb.id === fieldbus.id);
+                                fieldbus.startAddress = prevFb.startAddress;
+                                fieldbus.streamLength = prevFb.streamLength;
+                            }
+                        }
+                        console.log(oldNodes);
+                        // oldNode = this.#prevNodes[1].find((node) => node.ip === ip);
                     } catch (error) {
-                        console.log("there was no previous configuration detected");
-                    }        
-                    let node = await new Node(ip, oldNode);
+                        // console.error(error);
+                    }
+                    let node;
+                    try {
+                        node = await new Node(ip, false, oldNodes.length > 0 ? [...oldNodes] : null);    
+                    } catch(error) {console.error(error)};
+                                   
                     foundNodes.push(node);
                 }
                 if (init) foundNodes[0].active = true;
                 this.#nodes = foundNodes;
+
             } catch (error) {
                 if (error.name === "TimeoutError") {
                     console.error("Request timed out");
@@ -1268,34 +1294,9 @@ Acces-Control-Allow-Origin: *
         initaliseConfig() {
             this.activeNodeElement = document.getElementById(`${this.activeNode.UID}`);
 
-            // Universes and their braces
-            this.accoladesElement = document.getElementById("accolades");   
-            this.accoladesElement.innerHTML = '';   
-
-            let counter = 1;
-            this.activeNode.universes.forEach(un => {
-                if (counter <= this.activeNode.shownUniverses) {              
-                    let a = document.createElement("div");
-                    a.style.marginLeft = `${this.#accMargin}px`
-                    a.id = `accolade-${counter}`;
-                    a.classList.add("accolade");
-                    // svg definition of the braces
-                    let braceColor = this.lm? "rgb(77,77,77)" : "#FFF200";
-                    a.innerHTML = `
-                    <svg height="100%" viewBox="0 0 2000 72" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M61.4318 1.72424H2637.06" stroke=${braceColor} stroke-width="2"/>
-                        <path d="M61.4318 70.7244H2637.06" stroke=${braceColor} stroke-width="2"/>
-                        <path d="M46.4779 36.2288C51.7241 36.3106 59.3583 35.2166 56.7341 28.1965C55.0324 23.6442 50.049 20.9121 50.049 12.6052C50.049 5.20797 54.2605 1.72424 61.4318 1.72424M46.4779 36.2288C51.7241 36.1469 59.3583 37.2492 56.7341 44.2693C55.0324 48.8216 50.049 51.5537 50.049 59.8606C50.049 67.2579 54.2605 70.7416 61.4318 70.7416M46.4779 36.2288H5" fill="none" stroke=${braceColor} stroke-width="2"/>
-                        <text class="info ${this.lm}" x="60" y="40">0fps</text>
-                    </svg>`
-                    this.accoladesElement.appendChild(a);
-                }
-                counter++;
-            })
-
             this.fieldbussesElement = document.getElementById("fieldbusses");
             this.fieldbussesElement.innerHTML = '';
-            counter = 1;
+            let counter = 1;
             this.activeNode.fieldbusses.forEach(fb => {
                 fb.fbElement =  generateDomTree("div", null, { id: `fb-${counter}`, class: "fieldbus card" }, [
                                     generateDomTree("div", null, { class: "address range" }, [
@@ -1348,6 +1349,31 @@ Acces-Control-Allow-Origin: *
                 counter++;
             })
 
+            // Universes and their braces
+            this.accoladesElement = document.getElementById("accolades");   
+            this.accoladesElement.innerHTML = '';   
+
+            counter = 1;
+            this.activeNode.universes.forEach(un => {
+                if (counter <= this.activeNode.shownUniverses) {              
+                    let a = document.createElement("div");
+                    a.style.marginLeft = `${this.#accMargin}px`
+                    a.id = `accolade-${counter}`;
+                    a.classList.add("accolade");
+                    // svg definition of the braces
+                    let braceColor = this.lm? "rgb(77,77,77)" : "#FFF200";
+                    a.innerHTML = `
+                    <svg height="100%" viewBox="0 0 2000 72" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M61.4318 1.72424H2637.06" stroke=${braceColor} stroke-width="2"/>
+                        <path d="M61.4318 70.7244H2637.06" stroke=${braceColor} stroke-width="2"/>
+                        <path d="M46.4779 36.2288C51.7241 36.3106 59.3583 35.2166 56.7341 28.1965C55.0324 23.6442 50.049 20.9121 50.049 12.6052C50.049 5.20797 54.2605 1.72424 61.4318 1.72424M46.4779 36.2288C51.7241 36.1469 59.3583 37.2492 56.7341 44.2693C55.0324 48.8216 50.049 51.5537 50.049 59.8606C50.049 67.2579 54.2605 70.7416 61.4318 70.7416M46.4779 36.2288H5" fill="none" stroke=${braceColor} stroke-width="2"/>
+                        <text class="info ${this.lm}" x="60" y="40">0fps</text>
+                    </svg>`
+                    this.accoladesElement.appendChild(a);
+                }
+                counter++;
+            })
+
             counter = 1;
             this.activeNode.fieldbusses.forEach((fb) => {
                 fb.addressBlock = document.getElementById(`address-block-${counter}`);
@@ -1356,7 +1382,7 @@ Acces-Control-Allow-Origin: *
                 fb.codecElement = document.querySelector(`#fb-${counter} .fb-protocol`);
                 fb.patch = document.querySelector(".patch");
 
-                if (this.activeNode.codecs[fb.codec].split(" ")[0] === "disabled") {
+                if (fb.codec === 0) {
                     fb.addressBlock.hidden = true;
                 } else fb.addressBlock.hidden = false;
 
@@ -1366,11 +1392,11 @@ Acces-Control-Allow-Origin: *
                 if (this.config) {
                     fb.patch.classList.add("config");
                     startElement    =   generateDomTree("h3", null, null, [
-                                        generateDomTree("label", "start: ", {for: "start-address"}, [
-                                            generateDomTree("input", null, {id: "start-address", fieldbus: fb.id, type: "number", min: "1", max: "5119", value: `${fb.startAddress}`}, null)])]);
+                                        generateDomTree("label", "start: ", {for: "startAddress"}, [
+                                            generateDomTree("input", null, {id: "startAddress", fieldbus: fb.id, type: "number", min: "1", max: "5119", value: `${fb.startAddress}`}, null)])]);
                     streamElement   =   generateDomTree("h2", null, null, [
-                                            generateDomTree("label", null, {for: "stream-address"}, [
-                                                generateDomTree("input", null, {id: "stream-length", fieldbus: fb.id, type: "number", min: "1", max: "1024", value: `${fb.streamLength}`}, null)])]);
+                                            generateDomTree("label", null, {for: "streamLength"}, [
+                                                generateDomTree("input", null, {id: "streamLength", fieldbus: fb.id, type: "number", min: "1", max: "1024", value: `${fb.streamLength}`}, null)])]);
                 } else {
                     fb.patch.classList.remove("config");
                     startElement    =   generateDomTree("h3", "start: ", { class: "draggable" }, [
@@ -1387,10 +1413,10 @@ Acces-Control-Allow-Origin: *
                 let stream = String((fb.streamLength/(512*this.activeNode.shownUniverses))*100)+"%";
 
                 // Updating the styles so that overflow is handled
-                if (fb.streamLength <= 280 | this.config & fb.streamLength <= 400) {
+                if (fb.streamLength <= this.activeNode.ofMin | this.config & fb.streamLength <= this.activeNode.ofMax) {
                     fb.addressBlock.classList.add("overflow");
                 } else fb.addressBlock.classList.remove("overflow");
-                if (fb.streamLength <= 120 | this.config & fb.streamLength <= 250) {
+                if (fb.streamLength <= this.activeNode.ofExMin | this.config & fb.streamLength <= this.activeNode.ofExMax) {
                     fb.addressBlock.classList.add("extreme")
                 } else fb.addressBlock.classList.remove("extreme");
                 
@@ -1552,6 +1578,8 @@ Acces-Control-Allow-Origin: *
 
             this.configElement.addEventListener("mousedown", this.handleFbEvent);
             this.configElement.addEventListener("change", this.handleFbEvent);
+            this.configElement.addEventListener("input", this.handleFbEvent);
+            this.configElement.addEventListener("focusout", this.handleFbEvent)
             this.configElement.addEventListener("mousemove", this.handleFbEvent);
             this.configElement.addEventListener("mouseup", this.handleFbEvent);
         }     
@@ -1564,19 +1592,74 @@ Acces-Control-Allow-Origin: *
             }
 
             if (e.type !== "mousemove") {
-                console.log(e.target.classList);
-                if ((e.target.id === "universe" || e.target.id === "keep") && e.type === "change") {
-                    console.log(e.target)
-                    let param = e.target.id;
-                    let targetUniverse = this.activeNode.universes.find((uni) => uni.id === e.target.getAttribute("universe"));
-                    targetUniverse[param] = parseInt(e.target.value);
-                    this.activeNode.configuration.handleInputChange(targetUniverse);
-                    return;
+                if ((e.target.id === "universe" || e.target.id === "keep")) {
+                    if (e.type === "input") {
+                        let min, max;
+                        if (e.target.id === "universe") {
+                            min = 1, max = 32767;
+                        } else min = 500, max = 512;
+                        let inputValue = e.target.value;
+                        if (inputValue < min || inputValue > max) {
+                            e.target.classList.add("illegal");
+                        }
+                        else {
+                            e.target.classList.remove("illegal");
+                        }
+                    }
+
+                    if (e.type === "focusout") {
+                        if (e.target.classList.contains("illegal")) {
+                            e.target.value = this.activeNode.universes.find((uni) => uni.id === e.target.getAttribute("universe"))[e.target.id];
+                            e.target.classList.remove("illegal");
+                        }
+                    }
+                    
+                    if (e.type === "change") {
+                        if (e.target.classList.contains("illegal")) {
+                            return;
+                        }
+                        let param = e.target.id;
+                        let targetUniverse = this.activeNode.universes.find((uni) => uni.id === e.target.getAttribute("universe"));
+                        targetUniverse[param] = parseInt(e.target.value);
+                        this.activeNode.configuration.handleInputChange(targetUniverse);
+                        return;
+                    }
+                    
+                    
                 } else if (e.target.classList.contains("draggable") || e.target.tagName === "SELECT" && e.type === "change" || e.target.tagName === "INPUT" && e.target.hasAttribute("fieldbus")) {
                     this.targetFb = e.target.closest(".fieldbus").id.slice(-1)-1;
-                    this.targetFb = this.activeNode.fieldbusses.find((fb) => fb.id === `out${this.targetFb}`)
-                }
-                
+                    this.targetFb = this.activeNode.fieldbusses.find((fb) => fb.id === `out${this.targetFb}`);
+                    if (e.target.tagName === "INPUT") {
+                        if (e.type === "input") {
+                            let min = 1, max = 5120;
+                            let inputValue = e.target.value;
+                            if (inputValue < min || inputValue > max) {
+                                e.target.classList.add("illegal");
+                            }
+                            else {
+                                e.target.classList.remove("illegal");
+                            }
+                        }
+
+                        if (e.type === "focusout") {
+                            if (e.target.classList.contains("illegal")) {
+                                e.target.value = this.activeNode.fieldbusses.find((fb) => fb.id === e.target.getAttribute("fieldbus"))[e.target.id];
+                                e.target.classList.remove("illegal");
+                            }
+                        }
+
+                        if (e.type === "change") {
+                            if (e.target.classList.contains("illegal")) {
+                                return;
+                            }
+                            let param = e.target.id;
+                            let targetFieldbus = this.activeNode.fieldbusses.find((fb) => fb.id === e.target.getAttribute("fieldbus"));
+                            targetFieldbus[param] = parseInt(e.target.value);
+                            this.activeNode.configuration.handleInputChange(targetFieldbus);
+                            return;
+                        }
+                    }
+                }            
             }
 
             if (this.targetFb !== undefined) {
@@ -1585,7 +1668,7 @@ Acces-Control-Allow-Origin: *
                         this.targetFb.setStart(e);
                         break;
                     case "change":
-                        this.targetFb.handleParamChange(e);
+                        this.targetFb.handleCodecChange(e);
                         break;
                     case "mousemove":
                         this.targetFb.setMove(e);
@@ -1696,7 +1779,7 @@ Acces-Control-Allow-Origin: *
     }
 
     class Node {
-        #oldNode;
+        #oldNodes = [];
         #ip;
         #name;
         #mac;
@@ -1718,19 +1801,22 @@ Acces-Control-Allow-Origin: *
         #prevTimestampOff = null;
         #prevTimestampOn = null;
 
-        #enableDetector = [[0,1],[0,1],[0,1],[0,1],[0,1],[0,1]]
+        #enableDetector = [[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]]
 
-        constructor(ip, oldSelf = null, skipConfig = false) {
+        constructor(ip, skipConfig = false,  oldSelf = null) {
             this.#ip = ip;
             
             if (!skipConfig) {
                 return (async () => {
                     this.#configuration = await new Configuration(ip);
                     if (oldSelf !== null) {
-                        this.#oldNode = oldSelf;
-                        this.#enableDetector = this.#oldNode.enableDetector;
-                    }
+                        this.#oldNodes = [...oldSelf];
+                        // console.log(this.#oldNodes)
+                        this.#shownUniverses = this.#oldNodes[1].shownUniverses;
+                        this.#enableDetector = this.#oldNodes[1].enableDetector;
+                    };           
                     this.initialiseNode();
+                    this.calculateOverflow();
                     return this;
                 })();
             }
@@ -1925,29 +2011,31 @@ Acces-Control-Allow-Origin: *
                     for (let v of Object.values(value)) {
                         params.push(v);
                     }
+
                     this.#enableDetector[counter].push(params[0] > 0? 1 : 0);
-                    this.#enableDetector[counter].shift();
+                    this.#enableDetector[counter].shift();         
+
                     this.#fieldbusses.push(new Fieldbus(key, ...params));
                     counter++;
                 }
 
+                console.log(this.#oldNodes[0]);
+
                 for (let i = 0; i < this.#enableDetector.length; i++) {
-                    if (this.#enableDetector[i][0] === 0 && this.#enableDetector[i][1] === 1) {
+                    if (this.#enableDetector[i][0] === 0 && this.#enableDetector[i][1] === 1 && this.#oldNodes[1] !== undefined) {
                         console.log(`rising edge detected at fb ${i}`);
+                        let oldFb = this.#oldNodes[0].fieldbusses[i];
                         if (installation.prevInstallation !== null) {
-                            console.log("prevInstallation detected");
-                            let prevFb = null;
-                            this.#oldNode.fieldbusses.forEach((fb) => {
-                                console.log(fb.parentNode);
-                                if (fb.parentNode === this.mac) {
-                                    console.log(`previous config: ${fb.lastConfig.startAddress}, ${fb.lastConfig.streamLength}`)
-                                    this.fieldbusses[i].startAddress    = fb.lastConfig.startAddress;
-                                    this.fieldbusses[i].streamLength    = fb.lastConfig.streamLength;
-                                    console.log("restored previous config");
-                                    this.configuration.handleInputChange(this.fieldbusses[i]);
-                                }
-                            })
-                        }
+                            console.log(`previous config: ${oldFb.startAddress}, ${oldFb.streamLength}`)
+                            if (oldFb.startAddress === 0 && oldFb.streamLength === 0) {
+                                oldFb.startAddress = 1, oldFb.streamLength = 512;
+                            }
+                            this.fieldbusses[i].startAddress    = oldFb.startAddress;
+                            this.fieldbusses[i].streamLength    = oldFb.streamLength;
+                            console.log("restored previous config");
+                            this.configuration.handleInputChange(this.fieldbusses[i]);
+                        } 
+   
                     }
                 }
 
@@ -1975,7 +2063,7 @@ Acces-Control-Allow-Origin: *
                     const xmlText = await response.text();
                     const parser = new DOMParser();
                     const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
-                    let parsedXart = Configuration.parseConfig(xmlDoc);
+                    let parsedXart = Configuration.parseXml(xmlDoc);
                     let newTime = new Date().getTime();
                     if (this.#lastUpdate > 0) {
                         let delta = newTime - this.#lastUpdate;
@@ -2025,11 +2113,24 @@ Acces-Control-Allow-Origin: *
             console.log(this.name);
             if (this.mac !== "7B:A6:80:7F:EC:7D") this.configuration.handleFormChange(this);
         }
+
+        calculateOverflow() {
+            this.ofMin = Math.round(this.shownUniverses/10 * this.shownUniverses * 77.77);
+            this.ofMax = Math.round(this.shownUniverses/10 * this.shownUniverses * 111.11);
+            this.ofExMin = Math.round(this.shownUniverses/10 * this.shownUniverses * 33.3);
+            this.ofExMax = Math.round(this.shownUniverses/10 * this.shownUniverses * 63.88);
+        }
+
+        setCurrentFbStatus() {
+            for (let i = 0; i < this.#enableDetector.length; i++) {
+                if (this.fieldbusses[i].codec > 0) this.#enableDetector[i][1] = 1;
+            }
+        }
     }
 
     class NodeTemplate extends Node {
         constructor(ip, oldNode, name, mac, sw, nm, un, fb, c, fw){
-            super(ip, oldNode, true);
+            super(ip, true, oldNode);
             this.name = name;
             this.mac = mac;
             this.switch = sw;
@@ -2133,7 +2234,6 @@ Acces-Control-Allow-Origin: *
         }
 
         setStart = (e) => {
-            console.log(e.target.classList[0])
             switch (e.target.classList[0]) {
                 case "top-handle": 
                     this.start = "top"
@@ -2146,6 +2246,8 @@ Acces-Control-Allow-Origin: *
                 case "bottom-handle":
                     this.start = "bottom"
                     break;
+                default:
+                    return;
             }
             this.startedDrag = true;
             this.startCoord = e.clientY;
@@ -2276,32 +2378,15 @@ Acces-Control-Allow-Origin: *
             }
         }
 
-        handleParamChange = (e) => {
+        handleCodecChange = (e) => {
                 let target = e.target;
                 let value = target.value;
 
-                switch (target.id) {
-                    case "stream-length":
-                        this.streamLength = parseInt(value);
-                        break;
-                    case "start-address":
-                        this.startAddress = parseInt(value);
-                        break;
-                    case "codec":
-                        this.codec = target.selectedIndex;
-                        if (this.codec === 0) {
-                            this.lastConfig = this;
-                            this.parentNode = installation.activeNode.mac;
-                            console.log("parentnode set");
-                            console.log(this.parentNode);
-                            console.log(this);
-                        }
-                        break;
-                    default:
-                        console.log("can't detect the change");
-                        break;
-                }
-                installation.activeNode.configuration.handleInputChange(this);
+                this.codec = target.selectedIndex;
+
+                if (installation.activeNode.mac !== "7B:A6:80:7F:EC:7D") {
+                    installation.activeNode.configuration.handleInputChange(this);
+                } else installation.showActiveNode();
             }
     }
 
@@ -2328,7 +2413,7 @@ Acces-Control-Allow-Origin: *
         constructor(ip){
             return( async () => {
                 this.#xmlConfig = await this.fetchXmlConfig(ip);
-                this.#configObject = Configuration.parseConfig(this.#xmlConfig);
+                this.#configObject = Configuration.parseXml(this.#xmlConfig);
                 return this;
             })();
         }
@@ -2405,15 +2490,21 @@ Acces-Control-Allow-Origin: *
                     body: xml
                 })
 
+                const xmlText = await response.text();
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
+                let responseObj = Configuration.parseXml(xmlDoc);
+                console.log("configuration changed at: " + hexToDec(responseObj["changed"]));
+                console.log("Fault detected at: " + hexToDec(responseObj["fault"]));
+
                 if (!response.ok) {
                     throw new Error(`Response status: ${response.status}`);
                 }
 
                 let demoNode = installation.nodes.find((node) => node.mac === "7B:A6:80:7F:EC:7D");
-                installation.prevNodes = installation.nodes;
+                installation.pushPrevNodes(installation.nodes);
                 await installation.fetchNodes(false);
                 if (!installation.nodes.some((node) => node.mac === "7B:A6:80:7F:EC:7D")) installation.nodes.push(demoNode);
-                
                 installation.updateNav(false);
                 installation.navSwitcher();
             }
@@ -2439,7 +2530,7 @@ Acces-Control-Allow-Origin: *
             xmlText += `\t\t<name>${n.name}</name>\n`;
             xmlText += `\t</sys>\n`;
             xmlText += '</node>';
-            console.log(xmlText);
+            // console.log(xmlText);
             this.postXmlConfig(xmlText);
         }
 
@@ -2451,7 +2542,7 @@ Acces-Control-Allow-Origin: *
             xmlText += `</${io.id}>`
             io.id[0] === "i"? xmlText += '</artnet>' : xmlText += '</fieldbus>';
             xmlText += '</node>';
-            console.log(xmlText);
+            // console.log(xmlText);
             this.postXmlConfig(xmlText);
         }
 
@@ -2467,7 +2558,7 @@ Acces-Control-Allow-Origin: *
             return convertedObject;
         }
 
-        static parseConfig(xmlObj) {
+        static parseXml(xmlObj) {
         let config = {};
         
         // Recursieve functie die over all nodes gaat en het config object vult
@@ -2499,6 +2590,14 @@ Acces-Control-Allow-Origin: *
                     if (acc !== undefined) return acc;
                     if (typeof val === 'object') return dig(val, target);
                 }, undefined);
+
+    function hexToDec(hex) {
+        let dec = 0;
+        for (let i = 0; i < hex.length; i+=2) {
+            dec += parseInt(hex.substring(i, i+2), 16);
+        }
+        return dec;
+    }
 
     function hexToIP(hex){
         let ip = "";
