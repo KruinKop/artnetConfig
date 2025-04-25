@@ -1145,7 +1145,6 @@ Acces-Control-Allow-Origin: *
                                 fieldbus.streamLength = prevFb.streamLength;
                             }
                         }
-                        console.log(oldNodes);
                         // oldNode = this.#prevNodes[1].find((node) => node.ip === ip);
                     } catch (error) {
                         // console.error(error);
@@ -2010,32 +2009,35 @@ Acces-Control-Allow-Origin: *
                     let params = [];
                     for (let v of Object.values(value)) {
                         params.push(v);
-                    }
-
-                    this.#enableDetector[counter].push(params[0] > 0? 1 : 0);
-                    this.#enableDetector[counter].shift();         
+                    }      
 
                     this.#fieldbusses.push(new Fieldbus(key, ...params));
                     counter++;
                 }
 
-                console.log(this.#oldNodes[0]);
-
-                for (let i = 0; i < this.#enableDetector.length; i++) {
-                    if (this.#enableDetector[i][0] === 0 && this.#enableDetector[i][1] === 1 && this.#oldNodes[1] !== undefined) {
-                        console.log(`rising edge detected at fb ${i}`);
-                        let oldFb = this.#oldNodes[0].fieldbusses[i];
-                        if (installation.prevInstallation !== null) {
+                if (this.#oldNodes.length !== 0) {
+                    let resetFb = false;
+                    for (let i = 0; i < this.fieldbusses.length; i++) {
+                        if (this.#oldNodes[0].fieldbusses[i]["codec"] === 0 && this.#oldNodes[1].fieldbusses[i]["codec"] > 0) {
+                            console.log(`rising edge detected at fb ${i}`);
+                            let oldFb = this.#oldNodes[0].fieldbusses[i];
                             console.log(`previous config: ${oldFb.startAddress}, ${oldFb.streamLength}`)
-                            if (oldFb.startAddress === 0 && oldFb.streamLength === 0) {
-                                oldFb.startAddress = 1, oldFb.streamLength = 512;
-                            }
                             this.fieldbusses[i].startAddress    = oldFb.startAddress;
                             this.fieldbusses[i].streamLength    = oldFb.streamLength;
+                            resetFb = true;
                             console.log("restored previous config");
-                            this.configuration.handleInputChange(this.fieldbusses[i]);
-                        } 
-   
+                        } else if (this.fieldbusses[i].startAddress === 1 && this.fieldbusses[i].streamLength === 1
+                                    && this.fieldbusses[i].codec > 0 && this.#oldNodes[0].fieldbusses[i].streamLength === 0) {
+                            console.log("setting initial reset values");
+                            console.log(this.#oldNodes[0].fieldbusses[i]);
+                            this.fieldbusses[i].startAddress = 1;
+                            this.fieldbusses[i].streamLength = 512;
+                            resetFb = true;
+                        }
+                        if (resetFb) {
+                            this.configuration.handleInputChange(this.fieldbusses[i])
+                            resetFb = false;
+                        }                   
                     }
                 }
 
