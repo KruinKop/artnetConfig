@@ -798,7 +798,7 @@ Acces-Control-Allow-Origin: *
         position: relative;
         justify-self: center;
         grid-row: 1/7;
-        width:90%;
+        width: 90%;
         border-radius: 25px;
     }
 
@@ -864,63 +864,58 @@ Acces-Control-Allow-Origin: *
         border-radius: 0px 0px 5px 5px;
     }
 
-    #fieldbusses h3, #fieldbusses h2 {
-        max-width: 50px;
-    }
-
-    #fieldbusses input {
-        position: relative;
-        font-size: clamp(var(--font-size-xs), 1vw, var(--font-size-small));
-        width: 140%;
-    }
-
-    #fieldbusses h2 input {
-        margin-top: 3px;
-        font-size: clamp(var(--font-size-s), 1vw, var(--font-size-medium));
-    }
-
     .address-container {
         height: 100%;
         display: grid;
         grid-template-rows: repeat(3, 1fr);
     }
 
-    .address.range .patch.extreme.overflow .address-container {
-        display: block;
+    #fieldbusses .patch.config {
+        position: relative;
     }
 
-    .config.overflow .address-container h3 {
-        width: 110%;
+    #fieldbusses h2 {
+        padding: 5px;
+        font-size: clamp(var(--font-size-xs), 1vw, var(--font-size-small)); 
+        font-weight: lighter;
+        text-align: center;
     }
 
-    .address.range .patch.extreme.overflow h3 {
-        position: absolute;
-    }
-
-    .address.range .patch.overflow h3 {
+    #fieldbusses .overflow h2.start{
         margin-top: -30px;
         cursor: default;
         width: 90%;
     }
 
-    #fieldbusses .patch.overflow h2 input {
-        margin-top: 0px;
+    #fieldbusses .overflow h2.configurable.start {
+        margin-top: -50px;
     }
 
-    .address.range .patch.overflow.config h3 {
-        margin-top: -34px;
-        white-space: nowrap;
-    }
-
-    .address.range .patch.overflow.extreme h2 {
+    #fieldbusses .overflow.extreme h2.stream {
         position: absolute;
-        bottom: -40px;
-        width: 100%;
-        text-align: center;
+        bottom: clamp(-100px, -3.5em, -37px);
+        width: 90%;
     }
     
-    .address.range .config.patch.overflow.extreme h2  {
-        bottom: -2.2em;
+    #fieldbusses h2.configurable {
+        line-height: 16px;
+        width: 90%;
+    }
+
+    #fieldbusses h2.configurable.stream {
+        position: absolute;
+        bottom: 30px;
+    }
+
+    #fieldbusses .overflow.extreme h2.configurable.stream {
+        bottom: -30px;
+    }
+
+
+    #fieldbusses h2 input {
+        position: absolute;
+        left: 20%;
+        width: clamp(55px, 4.5vw, 90px);
     }
 
     .address.range div.light{
@@ -930,22 +925,6 @@ Acces-Control-Allow-Origin: *
     
     .address.range div.light div:after{
         background-color: var(--bg-card-grey);
-    }
-
-    .address.range h2 {
-        font-size: clamp(var(--font-size-small), 2vw, var(--font-size-medium));
-        font-weight: lighter;
-        align-self: center;
-        margin-left: auto;
-        margin-right: auto;
-    }
-
-    .address.range h3 {
-        width: 80%;
-        margin-top: 5px;
-        margin-left:5px;
-        font-size: clamp(var(--font-size-xs), 1vw, var(--font-size-small));
-        font-weight: lighter;
     }
 
     .fb-protocol.info {
@@ -981,9 +960,6 @@ Acces-Control-Allow-Origin: *
             white-space: inherit;
         }
 
-        #fieldbusses .overflow h3 input {
-            width: 105%;
-        }
     }
 
     @media screen and (max-width: 780px) {
@@ -1303,10 +1279,10 @@ Acces-Control-Allow-Origin: *
                                         generateDomTree("div", null, { id: `address-block-${counter}`, class: "patch" }, [
                                             generateDomTree("div", null, { class: "top-handle draggable" }),
                                             generateDomTree("div", null, { class: "address-container draggable" }, [
-                                                generateDomTree("h3", "start: ", { class: "draggable" }, [
+                                                generateDomTree("h2", "start: ", { class: "draggable start" }, [
                                                     generateDomTree("span")
                                                 ]),
-                                                generateDomTree("h2", null, { class: "draggable" })]),
+                                                generateDomTree("h2", null, { class: "draggable stream" })]),
                                             generateDomTree("div", null, { class: "bottom-handle draggable" })
                                         ])
                                 ]), 
@@ -1376,8 +1352,8 @@ Acces-Control-Allow-Origin: *
             counter = 1;
             this.activeNode.fieldbusses.forEach((fb) => {
                 fb.addressBlock = document.getElementById(`address-block-${counter}`);
-                fb.startElement = document.querySelector(`#fb-${counter} .address-container h3`);
-                fb.streamElement = document.querySelector(`#fb-${counter} .address-container h2`);
+                fb.startElement = document.querySelector(`#fb-${counter} .address-container h2.start`);
+                fb.streamElement = document.querySelector(`#fb-${counter} .address-container h2.stream`);
                 fb.codecElement = document.querySelector(`#fb-${counter} .fb-protocol`);
                 fb.patch = document.querySelector(".patch");
 
@@ -1388,19 +1364,21 @@ Acces-Control-Allow-Origin: *
                 // Config elements for start and streamlength
                 let startElement;
                 let streamElement;
+
                 if (this.config) {
-                    fb.patch.classList.add("config");
-                    startElement    =   generateDomTree("h3", null, null, [
-                                        generateDomTree("label", "start: ", {for: "startAddress"}, [
-                                            generateDomTree("input", null, {id: "startAddress", fieldbus: fb.id, type: "number", min: "1", max: "5119", value: `${fb.startAddress}`}, null)])]);
-                    streamElement   =   generateDomTree("h2", null, null, [
-                                            generateDomTree("label", null, {for: "streamLength"}, [
+                    fb.addressBlock.classList.add("config");
+                    startElement    =   generateDomTree("h2", null, {class: "configurable start"}, [
+                                            generateDomTree("label", "start: <br>", {for: "startAddress"}, [
+                                                generateDomTree("input", null, {id: "startAddress", fieldbus: fb.id, type: "number", min: "1", max: "5119", value: `${fb.startAddress}`}, null)])]);
+                    streamElement   =   generateDomTree("h2", null, {class: "configurable stream"}, [
+                                            generateDomTree("label", "stream: <br>", {for: "streamLength"}, [
                                                 generateDomTree("input", null, {id: "streamLength", fieldbus: fb.id, type: "number", min: "1", max: "1024", value: `${fb.streamLength}`}, null)])]);
                 } else {
-                    fb.patch.classList.remove("config");
-                    startElement    =   generateDomTree("h3", "start: ", { class: "draggable" }, [
+                    fb.addressBlock.classList.remove("config");
+                    startElement    =   generateDomTree("h2", "start: ", { class: "draggable non-configurable start" }, [
                                             generateDomTree("span", fb.startAddress)]);
-                    streamElement   =   generateDomTree("h2", fb.streamLength, { class: "draggable" });
+                    streamElement   =   generateDomTree("h2", "stream: <br>", { class: "draggable non-configurable stream" }, [
+                                            generateDomTree("span", fb.streamLength)]);
                 }
 
                 fb.startElement.replaceWith(startElement);
@@ -1409,18 +1387,15 @@ Acces-Control-Allow-Origin: *
                 // Updating all the fb.addressblock heights and startpositions
                 // Height = streamlength, top = startaddres
                 let start = String((fb.startAddress/(512*this.activeNode.shownUniverses))*100)+"%";
-                let stream = String((fb.streamLength/(512*this.activeNode.shownUniverses))*100)+"%";
-
-                // Updating the styles so that overflow is handled
-                if (fb.streamLength <= this.activeNode.ofMin | this.config & fb.streamLength <= this.activeNode.ofMax) {
-                    fb.addressBlock.classList.add("overflow");
-                } else fb.addressBlock.classList.remove("overflow");
-                if (fb.streamLength <= this.activeNode.ofExMin | this.config & fb.streamLength <= this.activeNode.ofExMax) {
-                    fb.addressBlock.classList.add("extreme")
-                } else fb.addressBlock.classList.remove("extreme");
+                let stream = String((fb.streamLength/(512*this.activeNode.shownUniverses))*100)+"%";             
                 
                 fb.addressBlock.style.height = stream;
                 fb.addressBlock.style.top = start;
+                
+                fb.startElement = document.querySelector(`#fb-${counter} .address-container h2.start`);
+                fb.streamElement = document.querySelector(`#fb-${counter} .address-container h2.stream`);
+                
+                checkOverflow(fb.addressBlock, fb.startElement.clientHeight, fb.streamElement.clientHeight, !this.config);
 
                 if (counter > this.activeNode.shownUniverses) {
                     fb.addressBlock.hidden = "true";
@@ -1815,7 +1790,7 @@ Acces-Control-Allow-Origin: *
                         this.#enableDetector = this.#oldNodes[1].enableDetector;
                     };           
                     this.initialiseNode();
-                    this.calculateOverflow();
+
                     return this;
                 })();
             }
@@ -2116,13 +2091,6 @@ Acces-Control-Allow-Origin: *
             if (this.mac !== "7B:A6:80:7F:EC:7D") this.configuration.handleFormChange(this);
         }
 
-        calculateOverflow() {
-            this.ofMin = Math.round(this.shownUniverses/10 * this.shownUniverses * 77.77);
-            this.ofMax = Math.round(this.shownUniverses/10 * this.shownUniverses * 111.11);
-            this.ofExMin = Math.round(this.shownUniverses/10 * this.shownUniverses * 33.3);
-            this.ofExMax = Math.round(this.shownUniverses/10 * this.shownUniverses * 63.88);
-        }
-
         setCurrentFbStatus() {
             for (let i = 0; i < this.#enableDetector.length; i++) {
                 if (this.fieldbusses[i].codec > 0) this.#enableDetector[i][1] = 1;
@@ -2259,39 +2227,34 @@ Acces-Control-Allow-Origin: *
         setMove = (e) => {
             if (this.startedDrag) {
                 let changePatch = (newRange = undefined, newStart = undefined) => {
-                    let patch = document.querySelector(`#fb-${parseInt(this.#id.split("out")[1])+1} .address.range .patch`);
+                    let patch = document.querySelector(`#${this.targetFb} .address.range .patch`);
+                    let start = document.querySelector(`#${this.targetFb} .address.range h2.start`);
+                    let stream = document.querySelector(`#${this.targetFb} .address.range h2.stream`);
                     if (newRange !== undefined) {
                         this.newRange = Math.floor(newRange);
                         let rangeElement;
                         let status = !document.querySelector(".patch").classList.contains("config");
                         if (status) {
-                            rangeElement = document.querySelector(`#${this.targetFb} .address-container h2`);
+                            rangeElement = document.querySelector(`#${this.targetFb} .address-container h2.stream span`);
                             rangeElement.innerHTML = this.newRange;
                         } else {
-                            rangeElement = document.querySelector(`#${this.targetFb} .address-container h2 input`);
+                            rangeElement = document.querySelector(`#${this.targetFb} .address-container h2.stream input`);
                             rangeElement.value = this.newRange;
                         }
                         patch.style.height = String((this.newRange/(512*installation.activeNode.shownUniverses))*100)+"%";
-                        if (this.newRange <= 280 | !status & this.newRange <= 400) {
-                            patch.classList.add("overflow");
-                        } else {
-                            if (patch.classList.contains("overflow")) patch.classList.remove("overflow");
-                        }
-                        if (this.newRange <= 120 | !status & this.newRange <= 230) {
-                            patch.classList.add("extreme");
-                        } else {
-                            if (patch.classList.contains("extreme")) patch.classList.remove("extreme");
-                        }
+
+                        checkOverflow(patch, start.clientHeight, stream.clientHeight, status)
+
                     }
                     if (newStart !== undefined) {
                         this.newStart = Math.floor(newStart);
                         patch.style.top = String((newStart/(512*installation.activeNode.shownUniverses))*100)+"%";
                         let startElement;
                         if (!document.querySelector(".patch").classList.contains("config")) {
-                            startElement = document.querySelector(`#${this.targetFb} .address-container h3 span`);
+                            startElement = document.querySelector(`#${this.targetFb} .address-container h2.start span`);
                             startElement.innerHTML = this.newStart;
                         } else {
-                            startElement = document.querySelector(`#${this.targetFb} .address-container h3 input`);
+                            startElement = document.querySelector(`#${this.targetFb} .address-container h2.start input`);
                             startElement.value = this.newStart;
                         }    
                     }
@@ -2679,6 +2642,26 @@ Acces-Control-Allow-Origin: *
             }
         }
         return root;
+    }
+  
+    function checkOverflow(patch, start, stream, status) {
+        let offset = 5;
+        let startOffset = 0;
+        if (!status) offset = 33;
+        if (!status && patch.classList.contains("overflow")) {
+            startOffset = 50;
+        }
+        if ((start - startOffset) + stream >= patch.clientHeight - offset) {
+            patch.classList.add("overflow");
+        } else if (!patch.classList.contains("extreme")) {
+            patch.classList.remove("overflow");
+        }
+        if (patch.classList.contains("overflow")) {
+            if (stream >= patch.clientHeight - offset) {
+                patch.classList.add("extreme");
+            } else patch.classList.remove("extreme");
+        }
+
     }
     
     let installation;
