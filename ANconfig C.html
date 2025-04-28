@@ -66,23 +66,6 @@ Acces-Control-Allow-Origin: *
     /* ======= starting with some custom properties ========= */
 
     :root {
-        /* colors */
-        --ll-yellow: #FFF200;
-        --ll-light-yellow: #F8EB00;
-        --ll-mustard: #B9AF00;
-        --bg-coal: #363633;
-        --bg-light: #F5F5F5;
-        --bg-dmx-box: #2F2F2F;
-        --bg-grey: #82827B;
-        --bg-grey-focus: #9e9e97;
-        --bg-grey-pressed: #63635e;
-        --bg-light-grey: #c9c9c9;
-        --bg-light-address: #FDFFF9;
-        --bg-card-grey: #4d4d4d;
-        --bg-light-card-grey: #DDDDDD;
-        --bg-error-red: #8a3838;
-        --bg-status-green: #2Aff00;
-
         /* font */
         --font-nav-title: 'Reddit', sans-serif;
         --font-regular: 'Roboto', sans-serif;
@@ -104,17 +87,47 @@ Acces-Control-Allow-Origin: *
     }   
 
     body {
+        /* colors */
+        --ll-yellow: #FFF200;
+        --ll-light-yellow: #F8EB00;
+        --ll-yellow-font: #F8EB00;
+        --ll-mustard: #B9AF00;
+        --bg-coal: #363633;
+        --bg-dmx-box: #2F2F2F;
+        --bg-grey: #82827B;
+        --bg-input-grey: #82827B;
+        --bg-button-grey: #5d5d44;
+        --bg-grey-focus: #777761;
+        --bg-grey-pressed: #63635e;
+        --bg-card-grey: #4d4d4d;
+        --bg-error-red: #8a3838;
+        --bg-status-green: #2Aff00;
+
         background-color: var(--bg-coal);
         display: grid;
         grid-template-columns: var(--grid-nav-width) 1fr;
         grid-template-rows: var(--banner-height) calc(100vh - var(--banner-height) - var(--padding-small));
         -webkit-user-select: none; /* Safari */
         -ms-user-select: none; /* IE 10 and IE 11 */
-        user-select: none; /* Standard syntax */
+        user-select: none; /* Standard syntax */ 
     }
 
     body.light {
-        background-color: var(--bg-light);
+        --ll-yellow: rgb(82, 82, 82);
+        --ll-light-yellow: #4d4d4d;
+        --ll-mustard: #f1d44b;
+        --nav-font: #4d4d4d;
+        --bg-coal: #f8f5e5;
+        --bg-dmx-box: #2F2F2F;
+        --bg-grey: #cccccc;
+        --bg-input-grey: #e5e5e5;
+        --bg-button-grey: #f0f0e7;
+        --bg-grey-focus: #9e9e97;
+        --bg-grey-pressed: #63635e;
+        --bg-light-card-grey: #DDDDDD;
+        --bg-light-address: #FDFFF9;
+        --bg-card-grey: #DDDDDD;
+        --bg-error-red: #c75454;
     }
 
     nav, .info, #banner span, #title {
@@ -127,10 +140,6 @@ Acces-Control-Allow-Origin: *
 
     .info {
         color: var(--ll-light-yellow)
-    }
-
-    .info.light {
-        color: black;
     }
 
     /*==================================== Banner ==================================== */
@@ -148,8 +157,9 @@ Acces-Control-Allow-Origin: *
         box-shadow: 5px 10px 15px rgba(0,0,0,0.5);
         z-index: 100;
     }
-    header.light{
-        background-color: var(--ll-light-yellow);
+
+    .light header {
+        box-shadow: 5px 10px 15px rgba(179, 179, 179, 0.5);
     }
 
     #banner {
@@ -201,7 +211,6 @@ Acces-Control-Allow-Origin: *
         box-shadow: inset 0px 5px 15px rgba(0,0,0,0.4), inset 0px -5px 15px rgba(255,255,255,0.4);
         cursor: pointer;
         transition: 0.3s;
-
     }
 
     #dark-mode-switch label:after{
@@ -224,16 +233,16 @@ Acces-Control-Allow-Origin: *
     }
 
     #dark-mode-switch input:checked + label {
-        background-color: #ebebeb;
+        background-color: var(--bg-coal);
     }
 
     #dark-mode-switch input:checked + label:after {
         left: calc(100% - 2.5px);
         transform: translateX(-100%);
-        background: linear-gradient(270deg, var(--bg-light-card-grey), var(--bg-card-grey));
+        background: linear-gradient(270deg, var(--bg-grey-focus), var(--bg-card-grey));
     }
 
-    #dark-mode-switch label:active:after {
+    #dark-mode-switch label:hover:after {
         width: 35px;
     }
 
@@ -274,10 +283,11 @@ Acces-Control-Allow-Origin: *
     .e-button {
         height: 25px;
         width: 25px;
-        background-color: var(--bg-coal);
+        background-color: var(--bg-button-grey);
         border: 2px solid var(--ll-yellow);
         color: var(--ll-yellow);
         border-radius: 100%;
+        transition: background-color 0.1s;
     }
 
     #pen {
@@ -286,15 +296,16 @@ Acces-Control-Allow-Origin: *
         padding: 3px;
     }
 
-    .e-button.light {
-        background-color: var(--bg-light-grey);
-        border: 2px solid var(--bg-dmx-box);
-        color: var(--bg-dmx-box);
-    }
-
     .e-button:hover{
         cursor: pointer;
+        background-color: var(--bg-grey-focus);
     }
+
+    .e-button:active {
+        background-color: var(--bg-grey-pressed)
+    }
+
+
 
     /*==================================== Navbar ==================================== */
 
@@ -340,6 +351,10 @@ Acces-Control-Allow-Origin: *
         color: var(--ll-yellow);
     }
 
+    .light #title h2:nth-child(1), .light #info {
+        color: var(--ll-yellow-font);
+    }
+
     /* Art-Net node */
     #title h2:nth-child(2) {
         position: relative;
@@ -367,11 +382,15 @@ Acces-Control-Allow-Origin: *
     }
 
     .node {
-        /* position: relative; */
         z-index: 101;
         font-size: var(--font-size-medium);
         padding: var(--padding-small) 0 var(--padding-small) var(--padding-small);
         color: var(--bg-coal);
+        transition: transform 0.3s ease-out;
+    }
+
+    .light .node {
+        color: var(--nav-font);
     }
 
     .node.disconnected h3 {
@@ -380,6 +399,7 @@ Acces-Control-Allow-Origin: *
 
     .node:hover {
         cursor: pointer;
+        transform: translateX(-5px);
     }
 
     .info {
@@ -415,9 +435,13 @@ Acces-Control-Allow-Origin: *
         margin-left: var(--padding-small);
         margin-right: -1px;
         border-radius: 10px 0px 0px 10px;
-        background-color: #363633;
+        background-color: var(--bg-coal);
         color: var(--ll-yellow);
         z-index: 5;
+    }
+
+    .node.selected:hover {
+        transform: none;
     }
 
     .node h2 {
@@ -426,11 +450,6 @@ Acces-Control-Allow-Origin: *
 
     .node.selected.disconnected h2 {
         opacity: 100%;
-    }
-
-    .node.selected.light {
-        background-color: var(--bg-light);
-        color: black;
     }
 
     .node.selected .info {
@@ -452,16 +471,6 @@ Acces-Control-Allow-Origin: *
         background-color: var(--bg-coal);
     }
 
-    .node.selected.light #top-curve:before,
-    .node.selected.light #bottom-curve:before {
-        background-color: var(--bg-light);
-    }
-
-    .node.selected.light #top-curve:after,
-    .node.selected.light #bottom-curve:after {
-        background-color: var(--bg-light-grey);
-    }
-
     .node.selected #top-curve:after {
         content: "";
         float: right;
@@ -472,7 +481,6 @@ Acces-Control-Allow-Origin: *
         height: 60px;
         background-color: var(--bg-grey);
         border-radius: 100%;
-        /* border-color: var(--bg-grey); */
     }
 
     .node.selected #bottom-curve {
@@ -529,7 +537,7 @@ Acces-Control-Allow-Origin: *
         color: (var(--ll-yellow));
         border: 2px solid var(--ll-yellow);
         border-radius: 5px;
-        background-color: var(--bg-grey);
+        background-color: var(--bg-input-grey);
     }
 
     form input {
@@ -537,15 +545,6 @@ Acces-Control-Allow-Origin: *
         margin-bottom: calc(var(--padding-small)/2);
         width: calc(var(--grid-nav-width) - 3*var(--padding-small)) ;
         min-width: 95px;
-    }
-
-    .light input, .light select {
-        border-color: black;
-        background-color: var(--bg-light-grey);
-    }
-
-    .light input::placeholder {
-        color: black;
     }
 
     #submit-wrapper {
@@ -574,7 +573,7 @@ Acces-Control-Allow-Origin: *
     }
 
     input.illegal {
-        opacity: 50%;
+        background-color: var(--bg-error-red);
     }
 
     /* ============= Center configuration ============== */
@@ -590,21 +589,11 @@ Acces-Control-Allow-Origin: *
     }
 
     .range {
-        background-color: var(--bg-grey);
-    }
-
-    .range.light {
-        background-color: var(--bg-light-address);
-        color: black;
+        background-color: var(--bg-input-grey);
     }
 
     .card {
         background-color: var(--bg-card-grey);
-    }
-
-    .card.light {
-        background-color: var(--bg-light-card-grey);
-        color: black;
     }
 
     .universe.card {
@@ -618,6 +607,10 @@ Acces-Control-Allow-Origin: *
         color: var(--ll-yellow);
         box-shadow: 0px 10px 15px 2px rgba(0,0,0,0.5);
     }
+
+    .light .universe.card {
+        box-shadow: 5px 10px 15px rgba(179, 179, 179, 0.5);
+    }
     
     .universe.card:before {
         top: -15px;
@@ -630,10 +623,6 @@ Acces-Control-Allow-Origin: *
         background-color: var(--bg-dmx-box);
         border-radius: 5px;
         z-index: -1;
-    }
-
-    .universe.card.light:before {
-        background-color: var(--bg-grey);
     }
 
     .universe:after {
@@ -650,6 +639,10 @@ Acces-Control-Allow-Origin: *
         box-shadow: 5px 0px 15px 2px rgba(0,0,0,0.5) inset;
     }
 
+    .light .universe:after {
+        background-color: var(--ll-mustard);
+    }
+
     #universes {
         display: grid;
         grid-column: 2/3;
@@ -663,8 +656,9 @@ Acces-Control-Allow-Origin: *
     .universe #tab {
         display: inline-block;
         position: absolute;
-        right: 60px;
-        top: 24.7px;
+        width: 51px;
+        right: 67px;
+        top: 17.7px;
         font-family: var(--font-regular);
         content: "Universes";
         transform: rotate(-90deg);
@@ -687,7 +681,10 @@ Acces-Control-Allow-Origin: *
         border-radius: 10px;
         z-index: 2;
         box-shadow: 0px 5px 15px 2px rgba(0,0,0,0.5);
-        transition: transform 0.2s;
+    }
+
+    #universes li.illegal, #universes li.illegal input:nth-of-type(1) {
+        background-color: var(--bg-error-red);
     }
 
     #universes li input {
@@ -767,9 +764,9 @@ Acces-Control-Allow-Origin: *
         font-size: var(--font-size-xs);
     }
 
-    .accolade .info.light {
+    /* .accolade .info.light {
         fill: black;
-    }
+    } */
 
     #fieldbusses{
         position: relative;
@@ -801,6 +798,9 @@ Acces-Control-Allow-Origin: *
         grid-row: 1/7;
         width: 90%;
         border-radius: 25px;
+        box-shadow: 0px -10px 35px 3px var(--bg-coal) inset;
+        outline: 3px solid var(--bg-coal);
+        outline-offset: -2px;
     }
 
     .address.range h1 {
@@ -815,22 +815,43 @@ Acces-Control-Allow-Origin: *
         opacity: 50%;
     }
 
+    .light .address.range h1 {
+        color: rgb(177, 177, 177);
+    }
+
     .address.range div.patch {
-        cursor: move;
         position: relative;
-        background-color: var(--bg-coal);
+        background: var(--bg-coal);
         border-radius: 15px;
         outline: 3px solid var(--ll-yellow);
         outline-offset: -2px;
+        transition: height 75ms
+    }
+
+    .draggable {
+        cursor: move;
+    }
+
+    .address.range div.patch.top {
+        background: linear-gradient(0deg, var(--bg-coal) 70%, var(--ll-mustard) 100%);
+        transition: color 2s;
+    }
+
+    .address.range div.patch.mid {
+        background: linear-gradient(0deg, var(--bg-coal) 0%, var(--ll-mustard) 50%, var(--bg-coal) 100%);
+    }
+
+    .address.range div.patch.bottom {
+        background: linear-gradient(0deg, var(--ll-mustard) 0%, var(--bg-coal) 30%);
     }
 
     .address.range div.top-handle {
         cursor: n-resize;
         position: absolute;
-        top: -6px;
+        top: -16px;
         display: flex;
         justify-content: center;
-        height: 10px;
+        height: 20px;
         width: 100%; 
     }
 
@@ -843,6 +864,8 @@ Acces-Control-Allow-Origin: *
         content: "";
         width: 17%;
         height: 7px;
+        position: relative;
+        bottom: -9px;
         background-color: var(--ll-yellow);
         border-radius: 5px 5px 0px 0px;
     }
@@ -850,10 +873,10 @@ Acces-Control-Allow-Origin: *
     .address.range div.bottom-handle {
         cursor: n-resize;
         position: absolute;
-        bottom: -9.5px;
+        bottom: -19.5px;
         display: flex;
         justify-content: center;
-        height: 10px;
+        height: 20px;
         width: 100%; 
     }
 
@@ -1323,6 +1346,45 @@ Acces-Control-Allow-Origin: *
             this.showActiveNode();
         }
 
+        checkDoubleUnis() {
+            let unis = document.querySelectorAll("#universes li");
+            let uni;
+            let keep;
+            
+            unis.forEach((uni) => uni.classList.remove("illegal"));
+            
+            let uniArr = [];
+            for (const uni of unis) {
+                this.config? uniArr.push(uni.children[0].value) : uniArr.push((uni.innerHTML).split("<")[0]);
+            }
+            let dupObj = {};
+            uniArr.forEach((element, index, array) => {
+                dupObj[element] = Array.from(array.entries()).reduce((indices, [i, e]) => {
+                    if (element === e) {
+                        indices.push(i);
+                    }
+                    return indices;
+                }, []);
+            });
+            
+            const setDuplicateError = (i) => {
+                let uni = document.querySelector(`#universes li:nth-child(${i+1})`);
+                uni.classList.add("illegal")
+            }
+
+            for (const duplicates of Object.values(dupObj)){
+                if (duplicates.length === 2) {
+                    setDuplicateError(duplicates[1])
+                }
+                else if (duplicates.length > 2) {
+                    duplicates.shift();
+                    for (const i in duplicates) {
+                        setDuplicateError(duplicates[i])
+                    }
+                }           
+            }
+        }
+
         showActiveNode() {
             this.activeNodeElement = document.getElementById(`${this.activeNode.UID}`);
                 
@@ -1397,17 +1459,17 @@ Acces-Control-Allow-Origin: *
                 if (this.config) {
                     fb.addressBlock.classList.add("config");
                     startElement    =   generateDomTree("h2", null, {class: "configurable start"}, [
-                                            generateDomTree("label", "start: <br>", {for: "startAddress"}, [
+                                            generateDomTree("label", "start: <br>", {for: "startAddress", class: "draggable"}, [
                                                 generateDomTree("input", null, {id: "startAddress", fieldbus: fb.id, type: "number", min: "1", max: "5119", value: `${fb.startAddress}`}, null)])]);
                     streamElement   =   generateDomTree("h2", null, {class: "configurable stream"}, [
-                                            generateDomTree("label", "stream: <br>", {for: "streamLength"}, [
+                                            generateDomTree("label", "length: <br>", {for: "streamLength", class: "draggable"}, [
                                                 generateDomTree("input", null, {id: "streamLength", fieldbus: fb.id, type: "number", min: "1", max: "1024", value: `${fb.streamLength}`}, null)])]);
                 } else {
                     fb.addressBlock.classList.remove("config");
                     startElement    =   generateDomTree("h2", "start: ", { class: "draggable non-configurable start" }, [
                                             generateDomTree("span", fb.startAddress)]);
                     streamElement   =   generateDomTree("h2", "length: <br>", { class: "draggable non-configurable stream" }, [
-                                            generateDomTree("span", fb.streamLength)]);
+                                            generateDomTree("span", fb.streamLength, {class: "draggable"})]);
                 }
 
                 fb.startElement.replaceWith(startElement);
@@ -1424,7 +1486,7 @@ Acces-Control-Allow-Origin: *
                 fb.startElement = document.querySelector(`#fb-${counter} .address-container h2.start`);
                 fb.streamElement = document.querySelector(`#fb-${counter} .address-container h2.stream`);
                 
-                checkOverflow(fb.addressBlock, !this.config);
+                if (fb.codec !== 0) checkOverflow(fb.addressBlock, !this.config);
 
                 if (counter > this.activeNode.shownUniverses) {
                     fb.addressBlock.hidden = "true";
@@ -1461,60 +1523,25 @@ Acces-Control-Allow-Origin: *
                     fb.codecElement.appendChild(h3);
                 }
                 fb.codecElement.appendChild(rj45);
-
-                // mark double universes in red
-                let unis = document.querySelectorAll("#universes li");
-                let uniArr = [];
-                for (const uni of unis) {
-                    uniArr.push((uni.innerHTML).split("<")[0]);
-                }
-
-                let dupObj = {};
-                uniArr.forEach((element, index, array) => {
-                    dupObj[element] = Array.from(array.entries()).reduce((indices, [i, e]) => {
-                        if (element === e) {
-                            indices.push(i);
-                        }
-                        return indices;
-                    }, []);
-                });
-
-                const setDuplicateError = (i) => {
-                    if (!this.config) {
-                        let uni = document.querySelector(`#universes li:nth-child(${i+1})`);
-                        let keep = document.querySelector(`#universes li:nth-child(${i+1}) span`)
-                        uni.style.backgroundColor = keep.style.backgroundColor = "var(--bg-error-red)";
-                    }
-                }
-
-                for (const duplicates of Object.values(dupObj)){
-                    if (duplicates.length === 2) {
-                        setDuplicateError(duplicates[1])
-                    }
-                    else if (duplicates.length > 2) {
-                        duplicates.shift();
-                        for (const i in duplicates) {
-                            setDuplicateError(duplicates[i])
-                        }
-                    }           
-                }
                 
-                this.changeGridStyling(); // must happen before setting the handlers otherwise the offset
-                // is wrong
-            
-                if (this.config) {
-                    // setting the event listener for the form
-                    let forms = document.getElementsByClassName("node-form");
-                    let form = this.activeNodeElement.children[3];
-                    Array.from(forms).forEach((form) => {
-                        form.removeEventListener("submit", this.activeNode.processForm);
-                    })
-                    form.addEventListener("submit", this.activeNode.processForm);
-                }
-
                 counter++;
-            })
+            });
+
+            // mark double universes in red
+            this.checkDoubleUnis();
             
+            this.changeGridStyling(); // must happen before setting the handlers otherwise the offset
+            // is wrong
+        
+            if (this.config) {
+                // setting the event listener for the form
+                let forms = document.getElementsByClassName("node-form");
+                let form = this.activeNodeElement.children[3];
+                Array.from(forms).forEach((form) => {
+                    form.removeEventListener("submit", this.activeNode.processForm);
+                })
+                form.addEventListener("submit", this.activeNode.processForm);
+            }       
         }
 
         eventInit() {
@@ -1608,6 +1635,7 @@ Acces-Control-Allow-Origin: *
                         else {
                             e.target.classList.remove("illegal");
                         }
+                        installation.checkDoubleUnis();
                     }
 
                     if (e.type === "focusout") {
@@ -1749,20 +1777,12 @@ Acces-Control-Allow-Origin: *
         switchDarkMode(sw) {
             let accolades = document.querySelectorAll(".accolade path");
             let buttonSvgs = document.querySelector("#edit svg path");
-            let lightArr = [];
-            lightArr.push(document.querySelector("body"));
-            lightArr.push(document.querySelector("header"));
-            lightArr.push(document.querySelector("#sidebar"));
-            lightArr.push(...document.querySelectorAll(".node"));
-            lightArr.push(...document.querySelectorAll(".info"));
-            lightArr.push(...document.querySelectorAll(".card"));
-            lightArr.push(...document.querySelectorAll(".range"));
-            lightArr.push(...document.querySelectorAll(".address.range div.patch"));
-            lightArr.push(...document.querySelectorAll(".e-button"));
+            let body = document.querySelector("body");
+
             if (sw.checked === true) {
                 this.lm = "light";
                 localStorage.setItem("darkMode", "enabled");
-                lightArr.forEach(e => e.classList.add("light"));
+                body.classList.add("light");
                 for (const accolade of accolades) {
                     accolade.style.stroke = "#4d4d4d";
                 }
@@ -1776,7 +1796,7 @@ Acces-Control-Allow-Origin: *
                 }
                 buttonSvgs.style.stroke = "#FFF200";
                 buttonSvgs.style.fill = "#FFF200";
-                lightArr.forEach(e => e.classList.remove("light"));
+                body.classList.remove("light");
             }
         }
     }
@@ -2032,8 +2052,6 @@ Acces-Control-Allow-Origin: *
                             console.log("restored previous config");
                         } else if (this.fieldbusses[i].startAddress === 1 && this.fieldbusses[i].streamLength === 1
                                     && this.fieldbusses[i].codec > 0 && this.#oldNodes[0].fieldbusses[i].streamLength === 0) {
-                            console.log("setting initial reset values");
-                            console.log(this.#oldNodes[0].fieldbusses[i]);
                             this.fieldbusses[i].startAddress = 1;
                             this.fieldbusses[i].streamLength = 512;
                             resetFb = true;
@@ -2236,14 +2254,17 @@ Acces-Control-Allow-Origin: *
             switch (e.target.classList[0]) {
                 case "top-handle": 
                     this.start = "top"
+                    e.target.closest(".patch").classList.add("top");
                     break;
                 case "address-container":
                 case "draggable":
-                    if (e.target.offsetParent.classList.contains("overflow") & e.target.tagName === "H3") break;
+                    if (e.target.offsetParent.classList.contains("overflow") && e.target.tagName === "H3") break;
                     this.start = "patch";
+                    e.target.closest(".patch").classList.add("mid");
                     break;
                 case "bottom-handle":
                     this.start = "bottom"
+                    e.target.closest(".patch").classList.add("bottom");
                     break;
                 default:
                     return;
@@ -2362,12 +2383,15 @@ Acces-Control-Allow-Origin: *
             if (e.target.tagName === "INPUT" | e.target.tagName === "SELECT" | e.target.tagName === "OPTION") {
                 return;
             }
+            let fbs = document.querySelectorAll(".patch");
+            fbs.forEach((fb) => fb.classList.remove("top", "mid", "bottom"));
+
             this.start = '';
             this.startedDrag = false;   
             if (this.newRange !== undefined) this.#streamLength = this.newRange;
             if (this.newStart !== undefined) this.#startAddress = this.newStart;
             
-            if (installation.activeNode.mac !== "7B:A6:80:7F:EC:7D") {
+            if (installation.activeNode.mac !== "7B:A6:80:7F:EC:7D" && e.target.tagName !== "LABEL") {
                 installation.activeNode.configuration.handleInputChange(this);
             }
         }
@@ -2685,7 +2709,6 @@ Acces-Control-Allow-Origin: *
             inputHeight = input.clientHeight;
         }
 
-        console.log(`${stream.clientHeight + inputHeight} = ${patch.clientHeight}`)
         if (start.clientHeight + stream.clientHeight + 2 * inputHeight >= patch.clientHeight - offset) {
             patch.classList.add("overflow");
         } else if (!patch.classList.contains("extreme")) {
@@ -2693,7 +2716,6 @@ Acces-Control-Allow-Origin: *
         }
 
         if (patch.classList.contains("overflow")) {
-            console.log("yes")
             if (stream.clientHeight + inputHeight >= patch.clientHeight - offset) {
                 patch.classList.add("extreme");
             } else patch.classList.remove("extreme");
@@ -2795,7 +2817,7 @@ Acces-Control-Allow-Origin: *
     </div>
     <div id="main-config">
         <div class="universe card">
-            <div class="card" id="tab">Universes</div>
+            <div class="card" id="tab">Art-Net</div>
             <ol id="universes">
             </ol>
             <div id="universe-filter-container">
