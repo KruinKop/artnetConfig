@@ -586,6 +586,7 @@ Acces-Control-Allow-Origin: *
         grid-template-columns: calc(40px - var(--padding-medium)) calc(2*var(--padding-medium) + 50px) calc(3*var(--padding-medium)) repeat(6,2fr); 
         margin: var(--padding-large) var(--padding-small) 0;
         min-width: 570px;
+        min-height: 768px;
     }
 
     .range {
@@ -683,7 +684,7 @@ Acces-Control-Allow-Origin: *
         box-shadow: 0px 5px 15px 2px rgba(0,0,0,0.5);
     }
 
-    #universes li.illegal, #universes li.illegal input:nth-of-type(1) {
+    #universes li.illegal, #universes li.illegal span, #universes li.illegal input:nth-of-type(1) {
         background-color: var(--bg-error-red);
     }
 
@@ -1442,11 +1443,12 @@ Acces-Control-Allow-Origin: *
 
             counter = 1;
             this.activeNode.fieldbusses.forEach((fb) => {
-                fb.addressBlock = document.getElementById(`address-block-${counter}`);
-                fb.startElement = document.querySelector(`#fb-${counter} .address-container h2.start`);
-                fb.streamElement = document.querySelector(`#fb-${counter} .address-container h2.stream`);
-                fb.codecElement = document.querySelector(`#fb-${counter} .fb-protocol`);
-                fb.patch = document.querySelector(".patch");
+                fb.addressRange     = document.querySelector(".address.range");
+                fb.addressBlock     = document.querySelector(`#address-block-${counter}`);
+                fb.startElement     = document.querySelector(`#fb-${counter} .address-container h2.start`);
+                fb.streamElement    = document.querySelector(`#fb-${counter} .address-container h2.stream`);
+                fb.codecElement     = document.querySelector(`#fb-${counter} .fb-protocol`);
+                // fb.patch = document.querySelector(".patch");
 
                 if (fb.codec === 0) {
                     fb.addressBlock.hidden = true;
@@ -1472,6 +1474,8 @@ Acces-Control-Allow-Origin: *
                                             generateDomTree("span", fb.streamLength, {class: "draggable"})]);
                 }
 
+                let addressHeight = fb.addressRange.getBoundingClientRect()["height"]*(fb.streamLength/(512*this.activeNode.shownUniverses));
+
                 fb.startElement.replaceWith(startElement);
                 fb.streamElement.replaceWith(streamElement);
 
@@ -1486,7 +1490,7 @@ Acces-Control-Allow-Origin: *
                 fb.startElement = document.querySelector(`#fb-${counter} .address-container h2.start`);
                 fb.streamElement = document.querySelector(`#fb-${counter} .address-container h2.stream`);
                 
-                if (fb.codec !== 0) checkOverflow(fb.addressBlock, !this.config);
+                checkOverflow(fb.addressBlock, !this.config, addressHeight)
 
                 if (counter > this.activeNode.shownUniverses) {
                     fb.addressBlock.hidden = "true";
@@ -1526,6 +1530,7 @@ Acces-Control-Allow-Origin: *
                 
                 counter++;
             });
+            
 
             // mark double universes in red
             this.checkDoubleUnis();
@@ -1623,6 +1628,7 @@ Acces-Control-Allow-Origin: *
 
             if (e.type !== "mousemove") {
                 if ((e.target.id === "universe" || e.target.id === "keep")) {
+                    e.target.select();
                     if (e.type === "input") {
                         let min, max;
                         if (e.target.id === "universe") {
@@ -1661,6 +1667,7 @@ Acces-Control-Allow-Origin: *
                     this.targetFb = e.target.closest(".fieldbus").id.slice(-1)-1;
                     this.targetFb = this.activeNode.fieldbusses.find((fb) => fb.id === `out${this.targetFb}`);
                     if (e.target.tagName === "INPUT") {
+                        e.target.select();
                         if (e.type === "input") {
                             let min = 1, max = 5120;
                             let inputValue = e.target.value;
@@ -2697,26 +2704,28 @@ Acces-Control-Allow-Origin: *
         return root;
     }
   
-    function checkOverflow(patchContainer, status) {
+    function checkOverflow(patchContainer, status, ah = null) {
         let patch = patchContainer.children[1];
         let start = patch.children[0];
         let stream = patch.children[1];
+        console.log(patch.clientHeight);
+        if (ah) console.log(ah);
         let input;
         let inputHeight = 0;
-        let offset = 7;
+        let offset = 5;
         if (!status) {
             input = start.children[0].children[1];
             inputHeight = input.clientHeight;
         }
 
-        if (start.clientHeight + stream.clientHeight + 2 * inputHeight >= patch.clientHeight - offset) {
+        if (start.clientHeight + stream.clientHeight + 2 * inputHeight >= (ah? ah : patch.clientHeight) - offset) {
             patch.classList.add("overflow");
         } else if (!patch.classList.contains("extreme")) {
             patch.classList.remove("overflow");
         }
 
         if (patch.classList.contains("overflow")) {
-            if (stream.clientHeight + inputHeight >= patch.clientHeight - offset) {
+            if (stream.clientHeight + inputHeight >= (ah? ah : patch.clientHeight) - offset) {
                 patch.classList.add("extreme");
             } else patch.classList.remove("extreme");
         }
