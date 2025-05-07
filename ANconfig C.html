@@ -181,6 +181,7 @@ Acces-Control-Allow-Origin: *
     }
 
     h1 {
+        grid-row: 1;
         grid-column: 4/5;
         justify-self: center;
         position: relative;
@@ -291,9 +292,9 @@ Acces-Control-Allow-Origin: *
     }
 
     #pen {
-        height: 18px;
-        width: 18px;
-        padding: 3px;
+        height: 20px;
+        width: 20px;
+        padding: 5px;
     }
 
     .e-button:hover{
@@ -363,11 +364,13 @@ Acces-Control-Allow-Origin: *
 
     #edit {
         z-index: 1000;
-        grid-column: 1;
+        grid-column: 4;
+        justify-self: center;
+        align-self: end;
         grid-row: 1;
         position: relative;
-        top: -5px;
-        right: 20px;
+        top: 15px;
+        left: 145px;
     }
 
     #edit label {
@@ -594,9 +597,11 @@ Acces-Control-Allow-Origin: *
 
     .card {
         background-color: var(--bg-card-grey);
+        border-radius: 25px;
+        box-shadow: 0px 10px 15px 2px rgba(0,0,0,0.5);
     }
 
-    .universe.card {
+    #universe-container {
         position: relative;
         display: grid;
         grid-column: 2/3;
@@ -608,11 +613,12 @@ Acces-Control-Allow-Origin: *
         box-shadow: 0px 10px 15px 2px rgba(0,0,0,0.5);
     }
 
-    .light .universe.card {
+
+    .light #universe-container {
         box-shadow: 5px 10px 15px rgba(179, 179, 179, 0.5);
     }
     
-    .universe.card:before {
+    #universe-container:before {
         top: -15px;
         left: 10px;
         position: absolute;
@@ -625,7 +631,7 @@ Acces-Control-Allow-Origin: *
         z-index: -1;
     }
 
-    .universe:after {
+    #universe-container:after {
         top: -50px;
         left: 25px;
         position: absolute;
@@ -639,7 +645,7 @@ Acces-Control-Allow-Origin: *
         box-shadow: 5px 0px 15px 2px rgba(0,0,0,0.5) inset;
     }
 
-    .light .universe:after {
+    .light #universe-container:after {
         background-color: var(--ll-mustard);
     }
 
@@ -653,7 +659,7 @@ Acces-Control-Allow-Origin: *
         font-family: var(--font-regular);
     }
 
-    .universe #tab {
+    #universe-container #tab {
         display: inline-block;
         position: absolute;
         width: 51px;
@@ -665,6 +671,7 @@ Acces-Control-Allow-Origin: *
         font-size: var(--font-size-small);
         padding: 7px;
         border-radius: 12px 12px 0px 0px;
+        box-shadow: none;
     }
 
     #universes li {
@@ -785,8 +792,6 @@ Acces-Control-Allow-Origin: *
         width: 70%;
         max-width: 125px;
         min-width: 50px;
-        border-radius: 25px;
-        box-shadow: 0px 10px 15px 2px rgba(0,0,0,0.5);
         color: var(--ll-yellow);
         font-family: var(--font-regular);
     }
@@ -1001,6 +1006,83 @@ Acces-Control-Allow-Origin: *
         max-width: 60%;
     }
 
+    #text-config-container {
+        z-index: 1000;
+        margin-right: var(--padding-large);
+        grid-row: 8;
+        grid-column: 2;
+        align-self: end;
+    }
+
+    #text-config-container.card {
+        position: relative;
+        min-width: 550px;
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        grid-template-rows: 6fr 1fr;
+        grid-column: 2/8;
+        grid-row: 1/9 !important;
+        align-self: inherit;     
+    }
+
+    #text-config, .xml-text-button {
+        cursor: pointer;
+        height: 50px;
+        width: 90px;
+        border-radius: 10px;
+        border-color: var(--ll-yellow-font);
+        color: var(--ll-yellow-font);
+    }
+
+    .card #text-config {
+        grid-row: 2;
+        margin-bottom: var(--padding-medium);
+        margin-left: var(--padding-medium);
+        align-self: end;
+    }
+
+    #xml-text-area {
+        display: none;
+        resize: none;
+        margin: var(--padding-medium) 0 0 var(--padding-medium);
+        background-color: var(--bg-coal);
+        color: var(--ll-yellow-font);
+    }
+
+    p#help-text {
+        grid-column: 2;
+        grid-row: 1;
+        padding: var(--padding-medium);
+        display: none;
+        color: var(--ll-yellow-font);
+        font-family: var(--font-regular);
+    }
+
+    #push{
+        margin: 0 var(--padding-medium) var(--padding-medium) 0;
+        align-self: end;
+        justify-self: end;
+    }
+
+    #upload, #download {
+        margin-left: var(--padding-medium);
+        grid-column: 2;
+        grid-row: 1;
+        align-self: end;
+    }
+
+    #upload {
+        margin-bottom: 60px;
+    }
+
+    .xml-text-button {
+        display: none;
+    }
+
+    .card #xml-text-area, .card p#help-text, .card .xml-text-button {
+        display: block;
+    }
+
     /* ============= Dynamic resizing ============== */
     
     @media screen and (max-width: 950px) {
@@ -1123,13 +1205,16 @@ Acces-Control-Allow-Origin: *
         constructor(customer){
             return (async () => {
                 this.#customer = customer;
-                await this.fetchNodes();
+                await this.fetchNodes(true);
                 this.addDemo();
                 this.#prevNodes.push(this.#nodes);  
                 if (localStorage.getItem("configuration") === "enabled") {
                     this.config = true;
                 } else this.config = false;
                 this.configElement = document.querySelector("body");
+                this.universesContainer = document.querySelector("#universe-container");
+                this.textConfigElement = document.querySelector("#text-config-container");
+                this.textConfig = false;
                 return this;
             })();
         }
@@ -1210,7 +1295,8 @@ Acces-Control-Allow-Origin: *
             for (let i=0; i<6; i++){
                 fieldbusses.push(new Fieldbus(`out${i}`, 2, i == 0? 1 : (i*512)+1, 512, 0));
             }
-            let demoNode = new NodeTemplate("127.0.0.1", null, "Demo", "7b:a6:80:7f:ec:7d", {}, "255.255.255.0", universes, fieldbusses, ["Disabled", "Used-by-previous-channel", "DMX-512", "DMX-RDM"], "v3.1")
+            let demoNode = new NodeTemplate("127.0.0.1", null, "Demo", "7b:a6:80:7f:ec:7d", {}, "255.255.255.0", universes, fieldbusses, ["Disabled", "Used-by-previous-channel", "DMX-512", "DMX-RDM"], "v3.1", new Configuration(null, true))
+            demoNode.configuration.setXmlConfig(demoNode);
             if (demoNode.mac === localStorage.getItem("activeNode")) {
                 this.nodes.map((node) => node.active = false);
                 demoNode.active = true;
@@ -1446,7 +1532,7 @@ Acces-Control-Allow-Origin: *
                 fb.startElement = document.querySelector(`#fb-${counter} .address-container h2.start`);
                 fb.streamElement = document.querySelector(`#fb-${counter} .address-container h2.stream`);
                 fb.codecElement = document.querySelector(`#fb-${counter} .fb-protocol`);
-                fb.patch = document.querySelector(".patch");
+                // fb.patch = document.querySelector(".patch");
 
                 if (fb.codec === 0) {
                     fb.addressBlock.hidden = true;
@@ -1478,15 +1564,17 @@ Acces-Control-Allow-Origin: *
                 // Updating all the fb.addressblock heights and startpositions
                 // Height = streamlength, top = startaddres
                 let start = String((fb.startAddress/(512*this.activeNode.shownUniverses))*100)+"%";
-                let stream = String((fb.streamLength/(512*this.activeNode.shownUniverses))*100)+"%";             
+                let stream = String((fb.streamLength/(512*this.activeNode.shownUniverses))*100)+"%";
+                
                 
                 fb.addressBlock.style.height = stream;
                 fb.addressBlock.style.top = start;
                 
                 fb.startElement = document.querySelector(`#fb-${counter} .address-container h2.start`);
                 fb.streamElement = document.querySelector(`#fb-${counter} .address-container h2.stream`);
-                
-                if (fb.codec !== 0) checkOverflow(fb.addressBlock, !this.config);
+                let patch = document.querySelector(`#fb-${counter} .address.range .patch`);
+                console.log(patch.clientHeight);
+
 
                 if (counter > this.activeNode.shownUniverses) {
                     fb.addressBlock.hidden = "true";
@@ -1523,6 +1611,8 @@ Acces-Control-Allow-Origin: *
                     fb.codecElement.appendChild(h3);
                 }
                 fb.codecElement.appendChild(rj45);
+
+                if (fb.codec !== 0) checkOverflow(patch, !this.config);
                 
                 counter++;
             });
@@ -1545,7 +1635,16 @@ Acces-Control-Allow-Origin: *
         }
 
         eventInit() {
-            // window.onresize = (e) => {console.log(e)}
+            window.onresize = (e) => {
+                if (this.textConfig) {
+                    let fieldbusContainers = document.querySelectorAll(".fieldbus");
+                    for (let i=0; i<fieldbusContainers.length; i++) {
+                        if (i > 0) {
+                            fieldbusContainers[i].style.left = `${(i-1)*(this.fieldbussesElement.clientWidth/6.5)}px`
+                        }                   
+                    }
+                }
+            }
             const dmSwitch = document.querySelector("#dark-mode-switch input");
             const configSwitch = document.querySelector("#edit-switch");
             const savedDarkMode = localStorage.getItem("darkMode");
@@ -1606,6 +1705,9 @@ Acces-Control-Allow-Origin: *
                 this.navSwitcher();    
             })
 
+            this.textConfigButton = document.querySelector("#text-config");
+            this.textConfigButton.addEventListener("click", this.switchTextConfig)
+
             this.configElement.addEventListener("mousedown", this.handleFbEvent);
             this.configElement.addEventListener("change", this.handleFbEvent);
             this.configElement.addEventListener("input", this.handleFbEvent);
@@ -1614,6 +1716,47 @@ Acces-Control-Allow-Origin: *
             this.configElement.addEventListener("mouseup", this.handleFbEvent);
         }     
 
+        switchTextConfig = (e) => {
+            this.textConfig = !this.textConfig;
+            let fieldbusContainers = document.querySelectorAll(".fieldbus");
+            if (this.textConfig) {
+                this.universesContainer.style.display = "none";
+                this.accoladesElement.style.display = "none";
+                this.fieldbussesElement.style.gridColumn = "8/10";
+                for (let i=0; i<fieldbusContainers.length; i++) {
+                    fieldbusContainers[i].style.position = "relative";
+                    fieldbusContainers[i].style.zIndex = `${fieldbusContainers.length-i}`;
+                    fieldbusContainers[i].style.gridColumn = "1"
+                    fieldbusContainers[i].style.justifySelf = "baseline"
+                    if (i > 0) {
+                        fieldbusContainers[i].style.left = `${(i-1)*(this.fieldbussesElement.clientWidth/6.5)}px`
+                    }
+                    
+                }
+                this.textConfigElement.classList.add("card");
+                this.textArea = document.querySelector("#xml-text-area");
+                if (this.activeNode.mac === "7B:A6:80:7F:EC:7D") {
+                    this.activeNode.configuration.setXmlConfig(this.activeNode);
+                    this.textArea.value = this.activeNode.configuration.textConfig;
+                } else {
+                    this.textArea.value = this.activeNode.configuration.generateTextConfig();
+                }          
+                this.textArea.hidden = false
+
+            } else {
+                this.universesContainer.style.display = "grid";
+                this.accoladesElement.style.display = "grid";
+                this.textConfigElement.classList.remove("card");
+                this.fieldbussesElement.style.gridColumn = "2/10";
+                for (let i=0; i<fieldbusContainers.length; i++) {
+                    fieldbusContainers[i].style.position = "relative";
+                    fieldbusContainers[i].style.zIndex = `${fieldbusContainers.length-i}`;
+                    fieldbusContainers[i].style.gridColumn = `${i+3}`;
+                    fieldbusContainers[i].style.justifySelf = "end";
+                    fieldbusContainers[i].style.left = "0px"
+                }
+            }
+        }
 
         handleFbEvent = (e) => {
             // console.log(e.target);
@@ -1623,6 +1766,7 @@ Acces-Control-Allow-Origin: *
 
             if (e.type !== "mousemove") {
                 if ((e.target.id === "universe" || e.target.id === "keep")) {
+                    e.target.select();
                     if (e.type === "input") {
                         let min, max;
                         if (e.target.id === "universe") {
@@ -1661,6 +1805,7 @@ Acces-Control-Allow-Origin: *
                     this.targetFb = e.target.closest(".fieldbus").id.slice(-1)-1;
                     this.targetFb = this.activeNode.fieldbusses.find((fb) => fb.id === `out${this.targetFb}`);
                     if (e.target.tagName === "INPUT") {
+                        e.target.select();
                         if (e.type === "input") {
                             let min = 1, max = 5120;
                             let inputValue = e.target.value;
@@ -1730,7 +1875,11 @@ Acces-Control-Allow-Origin: *
                 if (this.lm) nodeElement.classList.add("light");
                 node.active = true;
                 this.activeNode = node;
-                localStorage.setItem("activeNode", node.mac)               
+                localStorage.setItem("activeNode", node.mac);
+                // setting the xml config value and event listeners
+                if (this.textConfig) {
+                    this.textArea.value = this.activeNode.configuration.textConfig;
+                }              
             }
             this.updateNav(false);
             this.navSwitcher();
@@ -1751,18 +1900,19 @@ Acces-Control-Allow-Origin: *
 
         changeGridStyling(){
             let main            = document.getElementById("main-config");
-            let uniC            = document.querySelector(".universe.card");
+            let uniC            = document.querySelector("#universe-container");
             let uni             = document.getElementById("universes");
             let uniFilter       = document.querySelector("#universe-filter-container");
             let fieldbusses     = document.getElementById("fieldbusses");
             let fbC             = document.querySelectorAll(".fieldbus.card");
             let fb              = document.querySelectorAll(".address.range");
             let protos          = document.querySelectorAll(".fb-protocol.info");
+            let textC           = document.querySelector("#text-config-container");
 
             main.style.gridTemplateRows = `repeat(${this.activeNode.shownUniverses}, 1fr) 25px 120px`
             uniC.style.gridRow          = `1/${this.activeNode.shownUniverses+2}`
             uni.style.gridRow = fieldbusses.style.gridRow = `1/${this.activeNode.shownUniverses+3}`
-            uniFilter.style.gridRow = `${this.activeNode.shownUniverses+2}`
+            uniFilter.style.gridRow = textC.style.gridRow = `${this.activeNode.shownUniverses+2}`
             for (const fb of fbC) {
                 fb.style.gridRow = `1/${this.activeNode.shownUniverses+3}`
             }
@@ -1985,6 +2135,10 @@ Acces-Control-Allow-Origin: *
             this.#active = a;
         }
 
+        set configuration(c) {
+            this.#configuration = c;
+        }
+
         // setting the status indicator of the disconnected nodes, debounce to make sure there is no
         // flickering
         setStatus(o) {
@@ -2087,7 +2241,7 @@ Acces-Control-Allow-Origin: *
                     const xmlText = await response.text();
                     const parser = new DOMParser();
                     const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
-                    let parsedXart = Configuration.parseXml(xmlDoc);
+                    let parsedXart = Configuration.parseConfig(xmlDoc);
                     let newTime = new Date().getTime();
                     if (this.#lastUpdate > 0) {
                         let delta = newTime - this.#lastUpdate;
@@ -2146,7 +2300,7 @@ Acces-Control-Allow-Origin: *
     }
 
     class NodeTemplate extends Node {
-        constructor(ip, oldNode, name, mac, sw, nm, un, fb, c, fw){
+        constructor(ip, oldNode, name, mac, sw, nm, un, fb, c, fw, config){
             super(ip, true, oldNode);
             this.name = name;
             this.mac = mac;
@@ -2156,6 +2310,7 @@ Acces-Control-Allow-Origin: *
             this.fieldbusses = fb;
             this.codecs = c;
             this.firmware = fw;
+            this.configuration = config;
         }
     }
 
@@ -2411,6 +2566,8 @@ Acces-Control-Allow-Origin: *
     class Configuration {
         #xmlConfig;
         #configObject;
+        #textConfig;
+        #textConfigBlob;
 
         // look up table for the amount of hex characters per parameter
         #ioHexCount = {
@@ -2428,16 +2585,24 @@ Acces-Control-Allow-Origin: *
             
         }
 
-        constructor(ip){
-            return( async () => {
-                this.#xmlConfig = await this.fetchXmlConfig(ip);
-                this.#configObject = Configuration.parseXml(this.#xmlConfig);
-                return this;
-            })();
+        constructor(ip, skipConfig = false){
+            if (!skipConfig) {
+                return( async () => {
+                    this.#xmlConfig = await this.fetchXmlConfig(ip);
+                    this.#configObject = Configuration.parseConfig(this.#xmlConfig);
+                    // filling a text config blob for download with XML button
+                    this.#textConfigBlob = new Blob([this.generateTextConfig()], {type: 'text/plain'});    
+                    return this;
+                })();
+            }           
         }
 
         get xmlConfig(){
             return this.#xmlConfig;
+        }
+
+        get textConfig() {
+            return this.#textConfig;
         }
 
         get configObject(){
@@ -2511,7 +2676,7 @@ Acces-Control-Allow-Origin: *
                 const xmlText = await response.text();
                 const parser = new DOMParser();
                 const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
-                let responseObj = Configuration.parseXml(xmlDoc);
+                let responseObj = Configuration.parseConfig(xmlDoc);
                 console.log("configuration changed at: " + hexToDec(responseObj["changed"]));
                 console.log("Fault detected at: " + hexToDec(responseObj["fault"]));
 
@@ -2576,7 +2741,7 @@ Acces-Control-Allow-Origin: *
             return convertedObject;
         }
 
-        static parseXml(xmlObj) {
+        static parseConfig(xmlObj) {
         let config = {};
         
         // Recursieve functie die over all nodes gaat en het config object vult
@@ -2598,6 +2763,54 @@ Acces-Control-Allow-Origin: *
 
         traverseConfig(xmlObj.documentElement, config);
             return config;
+        }
+
+        generateTextConfig() {
+            let xmlText = "<node>\n";
+            console.log(this.#configObject);
+            // Filling the textConfig with information from the fetched object
+            function traverseObject(configObject, lvl = 1) {
+                if (configObject !== null && typeof configObject === 'object') {
+                    for (const [key, value] of Object.entries(configObject)) {
+                        if (typeof value === 'object') {
+                            xmlText += `${'  '.repeat(lvl)}<${key}>\n`;
+                            traverseObject(value, lvl + 1);
+                            xmlText += `${'  '.repeat(lvl)}</${key}>\n`;
+                        } else {
+                            xmlText += `${'  '.repeat(lvl)}<${key}>${value}</${key}>\n`;
+                        }
+                    }
+                }
+            }
+        
+            traverseObject(this.#configObject);
+            xmlText += "</node>";
+            this.#textConfig = xmlText;
+            this.#textConfigBlob = new Blob([xmlText], {type: 'text/plain'});
+            return xmlText;
+        }
+
+        setXmlConfig(node) {
+            let xmlText = '<node>\n'
+            xmlText += `  <sys>\n`
+            xmlText += `    <ip>${ipToHex(node.ip)}</ip>\n`
+            xmlText += `    <mask>${ipToHex(node.netmask)}</mask>\n`
+            xmlText += `    <mac>${macToHex(node.mac)}</mac>\n`
+            xmlText += `    <name>${node.name}</name>\n`
+            xmlText += `  </sys>\n`
+            xmlText += '  <artnet>\n'
+            node.universes.forEach((uni) => {
+                xmlText += `    <${uni.id}>${demoHexConverter(uni.universe, uni.keep, uni.framecounter)}</${uni.id}>\n`
+            })
+            xmlText += '  </artnet>\n'
+            xmlText += '  <fieldbus>\n'
+            node.fieldbusses.forEach((fieldbus) => {
+                xmlText += `    <${fieldbus.id}>${demoHexConverter(fieldbus.codec, fieldbus.startAddress, fieldbus.streamLength)}</${fieldbus.id}>\n`
+            })
+            xmlText += '  </fieldbus>\n'
+            xmlText += '</node>'
+            this.#textConfig = xmlText;
+            this.#textConfigBlob = new Blob([xmlText], {type: 'text/plain'});
         }
     }
 
@@ -2662,6 +2875,10 @@ Acces-Control-Allow-Origin: *
         return hex;
     }
 
+    function demoHexConverter(...params) {
+        return params.map(param => param.toString(16).toUpperCase()).join(' ');
+    }
+
     function hexConverter(io, ...params) {
         let paddedHex = '';
         let counter = 0;
@@ -2701,6 +2918,8 @@ Acces-Control-Allow-Origin: *
         let patch = patchContainer.children[1];
         let start = patch.children[0];
         let stream = patch.children[1];
+        // console.log(start.clientHeight);
+        // console.log(stream.clientHeight);
         let input;
         let inputHeight = 0;
         let offset = 7;
@@ -2779,6 +2998,16 @@ Acces-Control-Allow-Origin: *
                 </svg>
             </div>
             <h1>Configurator</h1>
+            <div id="edit">
+                <input type="checkbox" id="edit-switch" autocomplete="off">
+                <label for="edit-switch">
+                    <?xml version="1.0" encoding="utf-8"?><!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+                    <svg height="100%" class="e-button" id="pen" viewBox="0 0 24 24" id="_24x24_On_Light_Edit" data-name="24x24/On Light/Edit" xmlns="http://www.w3.org/2000/svg">
+                        <rect id="view-box" width="24" height="24" fill="none"/>
+                        <path id="Shape" d="M.75,17.5A.751.751,0,0,1,0,16.75V12.569a.755.755,0,0,1,.22-.53L11.461.8a2.72,2.72,0,0,1,3.848,0L16.7,2.191a2.72,2.72,0,0,1,0,3.848L5.462,17.28a.747.747,0,0,1-.531.22ZM1.5,12.879V16h3.12l7.91-7.91L9.41,4.97ZM13.591,7.03l2.051-2.051a1.223,1.223,0,0,0,0-1.727L14.249,1.858a1.222,1.222,0,0,0-1.727,0L10.47,3.91Z" stroke="#FFF200" transform="translate(3.25 3.25)" fill="#FFF200"/>
+                    </svg>
+                </label>
+            </div>
             <div id="dark-mode-switch">
                 <input type="checkbox" id="switch">
                 <label for="switch">
@@ -2796,16 +3025,6 @@ Acces-Control-Allow-Origin: *
             <h2>Lux<br>Lumen</h2>
             <h2>Art-Net<br>node</h2>
         </div>
-        <div id="edit">
-            <input type="checkbox" id="edit-switch" autocomplete="off">
-            <label for="edit-switch">
-                <?xml version="1.0" encoding="utf-8"?><!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
-                <svg class="e-button" id="pen" viewBox="0 0 24 24" id="_24x24_On_Light_Edit" data-name="24x24/On Light/Edit" xmlns="http://www.w3.org/2000/svg">
-                    <rect id="view-box" width="24" height="24" fill="none"/>
-                    <path id="Shape" d="M.75,17.5A.751.751,0,0,1,0,16.75V12.569a.755.755,0,0,1,.22-.53L11.461.8a2.72,2.72,0,0,1,3.848,0L16.7,2.191a2.72,2.72,0,0,1,0,3.848L5.462,17.28a.747.747,0,0,1-.531.22ZM1.5,12.879V16h3.12l7.91-7.91L9.41,4.97ZM13.591,7.03l2.051-2.051a1.223,1.223,0,0,0,0-1.727L14.249,1.858a1.222,1.222,0,0,0-1.727,0L10.47,3.91Z" stroke="#FFF200" transform="translate(3.25 3.25)" fill="#FFF200"/>
-                </svg>
-            </label>
-        </div>
         <nav>
             <ul id="node-list">
             </ul>
@@ -2816,7 +3035,7 @@ Acces-Control-Allow-Origin: *
         </div>
     </div>
     <div id="main-config">
-        <div class="universe card">
+        <div id="universe-container" class="card">
             <div class="card" id="tab">Art-Net</div>
             <ol id="universes">
             </ol>
@@ -2829,10 +3048,19 @@ Acces-Control-Allow-Origin: *
         </div>
         <!-- svg definition of the accolades -->
         <!-- end of accolade definition -->
-        <div id="accolades">
-        </div>
-        <div id="fieldbusses">
-        </div>
+        <div id="accolades"></div>
+        <div id="fieldbusses"></div>
+        <div id="text-config-container">
+            <textarea id="xml-text-area"></textarea>
+            <p id="help-text">
+                Editing the node parameters is possible by directly editing the fields within the tags. The values are in hex format where 2 characters represent a byte. 2 bytes after each other are MSB. different parameters are separated by a space.
+                <br><br>
+                It’s possible to change only 1 parameter by giving the tag and it’s value eg. &ltout3> 02 &lt/out3> wil set the third output to the second protocol.
+            </p>
+            <button class="card xml-text-button" id="push">push to node</button>
+            <button class="card xml-text-button" id="upload">upload</button>
+            <button class="card xml-text-button" id="download">download</button>
+            <button class="card" id="text-config">text config</button>
         </div>
     </div>
 </body>
