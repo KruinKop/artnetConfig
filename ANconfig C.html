@@ -1024,7 +1024,7 @@ Acces-Control-Allow-Origin: *
     #text-config-container {
         z-index: 2000;
         margin-right: var(--padding-large);
-        grid-row: 8;
+        /* grid-row: 8; */
         grid-column: 2;
         align-self: end;
     }
@@ -1491,15 +1491,22 @@ Acces-Control-Allow-Origin: *
         }
 
         showActiveNode() {
-            this.activeNodeElement = document.getElementById(`${this.activeNode.UID}`);
-                
-            let firmwareVersion = document.querySelector("#firmware span");
-            let configVersion = document.querySelector("#config span");
+            let main                = document.getElementById("main-config");
+            let uniC                = document.querySelector("#universe-container");
+            let uni                 = document.getElementById("universes");
+            let uniFilter           = document.querySelector("#universe-filter-container");
+            let textC               = document.querySelector("#text-config-container");
+            let firmwareVersion     = document.querySelector("#firmware span");
+            let configVersion       = document.querySelector("#config span");
+            
+            this.activeNodeElement  = document.getElementById(`${this.activeNode.UID}`);  
+            this.universesElement   = document.getElementById("universes");
 
-            this.universesElement = document.getElementById("universes");
-            this.universesElement.innerHTML = ''; 
+            
+            this.universesElement.innerHTML = '';
+            main.style.gridTemplateRows     = `repeat(${installation.shownUniverses}, 1fr) 25px 120px`; 
+            firmwareVersion.innerHTML       = this.activeNode.firmware;
 
-            firmwareVersion.innerHTML = this.activeNode.firmware;
             let counter = 1;
             this.activeNode.universes.forEach((uni) => {
                 if (counter <= installation.shownUniverses) {
@@ -1521,7 +1528,7 @@ Acces-Control-Allow-Origin: *
             })
 
             // Universes and their braces
-            this.accoladesElement = document.getElementById("accolades");   
+            this.accoladesElement           = document.getElementById("accolades");   
             this.accoladesElement.innerHTML = '';   
 
             counter = 1;
@@ -1545,6 +1552,11 @@ Acces-Control-Allow-Origin: *
                 counter++;
             })
 
+            uniC.style.gridRow          = `1/${installation.shownUniverses+2}`;
+            uni.style.gridRow           = fieldbusses.style.gridRow = `1/${installation.shownUniverses+3}`;
+            uniFilter.style.gridRow     = textC.style.gridRow = `${installation.shownUniverses+2}`;
+            if (!this.textConfig) textC.style.gridRow = `${installation.shownUniverses+2}`;
+
             counter = 1;
             this.activeNode.fieldbusses.forEach((fb) => {
                 fb.fieldbusElement  = document.querySelector(`#fb-${counter}`);
@@ -1555,19 +1567,22 @@ Acces-Control-Allow-Origin: *
                 fb.codecElement     = document.querySelector(`#fb-${counter} .fb-protocol`);
                 // fb.patch = document.querySelector(".patch");
 
-                fb.fieldbusElement.setAttribute("ubp", false);
-                if (fb.codec === 0 || fb.codec === 1) {
+                if (fb.codec === 0) {
                     fb.addressBlock.hidden = true;
-                    if (fb.codec === 1) {
-                        fb.fieldbusElement.setAttribute("ubp", true);
-                        fb.addressRange.hidden = true;
-                    } else {
-                        fb.addressRange.hidden = false;
-                    }
+                } else fb.addressBlock.hidden = false;
+
+                // setting all the gridRows
+                fb.fieldbusElement.style.gridRow = `1/${installation.shownUniverses+3}`
+                if (fb.codec === 1) {
+                    fb.fieldbusElement.style.gridRow = `${installation.shownUniverses}/${installation.shownUniverses+3}`
+                    fb.addressRange.hidden = true;
                 } else {
-                    fb.addressBlock.hidden = false;
+                    fb.fieldbusElement.style.gridRow = `1/${installation.shownUniverses+3}`
                     fb.addressRange.hidden = false;
                 }
+
+                fb.addressRange.style.gridRow = `1/${installation.shownUniverses+1}`
+                fb.codecElement.style.gridRow = `${installation.shownUniverses +2}`
 
                 // Config elements for start and streamlength
                 let startElement;
@@ -1599,14 +1614,13 @@ Acces-Control-Allow-Origin: *
                 let start = String((fb.startAddress/(512*installation.shownUniverses))*100)+"%";
                 let stream = String((fb.streamLength/(512*installation.shownUniverses))*100)+"%";
                 
-                
                 fb.addressBlock.style.height = stream;
                 fb.addressBlock.style.top = start;
                 
                 fb.startElement = document.querySelector(`#fb-${counter} .address-container h2.start`);
                 fb.streamElement = document.querySelector(`#fb-${counter} .address-container h2.stream`);
                 
-                // checkOverflow(fb.addressBlock, !this.config, addressHeight)
+                if (fb.codec !== 0 && fb.codec !== 1) checkOverflow(fb.addressBlock, !this.config, fb.addressHeight);
 
                 if (counter > installation.shownUniverses) {
                     fb.addressBlock.hidden = "true";
@@ -1647,19 +1661,8 @@ Acces-Control-Allow-Origin: *
                 counter++;
             });
             
-
             // mark double universes in red
             this.checkDoubleUnis();
-            
-            this.changeGridStyling(); // must happen before setting the handlers otherwise the offset
-            // is wrong
-
-            this.activeNode.fieldbusses.forEach((fb) => {
-                if (fb.codec === 1) {
-                    fb.fieldbusElement.style.gridRow = `${installation.shownUniverses}/${installation.shownUniverses+3}`
-                } 
-                checkOverflow(fb.addressBlock, !this.config, fb.addressHeight)
-            })
         
             if (this.config) {
                 // setting the event listener for the form
@@ -1728,7 +1731,7 @@ Acces-Control-Allow-Origin: *
                         }
                     }
                     this.initaliseConfig();
-                    this.changeGridStyling();
+                    // this.changeGridStyling();
                 })
             }
 
@@ -1743,6 +1746,9 @@ Acces-Control-Allow-Origin: *
                     this.config = false;
                     localStorage.setItem("configuration", "disabled");
                     this.updateNav(false);
+                };
+                if (this.textConfig) {
+                    this.textConfigElement.style.gridRow = `1/${this.shownUniverses+3}`
                 }  
                 this.navSwitcher();    
             })
@@ -1923,12 +1929,13 @@ Acces-Control-Allow-Origin: *
                 node.active = true;
                 this.activeNode = node;
                 localStorage.setItem("activeNode", node.mac);
-                // setting the xml config value and event listeners
-                if (this.textConfig) {
-                    this.textArea.value = this.activeNode.configuration.textConfig;
-                }              
+                // setting the xml config value and event listeners              
             }
             this.updateNav(false);
+            if (this.textConfig) {
+                this.textArea.value = this.activeNode.configuration.textConfig;
+                this.textConfigElement.style.gridRow = `1/${this.shownUniverses+3}`
+            }
             this.navSwitcher();
 
         }
@@ -1943,36 +1950,6 @@ Acces-Control-Allow-Origin: *
                 // Event listener to switch the active node
                 nodeElement.addEventListener("click", this.handleNavClick);
             })       
-        }
-
-        changeGridStyling(){
-            let main            = document.getElementById("main-config");
-            let uniC            = document.querySelector("#universe-container");
-            let uni             = document.getElementById("universes");
-            let uniFilter       = document.querySelector("#universe-filter-container");
-            let fieldbusses     = document.getElementById("fieldbusses");
-            let fbC             = document.querySelectorAll(".fieldbus.card");
-            let fb              = document.querySelectorAll(".address.range");
-            let protos          = document.querySelectorAll(".fb-protocol.info");
-            let textC           = document.querySelector("#text-config-container");
-
-            main.style.gridTemplateRows = `repeat(${installation.shownUniverses}, 1fr) 25px 120px`;
-            uniC.style.gridRow          = `1/${installation.shownUniverses+2}`;
-            uni.style.gridRow           = fieldbusses.style.gridRow = `1/${installation.shownUniverses+3}`;
-            uniFilter.style.gridRow     = textC.style.gridRow = `${installation.shownUniverses+2}`;
-
-            for (const fb of fbC) {
-                fb.style.gridRow = `1/${installation.shownUniverses+3}`
-                if (fb.getAttribute("ubp") === "true") {
-                    fb.style.gridRow = `${installation.shownUniverses}/${installation.shownUniverses+3}`
-                } else fb.style.gridRow = `1/${installation.shownUniverses+3}`
-            }
-            for (const f of fb) {
-                f.style.gridRow = `1/${installation.shownUniverses+1}`
-            }
-            for (const p of protos) {
-                p.style.gridRow = `${installation.shownUniverses +2}`
-            }
         }
 
         switchDarkMode(sw) {
@@ -2227,7 +2204,9 @@ Acces-Control-Allow-Origin: *
                     }
                     let fieldbus = new Fieldbus(key, ...params);
                     if (this.#oldNodes[0] !== undefined) {
-                        if (prevNode.fieldbusses[counter].startAddress === 0) {
+                        if (prevNode.fieldbusses[counter].startAddress === 0 && prevNode.fieldbusses[counter].streamLength === 0
+                            && prevNode.fieldbusses[counter].codec !== 0
+                        ) {
                             console.log("found fb at number " + counter);
                             fieldbus.startAddress = 1;
                             fieldbus.streamLength = 512;
@@ -2237,30 +2216,7 @@ Acces-Control-Allow-Origin: *
                     }
                     this.#fieldbusses.push(fieldbus);
                     counter++;
-                }
-
-                // if (this.#oldNodes.length !== 0) {
-                //     for (let i = 0; i < this.fieldbusses.length; i++) {
-                //         if (this.#oldNodes[0].fieldbusses[i]["codec"] === 0 && this.#oldNodes[1].fieldbusses[i]["codec"] > 0) {
-                //             console.log(`rising edge detected at fb ${i}`);
-                //             let oldFb = this.#oldNodes[0].fieldbusses[i];
-                //             console.log(`previous config: ${oldFb.startAddress}, ${oldFb.streamLength}`)
-                //             this.fieldbusses[i].startAddress    = oldFb.startAddress;
-                //             this.fieldbusses[i].streamLength    = oldFb.streamLength;
-                //             resetFb = true;
-                //             console.log("restored previous config");
-                //         } else if (this.fieldbusses[i].startAddress === 1 && this.fieldbusses[i].streamLength === 1
-                //                     && this.fieldbusses[i].codec > 0 && this.#oldNodes[0].fieldbusses[i].streamLength === 0) {
-                //             this.fieldbusses[i].startAddress = 1;
-                //             this.fieldbusses[i].streamLength = 512;
-                //             resetFb = true;
-                //         }
-                //         if (resetFb) {
-                //             this.configuration.handleInputChange(this.fieldbusses[i])
-                //             resetFb = false;
-                //         }                   
-                //     }
-                // }    
+                } 
 
                 for (const [key, value] of Object.entries(this.#configuration.artnet)) {
                     let params = [];
