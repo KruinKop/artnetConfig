@@ -112,10 +112,15 @@ Acces-Control-Allow-Origin: *
         user-select: none; /* Standard syntax */ 
     }
 
+    body.loading * {
+        cursor: progress !important;
+    }
+
     body.light {
         --ll-yellow: rgb(82, 82, 82);
         --ll-light-yellow: #4d4d4d;
         --ll-mustard: #f1d44b;
+        --ll-yellow-font: #646464;
         --nav-font: #4d4d4d;
         --bg-coal: #f8f5e5;
         --bg-dmx-box: #2F2F2F;
@@ -369,7 +374,7 @@ Acces-Control-Allow-Origin: *
         align-self: end;
         grid-row: 1;
         position: relative;
-        top: 15px;
+        top: -40px;
         left: 145px;
     }
 
@@ -589,6 +594,12 @@ Acces-Control-Allow-Origin: *
         grid-template-columns: calc(40px - var(--padding-medium)) calc(2*var(--padding-medium) + 50px) calc(3*var(--padding-medium)) repeat(6,2fr); 
         margin: var(--padding-large) var(--padding-small) 0;
         min-width: 570px;
+        min-height: 768px;
+        transition: opacity 500ms;
+    }
+
+    body.loading #main-config {
+        opacity: 50%;
     }
 
     .range {
@@ -690,7 +701,7 @@ Acces-Control-Allow-Origin: *
         box-shadow: 0px 5px 15px 2px rgba(0,0,0,0.5);
     }
 
-    #universes li.illegal, #universes li.illegal input:nth-of-type(1) {
+    #universes li.illegal, #universes li.illegal span, #universes li.illegal input:nth-of-type(1) {
         background-color: var(--bg-error-red);
     }
 
@@ -949,10 +960,14 @@ Acces-Control-Allow-Origin: *
 
     #fieldbusses h2.configurable.start {
         grid-row: 1;
+        width: fit-content;
+        justify-self: center;
     }
 
     #fieldbusses h2.configurable.stream {
         align-self: start;
+        width: fit-content;
+        justify-self: center;
         grid-row: 2;
         padding-top: 0px;
     }
@@ -1007,7 +1022,7 @@ Acces-Control-Allow-Origin: *
     }
 
     #text-config-container {
-        z-index: 1000;
+        z-index: 2000;
         margin-right: var(--padding-large);
         grid-row: 8;
         grid-column: 2;
@@ -1021,7 +1036,6 @@ Acces-Control-Allow-Origin: *
         grid-template-columns: 2fr 1fr;
         grid-template-rows: 6fr 1fr;
         grid-column: 2/8;
-        grid-row: 1/9 !important;
         align-self: inherit;     
     }
 
@@ -1198,6 +1212,9 @@ Acces-Control-Allow-Origin: *
         // activeNode and activeNodeElement public property is available
 
         #accMargin = -55;
+        #maxShownUniverses = 10;
+        #minShownUniverses = 6;
+        #shownUniverses = 6;
 
         // Immediately Invoked Async Function Expression zorgt ervoor dat we de nodes kunnen ophalen en nieuwe
         // object instanties kunnen aanmaken zonder then-chaining of extra async functies te gebruiken 
@@ -1207,7 +1224,7 @@ Acces-Control-Allow-Origin: *
                 this.#customer = customer;
                 await this.fetchNodes(true);
                 this.addDemo();
-                this.#prevNodes.push(this.#nodes);  
+                // this.#prevNodes.push(this.#nodes);
                 if (localStorage.getItem("configuration") === "enabled") {
                     this.config = true;
                 } else this.config = false;
@@ -1227,9 +1244,25 @@ Acces-Control-Allow-Origin: *
             return this.#prevNodes;
         }
 
+        get shownUniverses() {
+            return this.#shownUniverses;
+        }
+
+        get maxShownUniverses() {
+            return this.#maxShownUniverses;
+        }
+
+        get minShownUniverses() {
+            return this.#minShownUniverses;
+        }
+
+        changeShownUni(up){
+            up? this.#shownUniverses++ : this.#shownUniverses--;
+        }
+
         pushPrevNodes(pn) {
-            this.#prevNodes.push(pn);
-            if (this.#prevNodes.length > 2) this.#prevNodes.shift();
+            this.#prevNodes.unshift(pn);
+            if (this.#prevNodes.length > 2) this.#prevNodes.pop();
         }
 
         async fetchNodes(init) {
@@ -1246,31 +1279,17 @@ Acces-Control-Allow-Origin: *
                 for (let device of devices) {
                     let ip = hexToIP(device);
                     let oldNodes = [];
-                    try {
-                        for (const nodeList of this.#prevNodes) {
-                            let oldNode = nodeList.find((node) => node.ip === ip);
-                            oldNodes.push(oldNode);
-                        }
-                        for (const fieldbus of oldNodes[1].fieldbusses) {
-                            if (fieldbus.codec === 0) {
-                                let prevFb = oldNodes[0].fieldbusses.find((fb) => fb.id === fieldbus.id);
-                                fieldbus.startAddress = prevFb.startAddress;
-                                fieldbus.streamLength = prevFb.streamLength;
-                            }
-                        }
-                        // oldNode = this.#prevNodes[1].find((node) => node.ip === ip);
-                    } catch (error) {
-                        // console.error(error);
-                    }
                     let node;
                     try {
-                        node = await new Node(ip, false, oldNodes.length > 0 ? [...oldNodes] : null);    
+                        node = await new Node(ip, false, [...this.#prevNodes] );    
                     } catch(error) {console.error(error)};
                                    
                     foundNodes.push(node);
                 }
                 if (init) foundNodes[0].active = true;
                 this.#nodes = foundNodes;
+                this.pushPrevNodes(this.#nodes);  
+
 
             } catch (error) {
                 if (error.name === "TimeoutError") {
@@ -1330,11 +1349,11 @@ Acces-Control-Allow-Origin: *
                     <h3 id="name">${node.name}</h3>
                     <form class="node-form">
                         <label for="new-name"> Name:</label><br>
-                        <input type="text" id="new-name" placeholder=${node.name}><br>
+                        <input type="text" id="new-name" value=${node.name}><br>
                         <label class="form-label" for="new-ip"> IP:</label><br>
-                        <input type="text" id="new-ip" placeholder=${node.ip}><br>
+                        <input type="text" id="new-ip" value=${node.ip}><br>
                         <label class="form-label" for="new-mask"> Netmask:</label><br>
-                        <input type="text" id="new-mask" placeholder=${node.netmask}><br>
+                        <input type="text" id="new-mask" value=${node.netmask}><br>
                         <div id="submit-wrapper">
                             <input type="submit" value="Push to node">
                         </div>
@@ -1483,7 +1502,7 @@ Acces-Control-Allow-Origin: *
             firmwareVersion.innerHTML = this.activeNode.firmware;
             let counter = 1;
             this.activeNode.universes.forEach((uni) => {
-                if (counter <= this.activeNode.shownUniverses) {
+                if (counter <= installation.shownUniverses) {
                     let u = document.createElement("li");
                     u.classList.add("range");
                     if (this.lm) u.classList.add("light");
@@ -1507,7 +1526,7 @@ Acces-Control-Allow-Origin: *
 
             counter = 1;
             this.activeNode.universes.forEach(un => {
-                if (counter <= this.activeNode.shownUniverses) {              
+                if (counter <= installation.shownUniverses) {              
                     let a = document.createElement("div");
                     a.style.marginLeft = `${this.#accMargin}px`
                     a.id = `accolade-${counter}`;
@@ -1528,15 +1547,27 @@ Acces-Control-Allow-Origin: *
 
             counter = 1;
             this.activeNode.fieldbusses.forEach((fb) => {
-                fb.addressBlock = document.getElementById(`address-block-${counter}`);
-                fb.startElement = document.querySelector(`#fb-${counter} .address-container h2.start`);
-                fb.streamElement = document.querySelector(`#fb-${counter} .address-container h2.stream`);
-                fb.codecElement = document.querySelector(`#fb-${counter} .fb-protocol`);
+                fb.fieldbusElement  = document.querySelector(`#fb-${counter}`);
+                fb.addressRange     = document.querySelector(`#fb-${counter} .address.range`);
+                fb.addressBlock     = document.querySelector(`#address-block-${counter}`);
+                fb.startElement     = document.querySelector(`#fb-${counter} .address-container h2.start`);
+                fb.streamElement    = document.querySelector(`#fb-${counter} .address-container h2.stream`);
+                fb.codecElement     = document.querySelector(`#fb-${counter} .fb-protocol`);
                 // fb.patch = document.querySelector(".patch");
 
-                if (fb.codec === 0) {
+                fb.fieldbusElement.setAttribute("ubp", false);
+                if (fb.codec === 0 || fb.codec === 1) {
                     fb.addressBlock.hidden = true;
-                } else fb.addressBlock.hidden = false;
+                    if (fb.codec === 1) {
+                        fb.fieldbusElement.setAttribute("ubp", true);
+                        fb.addressRange.hidden = true;
+                    } else {
+                        fb.addressRange.hidden = false;
+                    }
+                } else {
+                    fb.addressBlock.hidden = false;
+                    fb.addressRange.hidden = false;
+                }
 
                 // Config elements for start and streamlength
                 let startElement;
@@ -1558,13 +1589,15 @@ Acces-Control-Allow-Origin: *
                                             generateDomTree("span", fb.streamLength, {class: "draggable"})]);
                 }
 
+                fb.addressHeight = fb.addressRange.getBoundingClientRect()["height"]*(fb.streamLength/(512*installation.shownUniverses));
+
                 fb.startElement.replaceWith(startElement);
                 fb.streamElement.replaceWith(streamElement);
 
                 // Updating all the fb.addressblock heights and startpositions
                 // Height = streamlength, top = startaddres
-                let start = String((fb.startAddress/(512*this.activeNode.shownUniverses))*100)+"%";
-                let stream = String((fb.streamLength/(512*this.activeNode.shownUniverses))*100)+"%";
+                let start = String((fb.startAddress/(512*installation.shownUniverses))*100)+"%";
+                let stream = String((fb.streamLength/(512*installation.shownUniverses))*100)+"%";
                 
                 
                 fb.addressBlock.style.height = stream;
@@ -1572,11 +1605,10 @@ Acces-Control-Allow-Origin: *
                 
                 fb.startElement = document.querySelector(`#fb-${counter} .address-container h2.start`);
                 fb.streamElement = document.querySelector(`#fb-${counter} .address-container h2.stream`);
-                let patch = document.querySelector(`#fb-${counter} .address.range .patch`);
-                console.log(patch.clientHeight);
+                
+                // checkOverflow(fb.addressBlock, !this.config, addressHeight)
 
-
-                if (counter > this.activeNode.shownUniverses) {
+                if (counter > installation.shownUniverses) {
                     fb.addressBlock.hidden = "true";
                 }
 
@@ -1611,17 +1643,23 @@ Acces-Control-Allow-Origin: *
                     fb.codecElement.appendChild(h3);
                 }
                 fb.codecElement.appendChild(rj45);
-
-                if (fb.codec !== 0) checkOverflow(patch, !this.config);
                 
                 counter++;
             });
+            
 
             // mark double universes in red
             this.checkDoubleUnis();
             
             this.changeGridStyling(); // must happen before setting the handlers otherwise the offset
             // is wrong
+
+            this.activeNode.fieldbusses.forEach((fb) => {
+                if (fb.codec === 1) {
+                    fb.fieldbusElement.style.gridRow = `${installation.shownUniverses}/${installation.shownUniverses+3}`
+                } 
+                checkOverflow(fb.addressBlock, !this.config, fb.addressHeight)
+            })
         
             if (this.config) {
                 // setting the event listener for the form
@@ -1631,7 +1669,11 @@ Acces-Control-Allow-Origin: *
                     form.removeEventListener("submit", this.activeNode.processForm);
                 })
                 form.addEventListener("submit", this.activeNode.processForm);
-            }       
+            }
+            
+            if (this.configElement.classList.contains("loading")) {
+                this.configElement.classList.remove("loading");
+            }
         }
 
         eventInit() {
@@ -1667,20 +1709,20 @@ Acces-Control-Allow-Origin: *
                 button.addEventListener("click", () => {
                     const accolades = document.querySelectorAll("#accolades div");
                     if (button.id === "increment") {
-                        if (this.activeNode.shownUniverses < this.activeNode.maxShownUniverses) {
-                            this.activeNode.changeShownUni(true);
+                        if (this.shownUniverses < this.maxShownUniverses) {
+                            this.changeShownUni(true);
                             this.#accMargin += 5;
                         }
                     } else if (button.id === "decrement") {
-                        if (this.activeNode.shownUniverses > this.activeNode.minShownUniverses) {
+                        if (this.shownUniverses > this.minShownUniverses) {
                             let overLap = false;
                             for (const fb of this.activeNode.fieldbusses) {
-                                if ((fb.startAddress + fb.streamLength)-1 > (this.activeNode.shownUniverses-1) * 512) {
+                                if ((fb.startAddress + fb.streamLength)-1 > (this.shownUniverses-1) * 512) {
                                     overLap = true;
                                 }
                             }
                             if (!overLap) {
-                                this.activeNode.changeShownUni(false);
+                                this.changeShownUni(false);
                                 this.#accMargin -= 5;
                             }        
                         }
@@ -1708,6 +1750,7 @@ Acces-Control-Allow-Origin: *
             this.textConfigButton = document.querySelector("#text-config");
             this.textConfigButton.addEventListener("click", this.switchTextConfig)
 
+            this.configElement.addEventListener("click", this.handleFbEvent);
             this.configElement.addEventListener("mousedown", this.handleFbEvent);
             this.configElement.addEventListener("change", this.handleFbEvent);
             this.configElement.addEventListener("input", this.handleFbEvent);
@@ -1725,7 +1768,7 @@ Acces-Control-Allow-Origin: *
                 this.fieldbussesElement.style.gridColumn = "8/10";
                 for (let i=0; i<fieldbusContainers.length; i++) {
                     fieldbusContainers[i].style.position = "relative";
-                    fieldbusContainers[i].style.zIndex = `${fieldbusContainers.length-i}`;
+                    fieldbusContainers[i].style.zIndex = `${1000 + fieldbusContainers.length-i}`;
                     fieldbusContainers[i].style.gridColumn = "1"
                     fieldbusContainers[i].style.justifySelf = "baseline"
                     if (i > 0) {
@@ -1734,6 +1777,7 @@ Acces-Control-Allow-Origin: *
                     
                 }
                 this.textConfigElement.classList.add("card");
+                this.textConfigElement.style.gridRow = `1/${installation.shownUniverses+3}`
                 this.textArea = document.querySelector("#xml-text-area");
                 if (this.activeNode.mac === "7B:A6:80:7F:EC:7D") {
                     this.activeNode.configuration.setXmlConfig(this.activeNode);
@@ -1747,11 +1791,11 @@ Acces-Control-Allow-Origin: *
                 this.universesContainer.style.display = "grid";
                 this.accoladesElement.style.display = "grid";
                 this.textConfigElement.classList.remove("card");
-                this.fieldbussesElement.style.gridColumn = "2/10";
+                this.fieldbussesElement.style.gridColumn = "4/10";
                 for (let i=0; i<fieldbusContainers.length; i++) {
                     fieldbusContainers[i].style.position = "relative";
                     fieldbusContainers[i].style.zIndex = `${fieldbusContainers.length-i}`;
-                    fieldbusContainers[i].style.gridColumn = `${i+3}`;
+                    fieldbusContainers[i].style.gridColumn = `${i + 1}`;
                     fieldbusContainers[i].style.justifySelf = "end";
                     fieldbusContainers[i].style.left = "0px"
                 }
@@ -1759,14 +1803,17 @@ Acces-Control-Allow-Origin: *
         }
 
         handleFbEvent = (e) => {
-            // console.log(e.target);
             if (e.target.classList.contains("e-button") || e.target.tagName === "OPTION") {
                 return;
             }
 
-            if (e.type !== "mousemove") {
+            if (e.type === "click" && e.target.tagName === "INPUT") {
+                e.target.focus();
+                e.target.select();
+            }
+
+            if (e.type !== "mousemove" && e.type !== "mouseup" && e.type !== "click") {
                 if ((e.target.id === "universe" || e.target.id === "keep")) {
-                    e.target.select();
                     if (e.type === "input") {
                         let min, max;
                         if (e.target.id === "universe") {
@@ -1805,7 +1852,6 @@ Acces-Control-Allow-Origin: *
                     this.targetFb = e.target.closest(".fieldbus").id.slice(-1)-1;
                     this.targetFb = this.activeNode.fieldbusses.find((fb) => fb.id === `out${this.targetFb}`);
                     if (e.target.tagName === "INPUT") {
-                        e.target.select();
                         if (e.type === "input") {
                             let min = 1, max = 5120;
                             let inputValue = e.target.value;
@@ -1845,6 +1891,7 @@ Acces-Control-Allow-Origin: *
                         break;
                     case "change":
                         this.targetFb.handleCodecChange(e);
+                        this.targetFb = undefined;
                         break;
                     case "mousemove":
                         this.targetFb.setMove(e);
@@ -1909,18 +1956,22 @@ Acces-Control-Allow-Origin: *
             let protos          = document.querySelectorAll(".fb-protocol.info");
             let textC           = document.querySelector("#text-config-container");
 
-            main.style.gridTemplateRows = `repeat(${this.activeNode.shownUniverses}, 1fr) 25px 120px`
-            uniC.style.gridRow          = `1/${this.activeNode.shownUniverses+2}`
-            uni.style.gridRow = fieldbusses.style.gridRow = `1/${this.activeNode.shownUniverses+3}`
-            uniFilter.style.gridRow = textC.style.gridRow = `${this.activeNode.shownUniverses+2}`
+            main.style.gridTemplateRows = `repeat(${installation.shownUniverses}, 1fr) 25px 120px`;
+            uniC.style.gridRow          = `1/${installation.shownUniverses+2}`;
+            uni.style.gridRow           = fieldbusses.style.gridRow = `1/${installation.shownUniverses+3}`;
+            uniFilter.style.gridRow     = textC.style.gridRow = `${installation.shownUniverses+2}`;
+
             for (const fb of fbC) {
-                fb.style.gridRow = `1/${this.activeNode.shownUniverses+3}`
+                fb.style.gridRow = `1/${installation.shownUniverses+3}`
+                if (fb.getAttribute("ubp") === "true") {
+                    fb.style.gridRow = `${installation.shownUniverses}/${installation.shownUniverses+3}`
+                } else fb.style.gridRow = `1/${installation.shownUniverses+3}`
             }
             for (const f of fb) {
-                f.style.gridRow = `1/${this.activeNode.shownUniverses+1}`
+                f.style.gridRow = `1/${installation.shownUniverses+1}`
             }
             for (const p of protos) {
-                p.style.gridRow = `${this.activeNode.shownUniverses +2}`
+                p.style.gridRow = `${installation.shownUniverses +2}`
             }
         }
 
@@ -1963,9 +2014,6 @@ Acces-Control-Allow-Origin: *
         #fieldbusses = [];
         #codecs = [];
         #firmware;
-        #maxShownUniverses = 10;
-        #minShownUniverses = 6;
-        #shownUniverses = 6;
         #lastUpdate;
         #online = true;
         #active = false;
@@ -1976,18 +2024,15 @@ Acces-Control-Allow-Origin: *
 
         #enableDetector = [[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]]
 
-        constructor(ip, skipConfig = false,  oldSelf = null) {
+        constructor(ip, skipConfig = false,  oldNodes = null) {
             this.#ip = ip;
             
             if (!skipConfig) {
                 return (async () => {
                     this.#configuration = await new Configuration(ip);
-                    if (oldSelf !== null) {
-                        this.#oldNodes = [...oldSelf];
-                        // console.log(this.#oldNodes)
-                        this.#shownUniverses = this.#oldNodes[1].shownUniverses;
-                        this.#enableDetector = this.#oldNodes[1].enableDetector;
-                    };           
+                    if (oldNodes !== null) {
+                        this.#oldNodes = [...oldNodes];
+                    };       
                     this.initialiseNode();
 
                     return this;
@@ -2033,18 +2078,6 @@ Acces-Control-Allow-Origin: *
 
         get firmware() {
             return this.#firmware;
-        }
-
-        get shownUniverses() {
-            return this.#shownUniverses;
-        }
-
-        get maxShownUniverses() {
-            return this.#maxShownUniverses;
-        }
-
-        get minShownUniverses() {
-            return this.#minShownUniverses;
         }
         
         get active() {
@@ -2167,10 +2200,6 @@ Acces-Control-Allow-Origin: *
             }    
         }
 
-        changeShownUni(up){
-            up? this.#shownUniverses++ : this.#shownUniverses--;
-        }
-
         initialiseNode() {
             if (this.#configuration !== null) {
                 this.#name = this.#configuration.name;
@@ -2182,40 +2211,56 @@ Acces-Control-Allow-Origin: *
                 this.#switch = this.#configuration.switch;
                 this.#netmask = this.#configuration.mask;
                 this.#firmware = this.#configuration.firmware;
+
+                let prevNode;
+                if (this.#oldNodes[0] !== undefined) {
+                    prevNode = this.#oldNodes[0].find((node) => node.mac === this.#mac)
+                    console.log(prevNode);
+                }
                 let counter = 0;
+                let resetFb = false;
+                let fbIndex = 0
                 for (const [key, value] of Object.entries(this.#configuration.fieldbus)) {
                     let params = [];
                     for (let v of Object.values(value)) {
                         params.push(v);
-                    }      
-
-                    this.#fieldbusses.push(new Fieldbus(key, ...params));
+                    }
+                    let fieldbus = new Fieldbus(key, ...params);
+                    if (this.#oldNodes[0] !== undefined) {
+                        if (prevNode.fieldbusses[counter].startAddress === 0) {
+                            console.log("found fb at number " + counter);
+                            fieldbus.startAddress = 1;
+                            fieldbus.streamLength = 512;
+                            console.log(fieldbus);
+                            this.configuration.handleInputChange(fieldbus);
+                        }
+                    }
+                    this.#fieldbusses.push(fieldbus);
                     counter++;
                 }
 
-                if (this.#oldNodes.length !== 0) {
-                    let resetFb = false;
-                    for (let i = 0; i < this.fieldbusses.length; i++) {
-                        if (this.#oldNodes[0].fieldbusses[i]["codec"] === 0 && this.#oldNodes[1].fieldbusses[i]["codec"] > 0) {
-                            console.log(`rising edge detected at fb ${i}`);
-                            let oldFb = this.#oldNodes[0].fieldbusses[i];
-                            console.log(`previous config: ${oldFb.startAddress}, ${oldFb.streamLength}`)
-                            this.fieldbusses[i].startAddress    = oldFb.startAddress;
-                            this.fieldbusses[i].streamLength    = oldFb.streamLength;
-                            resetFb = true;
-                            console.log("restored previous config");
-                        } else if (this.fieldbusses[i].startAddress === 1 && this.fieldbusses[i].streamLength === 1
-                                    && this.fieldbusses[i].codec > 0 && this.#oldNodes[0].fieldbusses[i].streamLength === 0) {
-                            this.fieldbusses[i].startAddress = 1;
-                            this.fieldbusses[i].streamLength = 512;
-                            resetFb = true;
-                        }
-                        if (resetFb) {
-                            this.configuration.handleInputChange(this.fieldbusses[i])
-                            resetFb = false;
-                        }                   
-                    }
-                }
+                // if (this.#oldNodes.length !== 0) {
+                //     for (let i = 0; i < this.fieldbusses.length; i++) {
+                //         if (this.#oldNodes[0].fieldbusses[i]["codec"] === 0 && this.#oldNodes[1].fieldbusses[i]["codec"] > 0) {
+                //             console.log(`rising edge detected at fb ${i}`);
+                //             let oldFb = this.#oldNodes[0].fieldbusses[i];
+                //             console.log(`previous config: ${oldFb.startAddress}, ${oldFb.streamLength}`)
+                //             this.fieldbusses[i].startAddress    = oldFb.startAddress;
+                //             this.fieldbusses[i].streamLength    = oldFb.streamLength;
+                //             resetFb = true;
+                //             console.log("restored previous config");
+                //         } else if (this.fieldbusses[i].startAddress === 1 && this.fieldbusses[i].streamLength === 1
+                //                     && this.fieldbusses[i].codec > 0 && this.#oldNodes[0].fieldbusses[i].streamLength === 0) {
+                //             this.fieldbusses[i].startAddress = 1;
+                //             this.fieldbusses[i].streamLength = 512;
+                //             resetFb = true;
+                //         }
+                //         if (resetFb) {
+                //             this.configuration.handleInputChange(this.fieldbusses[i])
+                //             resetFb = false;
+                //         }                   
+                //     }
+                // }    
 
                 for (const [key, value] of Object.entries(this.#configuration.artnet)) {
                     let params = [];
@@ -2446,14 +2491,14 @@ Acces-Control-Allow-Origin: *
                             rangeElement = document.querySelector(`#${this.targetFb} .address-container h2.stream input`);
                             rangeElement.value = this.newRange;
                         }
-                        patch.style.height = String((this.newRange/(512*installation.activeNode.shownUniverses))*100)+"%";
+                        patch.style.height = String((this.newRange/(512*installation.shownUniverses))*100)+"%";
 
                         checkOverflow(patch, status);
 
                     }
                     if (newStart !== undefined) {
                         this.newStart = Math.floor(newStart);
-                        patch.style.top = String((newStart/(512*installation.activeNode.shownUniverses))*100)+"%";
+                        patch.style.top = String((newStart/(512*installation.shownUniverses))*100)+"%";
                         let startElement;
                         if (!document.querySelector(".patch").classList.contains("config")) {
                             startElement = document.querySelector(`#${this.targetFb} .address-container h2.start span`);
@@ -2470,14 +2515,14 @@ Acces-Control-Allow-Origin: *
                 let newStart = 0;
                 let dif = 0;
                 const addressRange = document.querySelector(`#fb-${parseInt(this.#id.split("out")[1])+1} .address.range`);
-                const addressesPerPixel = (512*installation.activeNode.shownUniverses)/addressRange.getBoundingClientRect()["height"];
+                const addressesPerPixel = (512*installation.shownUniverses)/addressRange.getBoundingClientRect()["height"];
 
                 switch (this.start) {
                     case "top":
                         const offsetTop = this.startCoord-e.clientY;
                         newStart = this.#startAddress - (offsetTop*addressesPerPixel);
                         newRange = this.#streamLength + (offsetTop*addressesPerPixel);
-                        for (let i=0; i<= installation.activeNode.shownUniverses; i++) {
+                        for (let i=0; i<= installation.shownUniverses; i++) {
                             dif = newStart - (512*i);
                             if (dif > -threshold && dif < threshold) {
                                 let hop = (512*i) - newStart;
@@ -2502,7 +2547,7 @@ Acces-Control-Allow-Origin: *
                         const offsetBottom = this.startCoord-e.clientY;
                         newRange = this.#streamLength - (offsetBottom*addressesPerPixel);
                         // snapping to full universes
-                        for (let i=0; i<= installation.activeNode.shownUniverses; i++) {
+                        for (let i=0; i<= installation.shownUniverses; i++) {
                             dif = (512*i-(this.#startAddress+newRange));
                             if (dif < threshold && dif > -threshold){
                                 newRange = (512*i)-(this.#startAddress-1)
@@ -2510,14 +2555,14 @@ Acces-Control-Allow-Origin: *
                             }
                         }
                         // bottom and top limits
-                        if (this.startAddress + newRange > 512*installation.activeNode.shownUniverses) newRange = (512*installation.activeNode.shownUniverses)-(this.#startAddress-1);
+                        if (this.startAddress + newRange > 512*installation.shownUniverses) newRange = (512*installation.shownUniverses)-(this.#startAddress-1);
                         if (newRange < 1) newRange = 1;
                         changePatch(newRange);
                         break;  
                     case "patch":
                         const offset = this.startCoord-e.clientY;
                         newStart = this.#startAddress - (offset*addressesPerPixel);
-                        for (let i=0; i<= installation.activeNode.shownUniverses; i++) {
+                        for (let i=0; i<= installation.shownUniverses; i++) {
                             dif = newStart - (512*i);
                             if (dif > -threshold && dif < threshold) {
                                 newStart = (512*i) + 1;
@@ -2525,7 +2570,7 @@ Acces-Control-Allow-Origin: *
                             }          
                         }
                         if (newStart < 1) newStart = 1;
-                        else if (newStart + this.#streamLength > 512*installation.activeNode.shownUniverses) newStart = (512*installation.activeNode.shownUniverses) - this.#streamLength;
+                        else if (newStart + this.#streamLength > 512*installation.shownUniverses) newStart = (512*installation.shownUniverses) - this.#streamLength;
                         changePatch(undefined, newStart);
                         break
                     default:
@@ -2666,6 +2711,7 @@ Acces-Control-Allow-Origin: *
         }
 
         async postXmlConfig(xml) {
+            installation.configElement.classList.add("loading")
             try {
                 const response = await fetch(`http://${installation.activeNode.ip}/xml`, {
                     signal: AbortSignal.timeout(2000),
@@ -2685,7 +2731,7 @@ Acces-Control-Allow-Origin: *
                 }
 
                 let demoNode = installation.nodes.find((node) => node.mac === "7B:A6:80:7F:EC:7D");
-                installation.pushPrevNodes(installation.nodes);
+                // installation.pushPrevNodes(installation.nodes);
                 await installation.fetchNodes(false);
                 if (!installation.nodes.some((node) => node.mac === "7B:A6:80:7F:EC:7D")) installation.nodes.push(demoNode);
                 installation.updateNav(false);
@@ -2767,7 +2813,6 @@ Acces-Control-Allow-Origin: *
 
         generateTextConfig() {
             let xmlText = "<node>\n";
-            console.log(this.#configObject);
             // Filling the textConfig with information from the fetched object
             function traverseObject(configObject, lvl = 1) {
                 if (configObject !== null && typeof configObject === 'object') {
@@ -2914,28 +2959,26 @@ Acces-Control-Allow-Origin: *
         return root;
     }
   
-    function checkOverflow(patchContainer, status) {
+    function checkOverflow(patchContainer, status, ah = null) {
         let patch = patchContainer.children[1];
         let start = patch.children[0];
         let stream = patch.children[1];
-        // console.log(start.clientHeight);
-        // console.log(stream.clientHeight);
         let input;
         let inputHeight = 0;
-        let offset = 7;
+        let offset = 5;
         if (!status) {
             input = start.children[0].children[1];
             inputHeight = input.clientHeight;
         }
 
-        if (start.clientHeight + stream.clientHeight + 2 * inputHeight >= patch.clientHeight - offset) {
+        if (start.clientHeight + stream.clientHeight + 2 * inputHeight >= (ah? ah : patch.clientHeight) - offset) {
             patch.classList.add("overflow");
         } else if (!patch.classList.contains("extreme")) {
             patch.classList.remove("overflow");
         }
 
         if (patch.classList.contains("overflow")) {
-            if (stream.clientHeight + inputHeight >= patch.clientHeight - offset) {
+            if (stream.clientHeight + inputHeight >= (ah? ah : patch.clientHeight) - offset) {
                 patch.classList.add("extreme");
             } else patch.classList.remove("extreme");
         }
