@@ -112,6 +112,10 @@ Acces-Control-Allow-Origin: *
         user-select: none; /* Standard syntax */ 
     }
 
+    body.loading * {
+        cursor: progress !important;
+    }
+
     body.light {
         --ll-yellow: rgb(82, 82, 82);
         --ll-light-yellow: #4d4d4d;
@@ -1546,7 +1550,11 @@ Acces-Control-Allow-Origin: *
                     form.removeEventListener("submit", this.activeNode.processForm);
                 })
                 form.addEventListener("submit", this.activeNode.processForm);
-            }       
+            }
+            
+            if (this.configElement.classList.contains("loading")) {
+                this.configElement.classList.remove("loading");
+            }
         }
 
         eventInit() {
@@ -2508,6 +2516,7 @@ Acces-Control-Allow-Origin: *
         }
 
         async postXmlConfig(xml) {
+            installation.configElement.classList.add("loading")
             try {
                 const response = await fetch(`http://${installation.activeNode.ip}/xml`, {
                     signal: AbortSignal.timeout(2000),
