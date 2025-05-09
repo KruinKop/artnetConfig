@@ -456,7 +456,7 @@ Acces-Control-Allow-Origin: *
         font-weight: 200;
     }
 
-    .node.selected.disconnected h2 {
+    .node.selected.disconnected h3 {
         opacity: 100%;
     }
 
@@ -1036,13 +1036,17 @@ Acces-Control-Allow-Origin: *
         grid-template-columns: 2fr 1fr;
         grid-template-rows: 6fr 1fr;
         grid-column: 2/8;
-        align-self: inherit;     
+        align-self: inherit;
+        color: var(--ll-yellow-font);
+        font-family: var(--font-regular);   
     }
 
     #text-config, .xml-text-button {
         cursor: pointer;
+        font-size: var(--font-size-small);
         height: 50px;
         width: 90px;
+        border: 2px solid var(--ll-yellow-font);
         border-radius: 10px;
         border-color: var(--ll-yellow-font);
         color: var(--ll-yellow-font);
@@ -1068,8 +1072,7 @@ Acces-Control-Allow-Origin: *
         grid-row: 1;
         padding: var(--padding-medium);
         display: none;
-        color: var(--ll-yellow-font);
-        font-family: var(--font-regular);
+        
     }
 
     #push{
@@ -1078,15 +1081,26 @@ Acces-Control-Allow-Origin: *
         justify-self: end;
     }
 
-    #upload, #download {
+    #upload-container, #download-container {
+        text-decoration: none;
         margin-left: var(--padding-medium);
         grid-column: 2;
         grid-row: 1;
         align-self: end;
     }
 
-    #upload {
+    #upload-container {
+        padding: 2px;
+        height: auto;
+        width: 82px;
+        height: 42px;
+        line-height: 43px;
+        text-align: center;
         margin-bottom: 60px;
+    }
+
+    #upload {
+        display: none;
     }
 
     .xml-text-button {
@@ -1094,7 +1108,7 @@ Acces-Control-Allow-Origin: *
     }
 
     .card #xml-text-area, .card p#help-text, .card .xml-text-button {
-        display: block;
+        display: inline-block;
     }
 
     /* ============= Dynamic resizing ============== */
@@ -1267,7 +1281,8 @@ Acces-Control-Allow-Origin: *
 
         async fetchNodes(init) {
             try {
-                const response = await fetch(`${nodeIp}/xdev`, {signal: AbortSignal.timeout(2000)});
+                // ${nodeIp}/
+                const response = await fetch(`xdev`, {signal: AbortSignal.timeout(2000)});
                 if (!response.ok) {
                     throw new Error(`Response status: ${response.status}`);
                 }
@@ -1367,6 +1382,7 @@ Acces-Control-Allow-Origin: *
             navBar.innerHTML="";
             this.#nodes.forEach(node => {
                 let nodeElement = generateNode(node, this.lm);
+                if (!node.online) nodeElement.classList.add("disconnected");
                 if (this.lm) nodeElement.classList.add("light");
                 // check if the webpage address corresponds to one of the nodes in the lists,
                 // make this the selected node if match is found.
@@ -1663,6 +1679,10 @@ Acces-Control-Allow-Origin: *
             
             // mark double universes in red
             this.checkDoubleUnis();
+
+            if (this.textConfig) {
+                    this.textConfigElement.style.gridRow = `1/${this.shownUniverses+3}`
+                }
         
             if (this.config) {
                 // setting the event listener for the form
@@ -1685,7 +1705,7 @@ Acces-Control-Allow-Origin: *
                     let fieldbusContainers = document.querySelectorAll(".fieldbus");
                     for (let i=0; i<fieldbusContainers.length; i++) {
                         if (i > 0) {
-                            fieldbusContainers[i].style.left = `${(i-1)*(this.fieldbussesElement.clientWidth/6.5)}px`
+                            fieldbusContainers[i].style.left = `${(i-1)*(this.fieldbussesElement.clientWidth/8)}px`
                         }                   
                     }
                 }
@@ -1776,10 +1796,7 @@ Acces-Control-Allow-Origin: *
                     fieldbusContainers[i].style.position = "relative";
                     fieldbusContainers[i].style.zIndex = `${1000 + fieldbusContainers.length-i}`;
                     fieldbusContainers[i].style.gridColumn = "1"
-                    fieldbusContainers[i].style.justifySelf = "baseline"
-                    if (i > 0) {
-                        fieldbusContainers[i].style.left = `${(i-1)*(this.fieldbussesElement.clientWidth/6.5)}px`
-                    }
+                    fieldbusContainers[i].style.left = `${(i-1)*(this.fieldbussesElement.clientWidth/8)}px`
                     
                 }
                 this.textConfigElement.classList.add("card");
@@ -1789,7 +1806,7 @@ Acces-Control-Allow-Origin: *
                     this.activeNode.configuration.setXmlConfig(this.activeNode);
                     this.textArea.value = this.activeNode.configuration.textConfig;
                 } else {
-                    this.textArea.value = this.activeNode.configuration.generateTextConfig();
+                    this.textArea.value = this.activeNode.configuration.setXmlConfig(this.activeNode);
                 }          
                 this.textArea.hidden = false
 
@@ -1802,10 +1819,54 @@ Acces-Control-Allow-Origin: *
                     fieldbusContainers[i].style.position = "relative";
                     fieldbusContainers[i].style.zIndex = `${fieldbusContainers.length-i}`;
                     fieldbusContainers[i].style.gridColumn = `${i + 1}`;
-                    fieldbusContainers[i].style.justifySelf = "end";
                     fieldbusContainers[i].style.left = "0px"
                 }
             }
+
+            // adding event listeners for the buttons
+            this.textConfigElement.addEventListener("click", this.handleTextConfig);
+            this.fileInput = document.querySelector("#upload");
+            this.fileInput.addEventListener("change", this.handleUpload);
+            this.textArea.addEventListener("input", this.handleTextInput);
+        }
+
+        handleUpload = (e) => {
+            const conf = this.fileInput.files[0];
+            const reader = new FileReader();
+
+            reader.onload = () => {
+                const result = reader.result;
+                this.textArea.value = result;
+            }
+
+            reader.onerror = function () {
+                console.error('error reading the file');
+            }
+
+            reader.readAsText(conf, 'utf-8');
+        }
+
+        handleTextConfig = (e) => {
+            console.log(e.target.id);
+            switch(e.target.id) {
+                case "download":
+                    console.log("downloading");
+                    console.log(e.target.parentElement);
+                    const fileURL = URL.createObjectURL(this.activeNode.configuration.textConfigBlob);
+                    e.target.parentElement.href = fileURL;
+                    break;
+                case "push":
+                    console.log("pushing to node");
+                    console.log(this.textArea.value);
+                    this.activeNode.configuration.postXmlConfig(this.textArea.value)
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        handleTextInput = (e) => {
+            this.activeNode.configuration.generateTextBlob(e.target.value);
         }
 
         handleFbEvent = (e) => {
@@ -1999,8 +2060,6 @@ Acces-Control-Allow-Origin: *
         #prevTimestampOff = null;
         #prevTimestampOn = null;
 
-        #enableDetector = [[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]]
-
         constructor(ip, skipConfig = false,  oldNodes = null) {
             this.#ip = ip;
             
@@ -2061,9 +2120,10 @@ Acces-Control-Allow-Origin: *
             return this.#active;
         }
 
-        get enableDetector() {
-            return this.#enableDetector;
+        get online() {
+            return this.#online;
         }
+
         
         set ip(ip) {
             let reIP = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
@@ -2291,12 +2351,6 @@ Acces-Control-Allow-Origin: *
             this.ip = ip.value;
             console.log(this.name);
             if (this.mac !== "7B:A6:80:7F:EC:7D") this.configuration.handleFormChange(this);
-        }
-
-        setCurrentFbStatus() {
-            for (let i = 0; i < this.#enableDetector.length; i++) {
-                if (this.fieldbusses[i].codec > 0) this.#enableDetector[i][1] = 1;
-            }
         }
     }
 
@@ -2575,13 +2629,11 @@ Acces-Control-Allow-Origin: *
             "artnet": {
                 "universe": 4,
                 "keep": 4,
-                "framecounter": 4
             },
             "fieldbus": {
                 "codec": 2,
                 "startAddress": 4,
                 "streamLength": 4,
-                "fineTuningParams": 16
             }
             
         }
@@ -2642,6 +2694,10 @@ Acces-Control-Allow-Origin: *
             return this.#configObject["sys"]["fw"];
         }
 
+        get textConfigBlob() {
+            return this.#textConfigBlob;
+        }
+
         async fetchXmlConfig(ip) {
             try {
                 const response = await fetch(`http://${ip}/xml`, {signal: AbortSignal.timeout(2000)});
@@ -2668,11 +2724,13 @@ Acces-Control-Allow-Origin: *
 
         async postXmlConfig(xml) {
             installation.configElement.classList.add("loading")
+            let trimmedXml = xml.replaceAll("\n", "");
+            console.log(trimmedXml);
             try {
                 const response = await fetch(`http://${installation.activeNode.ip}/xml`, {
                     signal: AbortSignal.timeout(2000),
                     method: "POST",
-                    body: xml
+                    body: trimmedXml
                 })
 
                 const xmlText = await response.text();
@@ -2680,7 +2738,8 @@ Acces-Control-Allow-Origin: *
                 const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
                 let responseObj = Configuration.parseConfig(xmlDoc);
                 console.log("configuration changed at: " + hexToDec(responseObj["changed"]));
-                console.log("Fault detected at: " + hexToDec(responseObj["fault"]));
+                // console.log("Fault detected at: " + hexToDec(responseObj["fault"]));
+                console.log("Fault detected at: " + responseObj["fault"]);
 
                 if (!response.ok) {
                     throw new Error(`Response status: ${response.status}`);
@@ -2792,25 +2851,30 @@ Acces-Control-Allow-Origin: *
         }
 
         setXmlConfig(node) {
-            let xmlText = '<node>\n'
-            xmlText += `  <sys>\n`
-            xmlText += `    <ip>${ipToHex(node.ip)}</ip>\n`
-            xmlText += `    <mask>${ipToHex(node.netmask)}</mask>\n`
-            xmlText += `    <mac>${macToHex(node.mac)}</mac>\n`
-            xmlText += `    <name>${node.name}</name>\n`
-            xmlText += `  </sys>\n`
-            xmlText += '  <artnet>\n'
+            let xmlText  = '<node>\n'
+            xmlText     += `  <sys>\n`
+            xmlText     += `    <ip>${ipToHex(node.ip)}</ip>\n`
+            xmlText     += `    <mask>${ipToHex(node.netmask)}</mask>\n`
+            xmlText     += `    <mac>${macToHex(node.mac)}</mac>\n`
+            xmlText     += `    <name>${node.name}</name>\n`
+            xmlText     += `  </sys>\n`
+            xmlText     += '  <artnet>\n'
             node.universes.forEach((uni) => {
-                xmlText += `    <${uni.id}>${demoHexConverter(uni.universe, uni.keep, uni.framecounter)}</${uni.id}>\n`
+                xmlText += `    <${uni.id}>${hexConverter(this.#ioHexCount["artnet"],uni.universe, uni.keep)}</${uni.id}>\n`
             })
             xmlText += '  </artnet>\n'
             xmlText += '  <fieldbus>\n'
             node.fieldbusses.forEach((fieldbus) => {
-                xmlText += `    <${fieldbus.id}>${demoHexConverter(fieldbus.codec, fieldbus.startAddress, fieldbus.streamLength)}</${fieldbus.id}>\n`
+                xmlText += `    <${fieldbus.id}>${hexConverter(this.#ioHexCount["fieldbus"],fieldbus.codec, fieldbus.startAddress, fieldbus.streamLength)}</${fieldbus.id}>\n`
             })
             xmlText += '  </fieldbus>\n'
             xmlText += '</node>'
             this.#textConfig = xmlText;
+            this.#textConfigBlob = new Blob([xmlText], {type: 'text/plain'});
+            return xmlText;
+        }
+
+        generateTextBlob(xmlText) {
             this.#textConfigBlob = new Blob([xmlText], {type: 'text/plain'});
         }
     }
@@ -2876,9 +2940,9 @@ Acces-Control-Allow-Origin: *
         return hex;
     }
 
-    function demoHexConverter(...params) {
-        return params.map(param => param.toString(16).toUpperCase()).join(' ');
-    }
+    // function demoHexConverter(...params) {
+    //     return params.map(param => param.toString(16).toUpperCase()).join(' ');
+    // }
 
     function hexConverter(io, ...params) {
         let paddedHex = '';
@@ -3011,7 +3075,7 @@ Acces-Control-Allow-Origin: *
                 <input type="checkbox" id="switch">
                 <label for="switch">
                     <?xml version="1.0" encoding="utf-8"?>
-                    <svg class="sun" xmlns="http://www.w3.org/2000/svg" x="0px" y="px" viewBox="0 0 50 50">
+                    <svg class="sun" xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" viewBox="0 0 50 50">
                         <path d="M 24.90625 3.96875 C 24.863281 3.976563 24.820313 3.988281 24.78125 4 C 24.316406 4.105469 23.988281 4.523438 24 5 L 24 11 C 23.996094 11.359375 24.183594 11.695313 24.496094 11.878906 C 24.808594 12.058594 25.191406 12.058594 25.503906 11.878906 C 25.816406 11.695313 26.003906 11.359375 26 11 L 26 5 C 26.011719 4.710938 25.894531 4.433594 25.6875 4.238281 C 25.476563 4.039063 25.191406 3.941406 24.90625 3.96875 Z M 10.65625 9.84375 C 10.28125 9.910156 9.980469 10.183594 9.875 10.546875 C 9.769531 10.914063 9.878906 11.304688 10.15625 11.5625 L 14.40625 15.8125 C 14.648438 16.109375 15.035156 16.246094 15.410156 16.160156 C 15.78125 16.074219 16.074219 15.78125 16.160156 15.410156 C 16.246094 15.035156 16.109375 14.648438 15.8125 14.40625 L 11.5625 10.15625 C 11.355469 9.933594 11.054688 9.820313 10.75 9.84375 C 10.71875 9.84375 10.6875 9.84375 10.65625 9.84375 Z M 39.03125 9.84375 C 38.804688 9.875 38.59375 9.988281 38.4375 10.15625 L 34.1875 14.40625 C 33.890625 14.648438 33.753906 15.035156 33.839844 15.410156 C 33.925781 15.78125 34.21875 16.074219 34.589844 16.160156 C 34.964844 16.246094 35.351563 16.109375 35.59375 15.8125 L 39.84375 11.5625 C 40.15625 11.265625 40.246094 10.800781 40.0625 10.410156 C 39.875 10.015625 39.460938 9.789063 39.03125 9.84375 Z M 25 15 C 19.484375 15 15 19.484375 15 25 C 15 30.515625 19.484375 35 25 35 C 30.515625 35 35 30.515625 35 25 C 35 19.484375 30.515625 15 25 15 Z M 4.71875 24 C 4.167969 24.078125 3.78125 24.589844 3.859375 25.140625 C 3.9375 25.691406 4.449219 26.078125 5 26 L 11 26 C 11.359375 26.003906 11.695313 25.816406 11.878906 25.503906 C 12.058594 25.191406 12.058594 24.808594 11.878906 24.496094 C 11.695313 24.183594 11.359375 23.996094 11 24 L 5 24 C 4.96875 24 4.9375 24 4.90625 24 C 4.875 24 4.84375 24 4.8125 24 C 4.78125 24 4.75 24 4.71875 24 Z M 38.71875 24 C 38.167969 24.078125 37.78125 24.589844 37.859375 25.140625 C 37.9375 25.691406 38.449219 26.078125 39 26 L 45 26 C 45.359375 26.003906 45.695313 25.816406 45.878906 25.503906 C 46.058594 25.191406 46.058594 24.808594 45.878906 24.496094 C 45.695313 24.183594 45.359375 23.996094 45 24 L 39 24 C 38.96875 24 38.9375 24 38.90625 24 C 38.875 24 38.84375 24 38.8125 24 C 38.78125 24 38.75 24 38.71875 24 Z M 15 33.875 C 14.773438 33.90625 14.5625 34.019531 14.40625 34.1875 L 10.15625 38.4375 C 9.859375 38.679688 9.722656 39.066406 9.808594 39.441406 C 9.894531 39.8125 10.1875 40.105469 10.558594 40.191406 C 10.933594 40.277344 11.320313 40.140625 11.5625 39.84375 L 15.8125 35.59375 C 16.109375 35.308594 16.199219 34.867188 16.039063 34.488281 C 15.882813 34.109375 15.503906 33.867188 15.09375 33.875 C 15.0625 33.875 15.03125 33.875 15 33.875 Z M 34.6875 33.875 C 34.3125 33.941406 34.011719 34.214844 33.90625 34.578125 C 33.800781 34.945313 33.910156 35.335938 34.1875 35.59375 L 38.4375 39.84375 C 38.679688 40.140625 39.066406 40.277344 39.441406 40.191406 C 39.8125 40.105469 40.105469 39.8125 40.191406 39.441406 C 40.277344 39.066406 40.140625 38.679688 39.84375 38.4375 L 35.59375 34.1875 C 35.40625 33.988281 35.148438 33.878906 34.875 33.875 C 34.84375 33.875 34.8125 33.875 34.78125 33.875 C 34.75 33.875 34.71875 33.875 34.6875 33.875 Z M 24.90625 37.96875 C 24.863281 37.976563 24.820313 37.988281 24.78125 38 C 24.316406 38.105469 23.988281 38.523438 24 39 L 24 45 C 23.996094 45.359375 24.183594 45.695313 24.496094 45.878906 C 24.808594 46.058594 25.191406 46.058594 25.503906 45.878906 C 25.816406 45.695313 26.003906 45.359375 26 45 L 26 39 C 26.011719 38.710938 25.894531 38.433594 25.6875 38.238281 C 25.476563 38.039063 25.191406 37.941406 24.90625 37.96875 Z"></path>
                     </svg>
                     <svg class="moon" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 122.88 122.89" style="enable-background:new 0 0 122.88 122.89" xml:space="preserve"><g><path d="M49.06,1.27c2.17-0.45,4.34-0.77,6.48-0.98c2.2-0.21,4.38-0.31,6.53-0.29c1.21,0.01,2.18,1,2.17,2.21 c-0.01,0.93-0.6,1.72-1.42,2.03c-9.15,3.6-16.47,10.31-20.96,18.62c-4.42,8.17-6.1,17.88-4.09,27.68l0.01,0.07 c2.29,11.06,8.83,20.15,17.58,25.91c8.74,5.76,19.67,8.18,30.73,5.92l0.07-0.01c7.96-1.65,14.89-5.49,20.3-10.78 c5.6-5.47,9.56-12.48,11.33-20.16c0.27-1.18,1.45-1.91,2.62-1.64c0.89,0.21,1.53,0.93,1.67,1.78c2.64,16.2-1.35,32.07-10.06,44.71 c-8.67,12.58-22.03,21.97-38.18,25.29c-16.62,3.42-33.05-0.22-46.18-8.86C14.52,104.1,4.69,90.45,1.27,73.83 C-2.07,57.6,1.32,41.55,9.53,28.58C17.78,15.57,30.88,5.64,46.91,1.75c0.31-0.08,0.67-0.16,1.06-0.25l0.01,0l0,0L49.06,1.27 L49.06,1.27z"/></g></svg>
@@ -3057,8 +3121,13 @@ Acces-Control-Allow-Origin: *
                 It’s possible to change only 1 parameter by giving the tag and it’s value eg. &ltout3> 02 &lt/out3> wil set the third output to the second protocol.
             </p>
             <button class="card xml-text-button" id="push">push to node</button>
-            <button class="card xml-text-button" id="upload">upload</button>
-            <button class="card xml-text-button" id="download">download</button>
+            <label id="upload-container" for="upload" class="card xml-text-button">
+                Upload
+            </label>
+            <input id="upload" type="file">
+            <a id="download-container" download="XML.conf" href="">
+                <button class="card xml-text-button" id="download">download</button>
+            </a>
             <button class="card" id="text-config">text config</button>
         </div>
     </div>

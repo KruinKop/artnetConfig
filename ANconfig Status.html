@@ -1729,22 +1729,22 @@ Acces-Control-Allow-Origin: *
 
         setXmlConfig(node) {
             let xmlText = '<node>\n'
-            xmlText += `\t<sys>\n`
-            xmlText += `\t\t<ip>${ipToHex(node.ip)}</ip>\n`
-            xmlText += `\t\t<mask>${ipToHex(node.netmask)}</mask>\n`
-            xmlText += `\t\t<mac>${macToHex(node.mac)}</mac>\n`
-            xmlText += `\t\t<name>${node.name}</name>\n`
-            xmlText += `\t</sys>\n`
-            xmlText += '\t<artnet>\n'
+            xmlText += `  <sys>\n`
+            xmlText += `    <ip>${ipToHex(node.ip)}</ip>\n`
+            xmlText += `    <mask>${ipToHex(node.netmask)}</mask>\n`
+            xmlText += `    <mac>${macToHex(node.mac)}</mac>\n`
+            xmlText += `    <name>${node.name}</name>\n`
+            xmlText += `  </sys>\n`
+            xmlText += '  <artnet>\n'
             node.universes.forEach((uni) => {
-                xmlText += `\t\t<${uni.id}>${hexConverter(uni.universe, uni.keep, uni.framecounter)}</${uni.id}>\n`
+                xmlText += `    <${uni.id}>${hexConverter(uni.universe, uni.keep, uni.framecounter)}</${uni.id}>\n`
             })
-            xmlText += '\t</artnet>\n'
-            xmlText += '\t<fieldbus>\n'
+            xmlText += '  </artnet>\n'
+            xmlText += '  <fieldbus>\n'
             node.fieldbusses.forEach((fieldbus) => {
-                xmlText += `\t\t<${fieldbus.id}>${hexConverter(fieldbus.codec, fieldbus.startAddress, fieldbus.streamLength)}</${fieldbus.id}>\n`
+                xmlText += `    <${fieldbus.id}>${hexConverter(fieldbus.codec, fieldbus.startAddress, fieldbus.streamLength)}</${fieldbus.id}>\n`
             })
-            xmlText += '\t</fieldbus>\n'
+            xmlText += '  </fieldbus>\n'
             xmlText += '</node>'
             this.#textConfigBlob = new Blob([xmlText], {type: 'text/plain'});
         }
