@@ -689,10 +689,6 @@ Acces-Control-Allow-Origin: *
         position: relative;
         text-align: center;
         margin: 5px;
-        /* display: flex;
-        justify-content: center;
-        justify-self: center; */
-        /* align-items: center; */
         font-size: var(--font-size-medium);
         border-radius: 10px;
         z-index: 2;
@@ -1020,14 +1016,13 @@ Acces-Control-Allow-Origin: *
     #text-config-container {
         z-index: 2000;
         margin-right: var(--padding-large);
-        /* grid-row: 8; */
         grid-column: 2;
         align-self: end;
     }
 
     #text-config-container.card {
+        min-width: 430px;
         position: relative;
-        min-width: 550px;
         display: grid;
         grid-template-columns: 2fr 1fr;
         grid-template-rows: 6fr 1fr;
@@ -1278,7 +1273,7 @@ Acces-Control-Allow-Origin: *
         async fetchNodes(init) {
             try {
                 // ${nodeIp}/
-                const response = await fetch(`xdev`, {signal: AbortSignal.timeout(2000)});
+                const response = await fetch(`${nodeIp}/xdev`, {signal: AbortSignal.timeout(2000)});
                 if (!response.ok) {
                     throw new Error(`Response status: ${response.status}`);
                 }
@@ -1460,45 +1455,7 @@ Acces-Control-Allow-Origin: *
                 counter++;    
             })
 
-            this.accoladesElement           = document.getElementById("accolades");   
-            this.accoladesElement.innerHTML = '';   
-
-            const template = document.getElementById("brace-template");
-
-            counter = 1;
-            this.activeNode.universes.forEach(un => {
-                if (counter <= installation.shownUniverses) {
-                    const braceColor = this.lm ? "rgb(77,77,77)" : "#FFF200";
-                    const className = this.lm;
-                
-                    // Clone the template content
-                    const clone = template.content.cloneNode(true);
-                    const svg = clone.querySelector("svg");
-                
-                    // Replace color placeholders
-                    svg.innerHTML = svg.innerHTML
-                        .replaceAll("__COLOR__", braceColor)
-                        .replace("__CLASS__", className);
-
-                
-                    const a = document.createElement("div");
-                    a.style.marginLeft = `${this.#accMargin}px`;
-                    a.id = `accolade-${counter}`;
-                    a.classList.add("accolade");
-                    a.appendChild(svg);
-                    
-                    this.accoladesElement.appendChild(a);
-                }
-                counter++;
-            });
             this.showActiveNode();
-
-            // calculating the height of the accolades
-            let accDiv = document.querySelector(".accolade");
-            let accHeight = accDiv.getBoundingClientRect()["height"];
-            for(let i = 0; i < this.accoladesElement.children.length; i++) {
-                this.accoladesElement.children[i].children[0].style.height = accHeight;
-            }
         }
 
         checkDoubleUnis() {
@@ -1687,6 +1644,45 @@ Acces-Control-Allow-Origin: *
                 
                 counter++;
             });
+
+            this.accoladesElement           = document.getElementById("accolades");   
+            this.accoladesElement.innerHTML = '';   
+
+            const template = document.getElementById("brace-template");
+
+            counter = 1;
+            this.activeNode.universes.forEach(un => {
+                if (counter <= installation.shownUniverses) {
+                    const braceColor = this.lm ? "rgb(77,77,77)" : "#FFF200";
+                    const className = this.lm;
+                
+                    // Clone the template content
+                    const clone = template.content.cloneNode(true);
+                    const svg = clone.querySelector("svg");
+                
+                    // Replace color placeholders
+                    svg.innerHTML = svg.innerHTML
+                        .replaceAll("__COLOR__", braceColor)
+                        .replace("__CLASS__", className);
+
+                
+                    const a = document.createElement("div");
+                    a.style.marginLeft = `${this.#accMargin}px`;
+                    a.id = `accolade-${counter}`;
+                    a.classList.add("accolade");
+                    a.appendChild(svg);
+                    
+                    this.accoladesElement.appendChild(a);
+                }
+                counter++;
+            });
+
+            // calculating the height of the accolades
+            let accDiv = document.querySelector(".accolade");
+            let accHeight = accDiv.getBoundingClientRect()["height"];
+            for(let i = 0; i < this.accoladesElement.children.length; i++) {
+                this.accoladesElement.children[i].children[0].style.height = accHeight;
+            }
             
             // mark double universes in red
             this.checkDoubleUnis();
@@ -1839,7 +1835,8 @@ Acces-Control-Allow-Origin: *
                     fieldbusContainers[i].style.position = "relative";
                     fieldbusContainers[i].style.zIndex = `${fieldbusContainers.length-i}`;
                     fieldbusContainers[i].style.gridColumn = `${i + 1}`;
-                    fieldbusContainers[i].style.left = "0px"
+                    fieldbusContainers[i].style.left = "0px";
+                    fieldbusContainers[i].style.justifySelf = "end";
                 }
             }
 
