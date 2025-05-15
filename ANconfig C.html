@@ -456,7 +456,7 @@ Acces-Control-Allow-Origin: *
         font-weight: 200;
     }
 
-    .node.selected.disconnected h2 {
+    .node.selected.disconnected h3 {
         opacity: 100%;
     }
 
@@ -1032,13 +1032,17 @@ Acces-Control-Allow-Origin: *
         grid-template-columns: 2fr 1fr;
         grid-template-rows: 6fr 1fr;
         grid-column: 2/8;
-        align-self: inherit;     
+        align-self: inherit;
+        color: var(--ll-yellow-font);
+        font-family: var(--font-regular);   
     }
 
     #text-config, .xml-text-button {
         cursor: pointer;
+        font-size: var(--font-size-small);
         height: 50px;
         width: 90px;
+        border: 2px solid var(--ll-yellow-font);
         border-radius: 10px;
         border-color: var(--ll-yellow-font);
         color: var(--ll-yellow-font);
@@ -1064,8 +1068,7 @@ Acces-Control-Allow-Origin: *
         grid-row: 1;
         padding: var(--padding-medium);
         display: none;
-        color: var(--ll-yellow-font);
-        font-family: var(--font-regular);
+        
     }
 
     #push{
@@ -1074,15 +1077,26 @@ Acces-Control-Allow-Origin: *
         justify-self: end;
     }
 
-    #upload, #download {
+    #upload-container, #download-container {
+        text-decoration: none;
         margin-left: var(--padding-medium);
         grid-column: 2;
         grid-row: 1;
         align-self: end;
     }
 
-    #upload {
+    #upload-container {
+        padding: 2px;
+        height: auto;
+        width: 82px;
+        height: 42px;
+        line-height: 43px;
+        text-align: center;
         margin-bottom: 60px;
+    }
+
+    #upload {
+        display: none;
     }
 
     .xml-text-button {
@@ -1090,7 +1104,7 @@ Acces-Control-Allow-Origin: *
     }
 
     .card #xml-text-area, .card p#help-text, .card .xml-text-button {
-        display: block;
+        display: inline-block;
     }
 
     /* ============= Dynamic resizing ============== */
@@ -1263,7 +1277,8 @@ Acces-Control-Allow-Origin: *
 
         async fetchNodes(init) {
             try {
-                const response = await fetch(`${nodeIp}/xdev`, {signal: AbortSignal.timeout(2000)});
+                // ${nodeIp}/
+                const response = await fetch(`xdev`, {signal: AbortSignal.timeout(2000)});
                 if (!response.ok) {
                     throw new Error(`Response status: ${response.status}`);
                 }
@@ -1363,6 +1378,7 @@ Acces-Control-Allow-Origin: *
             navBar.innerHTML="";
             this.#nodes.forEach(node => {
                 let nodeElement = generateNode(node, this.lm);
+                if (!node.online) nodeElement.classList.add("disconnected");
                 if (this.lm) nodeElement.classList.add("light");
                 // check if the webpage address corresponds to one of the nodes in the lists,
                 // make this the selected node if match is found.
@@ -1674,6 +1690,10 @@ Acces-Control-Allow-Origin: *
             
             // mark double universes in red
             this.checkDoubleUnis();
+
+            if (this.textConfig) {
+                    this.textConfigElement.style.gridRow = `1/${this.shownUniverses+3}`
+                }
         
             if (this.config) {
                 // setting the event listener for the form
@@ -1703,7 +1723,7 @@ Acces-Control-Allow-Origin: *
                     let fieldbusContainers = document.querySelectorAll(".fieldbus");
                     for (let i=0; i<fieldbusContainers.length; i++) {
                         if (i > 0) {
-                            fieldbusContainers[i].style.left = `${(i-1)*(this.fieldbussesElement.clientWidth/6.5)}px`
+                            fieldbusContainers[i].style.left = `${(i-1)*(this.fieldbussesElement.clientWidth/8)}px`
                         }                   
                     }
                 }
@@ -1806,7 +1826,7 @@ Acces-Control-Allow-Origin: *
                     this.activeNode.configuration.setXmlConfig(this.activeNode);
                     this.textArea.value = this.activeNode.configuration.textConfig;
                 } else {
-                    this.textArea.value = this.activeNode.configuration.generateTextConfig();
+                    this.textArea.value = this.activeNode.configuration.setXmlConfig(this.activeNode);
                 }          
                 this.textArea.hidden = false;
 
@@ -1819,10 +1839,54 @@ Acces-Control-Allow-Origin: *
                     fieldbusContainers[i].style.position = "relative";
                     fieldbusContainers[i].style.zIndex = `${fieldbusContainers.length-i}`;
                     fieldbusContainers[i].style.gridColumn = `${i + 1}`;
-                    fieldbusContainers[i].style.justifySelf = "end";
                     fieldbusContainers[i].style.left = "0px"
                 }
             }
+
+            // adding event listeners for the buttons
+            this.textConfigElement.addEventListener("click", this.handleTextConfig);
+            this.fileInput = document.querySelector("#upload");
+            this.fileInput.addEventListener("change", this.handleUpload);
+            this.textArea.addEventListener("input", this.handleTextInput);
+        }
+
+        handleUpload = (e) => {
+            const conf = this.fileInput.files[0];
+            const reader = new FileReader();
+
+            reader.onload = () => {
+                const result = reader.result;
+                this.textArea.value = result;
+            }
+
+            reader.onerror = function () {
+                console.error('error reading the file');
+            }
+
+            reader.readAsText(conf, 'utf-8');
+        }
+
+        handleTextConfig = (e) => {
+            console.log(e.target.id);
+            switch(e.target.id) {
+                case "download":
+                    console.log("downloading");
+                    console.log(e.target.parentElement);
+                    const fileURL = URL.createObjectURL(this.activeNode.configuration.textConfigBlob);
+                    e.target.parentElement.href = fileURL;
+                    break;
+                case "push":
+                    console.log("pushing to node");
+                    console.log(this.textArea.value);
+                    this.activeNode.configuration.postXmlConfig(this.textArea.value)
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        handleTextInput = (e) => {
+            this.activeNode.configuration.generateTextBlob(e.target.value);
         }
 
         handleFbEvent = (e) => {
@@ -2016,8 +2080,6 @@ Acces-Control-Allow-Origin: *
         #prevTimestampOff = null;
         #prevTimestampOn = null;
 
-        #enableDetector = [[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]]
-
         constructor(ip, skipConfig = false,  oldNodes = null) {
             this.#ip = ip;
             
@@ -2078,9 +2140,10 @@ Acces-Control-Allow-Origin: *
             return this.#active;
         }
 
-        get enableDetector() {
-            return this.#enableDetector;
+        get online() {
+            return this.#online;
         }
+
         
         set ip(ip) {
             let reIP = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
@@ -2308,12 +2371,6 @@ Acces-Control-Allow-Origin: *
             this.ip = ip.value;
             console.log(this.name);
             if (this.mac !== "7B:A6:80:7F:EC:7D") this.configuration.handleFormChange(this);
-        }
-
-        setCurrentFbStatus() {
-            for (let i = 0; i < this.#enableDetector.length; i++) {
-                if (this.fieldbusses[i].codec > 0) this.#enableDetector[i][1] = 1;
-            }
         }
     }
 
@@ -2592,13 +2649,11 @@ Acces-Control-Allow-Origin: *
             "artnet": {
                 "universe": 4,
                 "keep": 4,
-                "framecounter": 4
             },
             "fieldbus": {
                 "codec": 2,
                 "startAddress": 4,
                 "streamLength": 4,
-                "fineTuningParams": 16
             }
             
         }
@@ -2659,6 +2714,10 @@ Acces-Control-Allow-Origin: *
             return this.#configObject["sys"]["fw"];
         }
 
+        get textConfigBlob() {
+            return this.#textConfigBlob;
+        }
+
         async fetchXmlConfig(ip) {
             try {
                 const response = await fetch(`http://${ip}/xml`, {signal: AbortSignal.timeout(2000)});
@@ -2685,11 +2744,13 @@ Acces-Control-Allow-Origin: *
 
         async postXmlConfig(xml) {
             installation.configElement.classList.add("loading")
+            let trimmedXml = xml.replaceAll("\n", "");
+            console.log(trimmedXml);
             try {
                 const response = await fetch(`http://${installation.activeNode.ip}/xml`, {
                     signal: AbortSignal.timeout(2000),
                     method: "POST",
-                    body: xml
+                    body: trimmedXml
                 })
 
                 const xmlText = await response.text();
@@ -2697,7 +2758,8 @@ Acces-Control-Allow-Origin: *
                 const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
                 let responseObj = Configuration.parseConfig(xmlDoc);
                 console.log("configuration changed at: " + hexToDec(responseObj["changed"]));
-                console.log("Fault detected at: " + hexToDec(responseObj["fault"]));
+                // console.log("Fault detected at: " + hexToDec(responseObj["fault"]));
+                console.log("Fault detected at: " + responseObj["fault"]);
 
                 if (!response.ok) {
                     throw new Error(`Response status: ${response.status}`);
@@ -2809,25 +2871,30 @@ Acces-Control-Allow-Origin: *
         }
 
         setXmlConfig(node) {
-            let xmlText = '<node>\n'
-            xmlText += `  <sys>\n`
-            xmlText += `    <ip>${ipToHex(node.ip)}</ip>\n`
-            xmlText += `    <mask>${ipToHex(node.netmask)}</mask>\n`
-            xmlText += `    <mac>${macToHex(node.mac)}</mac>\n`
-            xmlText += `    <name>${node.name}</name>\n`
-            xmlText += `  </sys>\n`
-            xmlText += '  <artnet>\n'
+            let xmlText  = '<node>\n'
+            xmlText     += `  <sys>\n`
+            xmlText     += `    <ip>${ipToHex(node.ip)}</ip>\n`
+            xmlText     += `    <mask>${ipToHex(node.netmask)}</mask>\n`
+            xmlText     += `    <mac>${macToHex(node.mac)}</mac>\n`
+            xmlText     += `    <name>${node.name}</name>\n`
+            xmlText     += `  </sys>\n`
+            xmlText     += '  <artnet>\n'
             node.universes.forEach((uni) => {
-                xmlText += `    <${uni.id}>${demoHexConverter(uni.universe, uni.keep, uni.framecounter)}</${uni.id}>\n`
+                xmlText += `    <${uni.id}>${hexConverter(this.#ioHexCount["artnet"],uni.universe, uni.keep)}</${uni.id}>\n`
             })
             xmlText += '  </artnet>\n'
             xmlText += '  <fieldbus>\n'
             node.fieldbusses.forEach((fieldbus) => {
-                xmlText += `    <${fieldbus.id}>${demoHexConverter(fieldbus.codec, fieldbus.startAddress, fieldbus.streamLength)}</${fieldbus.id}>\n`
+                xmlText += `    <${fieldbus.id}>${hexConverter(this.#ioHexCount["fieldbus"],fieldbus.codec, fieldbus.startAddress, fieldbus.streamLength)}</${fieldbus.id}>\n`
             })
             xmlText += '  </fieldbus>\n'
             xmlText += '</node>'
             this.#textConfig = xmlText;
+            this.#textConfigBlob = new Blob([xmlText], {type: 'text/plain'});
+            return xmlText;
+        }
+
+        generateTextBlob(xmlText) {
             this.#textConfigBlob = new Blob([xmlText], {type: 'text/plain'});
         }
     }
@@ -2893,9 +2960,9 @@ Acces-Control-Allow-Origin: *
         return hex;
     }
 
-    function demoHexConverter(...params) {
-        return params.map(param => param.toString(16).toUpperCase()).join(' ');
-    }
+    // function demoHexConverter(...params) {
+    //     return params.map(param => param.toString(16).toUpperCase()).join(' ');
+    // }
 
     function hexConverter(io, ...params) {
         let paddedHex = '';
@@ -3082,8 +3149,13 @@ Acces-Control-Allow-Origin: *
                 It’s possible to change only 1 parameter by giving the tag and it’s value eg. &ltout3> 02 &lt/out3> wil set the third output to the second protocol.
             </p>
             <button class="card xml-text-button" id="push">push to node</button>
-            <button class="card xml-text-button" id="upload">upload</button>
-            <button class="card xml-text-button" id="download">download</button>
+            <label id="upload-container" for="upload" class="card xml-text-button">
+                Upload
+            </label>
+            <input id="upload" type="file">
+            <a id="download-container" download="XML.conf" href="">
+                <button class="card xml-text-button" id="download">download</button>
+            </a>
             <button class="card" id="text-config">text config</button>
         </div>
     </div>
