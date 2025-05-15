@@ -592,9 +592,8 @@ Acces-Control-Allow-Origin: *
         grid-column: 2/3;
         grid-row: 2/3;
         grid-template-columns: calc(40px - var(--padding-medium)) calc(2*var(--padding-medium) + 50px) calc(3*var(--padding-medium)) repeat(6,2fr); 
+        grid-template-rows: subgrid;
         margin: var(--padding-large) var(--padding-small) 0;
-        min-width: 570px;
-        min-height: 768px;
         transition: opacity 500ms;
     }
 
@@ -688,13 +687,12 @@ Acces-Control-Allow-Origin: *
     #universes li {
         align-self: center;
         position: relative;
+        text-align: center;
         margin: 5px;
-        display: flex;
+        /* display: flex;
         justify-content: center;
-        justify-self: center;
-        align-items: center;
-        height: 40px;
-        width: 80px;
+        justify-self: center; */
+        /* align-items: center; */
         font-size: var(--font-size-medium);
         border-radius: 10px;
         z-index: 2;
@@ -706,9 +704,8 @@ Acces-Control-Allow-Origin: *
     }
 
     #universes li input {
+        width: 100%;
         position: relative;
-        min-width: 90%;
-        height: 110%;
         font-size: var(--font-size-medium);
         text-align: center;
     }
@@ -718,7 +715,7 @@ Acces-Control-Allow-Origin: *
         min-width: 60%;
         height: 60%;
         width: 70%;
-        top: 40px;
+        top: 31px;
         left: 40px;
         font-size: var(--font-size-small);
         z-index: 1000;
@@ -841,7 +838,6 @@ Acces-Control-Allow-Origin: *
         border-radius: 15px;
         outline: 3px solid var(--ll-yellow);
         outline-offset: -2px;
-        transition: height 75ms
     }
 
     .draggable {
@@ -1211,10 +1207,10 @@ Acces-Control-Allow-Origin: *
         #lightMode = false;
         // activeNode and activeNodeElement public property is available
 
-        #accMargin = -55;
+        #accMargin = -50;
         #maxShownUniverses = 10;
         #minShownUniverses = 6;
-        #shownUniverses = 6;
+        #shownUniverses = 8;
 
         // Immediately Invoked Async Function Expression zorgt ervoor dat we de nodes kunnen ophalen en nieuwe
         // object instanties kunnen aanmaken zonder then-chaining of extra async functies te gebruiken 
@@ -1420,7 +1416,6 @@ Acces-Control-Allow-Origin: *
                 
                 this.initaliseConfig();
             } else this.showActiveNode();
-            
         }
 
         initaliseConfig() {
@@ -1428,6 +1423,7 @@ Acces-Control-Allow-Origin: *
 
             this.fieldbussesElement = document.getElementById("fieldbusses");
             this.fieldbussesElement.innerHTML = '';
+            
             let counter = 1;
             this.activeNode.fieldbusses.forEach(fb => {
                 fb.fbElement =  generateDomTree("div", null, { id: `fb-${counter}`, class: "fieldbus card" }, [
@@ -1447,8 +1443,46 @@ Acces-Control-Allow-Origin: *
                 this.fieldbussesElement.appendChild(fb.fbElement);
                 counter++;    
             })
-      
+
+            this.accoladesElement           = document.getElementById("accolades");   
+            this.accoladesElement.innerHTML = '';   
+
+            const template = document.getElementById("brace-template");
+
+            counter = 1;
+            this.activeNode.universes.forEach(un => {
+                if (counter <= installation.shownUniverses) {
+                    const braceColor = this.lm ? "rgb(77,77,77)" : "#FFF200";
+                    const className = this.lm;
+                
+                    // Clone the template content
+                    const clone = template.content.cloneNode(true);
+                    const svg = clone.querySelector("svg");
+                
+                    // Replace color placeholders
+                    svg.innerHTML = svg.innerHTML
+                        .replaceAll("__COLOR__", braceColor)
+                        .replace("__CLASS__", className);
+
+                
+                    const a = document.createElement("div");
+                    a.style.marginLeft = `${this.#accMargin}px`;
+                    a.id = `accolade-${counter}`;
+                    a.classList.add("accolade");
+                    a.appendChild(svg);
+                    
+                    this.accoladesElement.appendChild(a);
+                }
+                counter++;
+            });
             this.showActiveNode();
+
+            // calculating the height of the accolades
+            let accDiv = document.querySelector(".accolade");
+            let accHeight = accDiv.getBoundingClientRect()["height"];
+            for(let i = 0; i < this.accoladesElement.children.length; i++) {
+                this.accoladesElement.children[i].children[0].style.height = accHeight;
+            }
         }
 
         checkDoubleUnis() {
@@ -1511,6 +1545,7 @@ Acces-Control-Allow-Origin: *
             this.activeNode.universes.forEach((uni) => {
                 if (counter <= installation.shownUniverses) {
                     let u = document.createElement("li");
+                    u.style.padding = "0px"
                     u.classList.add("range");
                     if (this.lm) u.classList.add("light");
                     if (this.config) {
@@ -1521,34 +1556,10 @@ Acces-Control-Allow-Origin: *
                         u.appendChild(inputK);
                     } else {
                         u.innerHTML = `${uni.universe}<span class="range ${this.lm}">${uni.keep}</span>`
+                        u.style.padding = "0.5rem"
                     }
                     this.universesElement.appendChild(u);
                 }        
-                counter++;
-            })
-
-            // Universes and their braces
-            this.accoladesElement           = document.getElementById("accolades");   
-            this.accoladesElement.innerHTML = '';   
-
-            counter = 1;
-            this.activeNode.universes.forEach(un => {
-                if (counter <= installation.shownUniverses) {              
-                    let a = document.createElement("div");
-                    a.style.marginLeft = `${this.#accMargin}px`
-                    a.id = `accolade-${counter}`;
-                    a.classList.add("accolade");
-                    // svg definition of the braces
-                    let braceColor = this.lm? "rgb(77,77,77)" : "#FFF200";
-                    a.innerHTML = `
-                    <svg height="100%" viewBox="0 0 2000 72" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M61.4318 1.72424H2637.06" stroke=${braceColor} stroke-width="2"/>
-                        <path d="M61.4318 70.7244H2637.06" stroke=${braceColor} stroke-width="2"/>
-                        <path d="M46.4779 36.2288C51.7241 36.3106 59.3583 35.2166 56.7341 28.1965C55.0324 23.6442 50.049 20.9121 50.049 12.6052C50.049 5.20797 54.2605 1.72424 61.4318 1.72424M46.4779 36.2288C51.7241 36.1469 59.3583 37.2492 56.7341 44.2693C55.0324 48.8216 50.049 51.5537 50.049 59.8606C50.049 67.2579 54.2605 70.7416 61.4318 70.7416M46.4779 36.2288H5" fill="none" stroke=${braceColor} stroke-width="2"/>
-                        <text class="info ${this.lm}" x="60" y="40">0fps</text>
-                    </svg>`
-                    this.accoladesElement.appendChild(a);
-                }
                 counter++;
             })
 
@@ -1581,8 +1592,8 @@ Acces-Control-Allow-Origin: *
                     fb.addressRange.hidden = false;
                 }
 
-                fb.addressRange.style.gridRow = `1/${installation.shownUniverses+1}`
-                fb.codecElement.style.gridRow = `${installation.shownUniverses +2}`
+                fb.addressRange.style.gridRow   = `1/${installation.shownUniverses+1}`;
+                fb.codecElement.style.gridRow   = `${installation.shownUniverses +2}`;
 
                 // Config elements for start and streamlength
                 let startElement;
@@ -1681,6 +1692,13 @@ Acces-Control-Allow-Origin: *
 
         eventInit() {
             window.onresize = (e) => {
+                // calculating the height of the accolades
+                let accDiv = document.querySelector(".accolade");
+                let accHeight = accDiv.getBoundingClientRect()["height"];
+                for(let i = 0; i < this.accoladesElement.children.length; i++) {
+                    this.accoladesElement.children[i].children[0].style.height = accHeight;
+                }
+
                 if (this.textConfig) {
                     let fieldbusContainers = document.querySelectorAll(".fieldbus");
                     for (let i=0; i<fieldbusContainers.length; i++) {
@@ -1731,7 +1749,6 @@ Acces-Control-Allow-Origin: *
                         }
                     }
                     this.initaliseConfig();
-                    // this.changeGridStyling();
                 })
             }
 
@@ -1775,10 +1792,10 @@ Acces-Control-Allow-Origin: *
                 for (let i=0; i<fieldbusContainers.length; i++) {
                     fieldbusContainers[i].style.position = "relative";
                     fieldbusContainers[i].style.zIndex = `${1000 + fieldbusContainers.length-i}`;
-                    fieldbusContainers[i].style.gridColumn = "1"
-                    fieldbusContainers[i].style.justifySelf = "baseline"
+                    fieldbusContainers[i].style.gridColumn = "1";
+                    fieldbusContainers[i].style.justifySelf = "stretch";
                     if (i > 0) {
-                        fieldbusContainers[i].style.left = `${(i-1)*(this.fieldbussesElement.clientWidth/6.5)}px`
+                        fieldbusContainers[i].style.left = `${(i-1)*(this.fieldbussesElement.clientWidth/6.5)}px`;
                     }
                     
                 }
@@ -1791,7 +1808,7 @@ Acces-Control-Allow-Origin: *
                 } else {
                     this.textArea.value = this.activeNode.configuration.generateTextConfig();
                 }          
-                this.textArea.hidden = false
+                this.textArea.hidden = false;
 
             } else {
                 this.universesContainer.style.display = "grid";
@@ -3011,7 +3028,7 @@ Acces-Control-Allow-Origin: *
                 <input type="checkbox" id="switch">
                 <label for="switch">
                     <?xml version="1.0" encoding="utf-8"?>
-                    <svg class="sun" xmlns="http://www.w3.org/2000/svg" x="0px" y="px" viewBox="0 0 50 50">
+                    <svg class="sun" xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" viewBox="0 0 50 50">
                         <path d="M 24.90625 3.96875 C 24.863281 3.976563 24.820313 3.988281 24.78125 4 C 24.316406 4.105469 23.988281 4.523438 24 5 L 24 11 C 23.996094 11.359375 24.183594 11.695313 24.496094 11.878906 C 24.808594 12.058594 25.191406 12.058594 25.503906 11.878906 C 25.816406 11.695313 26.003906 11.359375 26 11 L 26 5 C 26.011719 4.710938 25.894531 4.433594 25.6875 4.238281 C 25.476563 4.039063 25.191406 3.941406 24.90625 3.96875 Z M 10.65625 9.84375 C 10.28125 9.910156 9.980469 10.183594 9.875 10.546875 C 9.769531 10.914063 9.878906 11.304688 10.15625 11.5625 L 14.40625 15.8125 C 14.648438 16.109375 15.035156 16.246094 15.410156 16.160156 C 15.78125 16.074219 16.074219 15.78125 16.160156 15.410156 C 16.246094 15.035156 16.109375 14.648438 15.8125 14.40625 L 11.5625 10.15625 C 11.355469 9.933594 11.054688 9.820313 10.75 9.84375 C 10.71875 9.84375 10.6875 9.84375 10.65625 9.84375 Z M 39.03125 9.84375 C 38.804688 9.875 38.59375 9.988281 38.4375 10.15625 L 34.1875 14.40625 C 33.890625 14.648438 33.753906 15.035156 33.839844 15.410156 C 33.925781 15.78125 34.21875 16.074219 34.589844 16.160156 C 34.964844 16.246094 35.351563 16.109375 35.59375 15.8125 L 39.84375 11.5625 C 40.15625 11.265625 40.246094 10.800781 40.0625 10.410156 C 39.875 10.015625 39.460938 9.789063 39.03125 9.84375 Z M 25 15 C 19.484375 15 15 19.484375 15 25 C 15 30.515625 19.484375 35 25 35 C 30.515625 35 35 30.515625 35 25 C 35 19.484375 30.515625 15 25 15 Z M 4.71875 24 C 4.167969 24.078125 3.78125 24.589844 3.859375 25.140625 C 3.9375 25.691406 4.449219 26.078125 5 26 L 11 26 C 11.359375 26.003906 11.695313 25.816406 11.878906 25.503906 C 12.058594 25.191406 12.058594 24.808594 11.878906 24.496094 C 11.695313 24.183594 11.359375 23.996094 11 24 L 5 24 C 4.96875 24 4.9375 24 4.90625 24 C 4.875 24 4.84375 24 4.8125 24 C 4.78125 24 4.75 24 4.71875 24 Z M 38.71875 24 C 38.167969 24.078125 37.78125 24.589844 37.859375 25.140625 C 37.9375 25.691406 38.449219 26.078125 39 26 L 45 26 C 45.359375 26.003906 45.695313 25.816406 45.878906 25.503906 C 46.058594 25.191406 46.058594 24.808594 45.878906 24.496094 C 45.695313 24.183594 45.359375 23.996094 45 24 L 39 24 C 38.96875 24 38.9375 24 38.90625 24 C 38.875 24 38.84375 24 38.8125 24 C 38.78125 24 38.75 24 38.71875 24 Z M 15 33.875 C 14.773438 33.90625 14.5625 34.019531 14.40625 34.1875 L 10.15625 38.4375 C 9.859375 38.679688 9.722656 39.066406 9.808594 39.441406 C 9.894531 39.8125 10.1875 40.105469 10.558594 40.191406 C 10.933594 40.277344 11.320313 40.140625 11.5625 39.84375 L 15.8125 35.59375 C 16.109375 35.308594 16.199219 34.867188 16.039063 34.488281 C 15.882813 34.109375 15.503906 33.867188 15.09375 33.875 C 15.0625 33.875 15.03125 33.875 15 33.875 Z M 34.6875 33.875 C 34.3125 33.941406 34.011719 34.214844 33.90625 34.578125 C 33.800781 34.945313 33.910156 35.335938 34.1875 35.59375 L 38.4375 39.84375 C 38.679688 40.140625 39.066406 40.277344 39.441406 40.191406 C 39.8125 40.105469 40.105469 39.8125 40.191406 39.441406 C 40.277344 39.066406 40.140625 38.679688 39.84375 38.4375 L 35.59375 34.1875 C 35.40625 33.988281 35.148438 33.878906 34.875 33.875 C 34.84375 33.875 34.8125 33.875 34.78125 33.875 C 34.75 33.875 34.71875 33.875 34.6875 33.875 Z M 24.90625 37.96875 C 24.863281 37.976563 24.820313 37.988281 24.78125 38 C 24.316406 38.105469 23.988281 38.523438 24 39 L 24 45 C 23.996094 45.359375 24.183594 45.695313 24.496094 45.878906 C 24.808594 46.058594 25.191406 46.058594 25.503906 45.878906 C 25.816406 45.695313 26.003906 45.359375 26 45 L 26 39 C 26.011719 38.710938 25.894531 38.433594 25.6875 38.238281 C 25.476563 38.039063 25.191406 37.941406 24.90625 37.96875 Z"></path>
                     </svg>
                     <svg class="moon" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 122.88 122.89" style="enable-background:new 0 0 122.88 122.89" xml:space="preserve"><g><path d="M49.06,1.27c2.17-0.45,4.34-0.77,6.48-0.98c2.2-0.21,4.38-0.31,6.53-0.29c1.21,0.01,2.18,1,2.17,2.21 c-0.01,0.93-0.6,1.72-1.42,2.03c-9.15,3.6-16.47,10.31-20.96,18.62c-4.42,8.17-6.1,17.88-4.09,27.68l0.01,0.07 c2.29,11.06,8.83,20.15,17.58,25.91c8.74,5.76,19.67,8.18,30.73,5.92l0.07-0.01c7.96-1.65,14.89-5.49,20.3-10.78 c5.6-5.47,9.56-12.48,11.33-20.16c0.27-1.18,1.45-1.91,2.62-1.64c0.89,0.21,1.53,0.93,1.67,1.78c2.64,16.2-1.35,32.07-10.06,44.71 c-8.67,12.58-22.03,21.97-38.18,25.29c-16.62,3.42-33.05-0.22-46.18-8.86C14.52,104.1,4.69,90.45,1.27,73.83 C-2.07,57.6,1.32,41.55,9.53,28.58C17.78,15.57,30.88,5.64,46.91,1.75c0.31-0.08,0.67-0.16,1.06-0.25l0.01,0l0,0L49.06,1.27 L49.06,1.27z"/></g></svg>
@@ -3046,6 +3063,14 @@ Acces-Control-Allow-Origin: *
             </div>
         </div>
         <!-- svg definition of the accolades -->
+        <template id="brace-template">
+            <svg viewBox="0 0 2000 72" xmlns="http://www.w3.org/2000/svg">
+                <path d="M61.4318 1.72424H2637.06" stroke="__COLOR__" stroke-width="2"/>
+                <path d="M61.4318 70.7244H2637.06" stroke="__COLOR__" stroke-width="2"/>
+                <path d="M46.4779 36.2288C51.7241 36.3106 59.3583 35.2166 56.7341 28.1965C55.0324 23.6442 50.049 20.9121 50.049 12.6052C50.049 5.20797 54.2605 1.72424 61.4318 1.72424M46.4779 36.2288C51.7241 36.1469 59.3583 37.2492 56.7341 44.2693C55.0324 48.8216 50.049 51.5537 50.049 59.8606C50.049 67.2579 54.2605 70.7416 61.4318 70.7416M46.4779 36.2288H5" fill="none" stroke="__COLOR__" stroke-width="2"/>
+                <text class="info __CLASS__" x="60px" y="40px">0fps</text>
+            </svg>
+        </template>
         <!-- end of accolade definition -->
         <div id="accolades"></div>
         <div id="fieldbusses"></div>
