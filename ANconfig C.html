@@ -1292,7 +1292,10 @@ Acces-Control-Allow-Origin: *
                                    
                     foundNodes.push(node);
                 }
-                if (init) foundNodes[0].active = true;
+                if (init) {
+                    foundNodes[0].active = true;
+                    this.activeNode = foundNodes[0];
+                }
                 this.#nodes = foundNodes;
                 this.pushPrevNodes(this.#nodes);  
 
@@ -1372,13 +1375,13 @@ Acces-Control-Allow-Origin: *
             let navBar = document.getElementById("node-list");
             navBar.innerHTML="";
             this.#nodes.forEach(node => {
+                let activeNode;
+                if (node.mac === localStorage.getItem("activeNode")) activeNode = true;
                 let nodeElement = generateNode(node, this.lm);
                 if (!node.online) nodeElement.classList.add("disconnected");
                 if (this.lm) nodeElement.classList.add("light");
-                // check if the webpage address corresponds to one of the nodes in the lists,
-                // make this the selected node if match is found.
-                if (init && localStorage.getItem("activeNode") === "") {
-                    if (node.ip == (nodeIp.split("http://"))[1]) {
+                if (init) {
+                    if (node.active || activeNode) {
                         nodeElement.classList.add("selected");
                         node.active = true;
                         this.activeNode = node;
@@ -1560,7 +1563,54 @@ Acces-Control-Allow-Origin: *
                 if (fb.codec === 1) {
                     fb.fieldbusElement.style.gridRow = `${installation.shownUniverses}/${installation.shownUniverses+3}`
                     fb.addressRange.hidden = true;
+                    // adding arrow pointing to the previous channel
+                    let arrow = document.createElement("div");
+                    arrow.id = "arrowSvg"
+                    arrow.innerHTML = `
+                    <?xml version="1.0" encoding="UTF-8" standalone="no"?>
+                    <!-- Created with Inkscape (http://www.inkscape.org/) -->
+                                    
+                    <svg
+                       viewBox="0 0 419.52734 525.35492"
+                       version="1.1"
+                       xmlns="http://www.w3.org/2000/svg"
+                       xmlns:svg="http://www.w3.org/2000/svg">
+                      <defs
+                         id="defs1" />
+                      <g
+                         inkscape:label="Laag 1"
+                         inkscape:groupmode="layer"
+                         id="layer1">
+                        <path
+                           style="fill:#000000"
+                           d="m 241.03184,826.39488 h 172.1656"
+                           id="path1" />
+                        <path
+                           style="fill:#000000;stroke-width:198.293;stroke-dasharray:none"
+                           d="M 247.37459,821.98486 H 494.74918"
+                           id="path2" />
+                        <path
+                           style="fill:var(--bg-coal);fill-opacity:1;stroke:var(--ll-yellow);stroke-width:19.5213;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1;paint-order:normal"
+                           d="m 379.82697,504.48806 -248.04154,-0.87159 c 0,0 155.51854,-110.38667 40.55595,-240.79349 L 98.672304,357.52911 58.587054,192.32546 15.580464,15.082048 370.58215,141.67429 258.19279,193.07579 c 0,0 210.30919,158.00931 121.77737,311.35093"
+                           id="path3"
+                           />
+                      </g>
+                    </svg>
+                    `;
+                    fb.fieldbusElement.appendChild(arrow);
+                    arrow.style.width = "55%"
+                    // arrow.style.position = "relative"
+                    arrow.style.alignSelf = "end";
+                    arrow.style.justifySelf = "center"
+                    arrow.style.gridColumn = "1";
+                    arrow.style.gridRow = "2";
+
+
                 } else {
+                    let arrow = document.querySelector(`#fb-${counter} #arrowSvg`);
+                    if (arrow) {
+                        arrow.parentNode.removeChild(arrow);
+                    }
                     fb.fieldbusElement.style.gridRow = `1/${installation.shownUniverses+3}`
                     fb.addressRange.hidden = false;
                 }
@@ -1838,6 +1888,11 @@ Acces-Control-Allow-Origin: *
                     fieldbusContainers[i].style.left = "0px";
                     fieldbusContainers[i].style.justifySelf = "end";
                 }
+                let accDiv = document.querySelector(".accolade");
+                let accHeight = accDiv.getBoundingClientRect()["height"];
+                for(let i = 0; i < this.accoladesElement.children.length; i++) {
+                    this.accoladesElement.children[i].children[0].style.height = accHeight;
+            }
             }
 
             // adding event listeners for the buttons

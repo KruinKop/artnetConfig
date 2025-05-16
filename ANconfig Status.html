@@ -1091,6 +1091,7 @@ Acces-Control-Allow-Origin: *
                     </div>`;
                 fieldbussesElement.appendChild(fbElement);   
                 let addressBlock = document.getElementById(`address-block-${counter}`);
+                
                 if (this.activeNode.codecs[fb.codec].split(" ")[0] === "disabled") {
                     addressBlock.style.display = "none"
                 }         
