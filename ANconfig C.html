@@ -171,7 +171,7 @@ Acces-Control-Allow-Origin: *
         display: grid;
         column-gap: var(--padding-small);
         grid-column: 2/3;
-        grid-template-columns: 45px repeat(2, 40px) auto 50px var(--padding-small);
+        grid-template-columns: clamp(29px, 5vw, 50px) repeat(2, 40px) auto 50px var(--padding-small);
         align-items: center;
     }
 
@@ -197,7 +197,7 @@ Acces-Control-Allow-Origin: *
     }
 
     h3 {
-        font-weight: 100;
+        font-weight: 400;
     }
 
     /* ============= Dark mode switch ============== */
@@ -587,11 +587,10 @@ Acces-Control-Allow-Origin: *
     /* ============= Center configuration ============== */
 
     #main-config {
-        /* isolation: isolate; */
         display: grid;
         grid-column: 2/3;
         grid-row: 2/3;
-        grid-template-columns: calc(40px - var(--padding-medium)) calc(2*var(--padding-medium) + 50px) calc(3*var(--padding-medium)) repeat(6,2fr); 
+        grid-template-columns: calc(40px - var(--padding-medium)) clamp(60px, 10vw, 100px) calc(3*var(--padding-medium)) repeat(6,2fr); 
         grid-template-rows: subgrid;
         margin: var(--padding-large) var(--padding-small) 0;
         transition: opacity 500ms;
@@ -630,11 +629,11 @@ Acces-Control-Allow-Origin: *
     
     #universe-container:before {
         top: -15px;
-        left: 10px;
         position: absolute;
+        justify-self: center;
         content: "";
         display: inline-block;
-        width: 70px;
+        width: 70%;
         height: 20px;
         background-color: var(--bg-dmx-box);
         border-radius: 5px;
@@ -643,11 +642,11 @@ Acces-Control-Allow-Origin: *
 
     #universe-container:after {
         top: -50px;
-        left: 25px;
         position: absolute;
+        justify-self: center;
         content: "";
         display: inline-block;
-        width: 40px;
+        width: 40%;
         height: 50px;
         background-color: var(--ll-yellow);
         border-radius: 5px;
@@ -673,7 +672,7 @@ Acces-Control-Allow-Origin: *
         display: inline-block;
         position: absolute;
         width: 51px;
-        right: 67px;
+        margin-left: -46px;
         top: 17.7px;
         font-family: var(--font-regular);
         content: "Universes";
@@ -689,10 +688,21 @@ Acces-Control-Allow-Origin: *
         position: relative;
         text-align: center;
         margin: 5px;
-        font-size: var(--font-size-medium);
+        padding: 8px 0;
+        font-size: clamp(var(--font-size-small), 2vw, var(--font-size-medium)); 
         border-radius: 10px;
         z-index: 2;
         box-shadow: 0px 5px 15px 2px rgba(0,0,0,0.5);
+    }
+
+    #universes li span {
+        font-size: var(--font-size-small);
+        position: absolute;
+        padding: 5px;
+        top: 25px;
+        left: 75%;
+        border-radius: 10px;
+        z-index: -1;
     }
 
     #universes li.illegal, #universes li.illegal span, #universes li.illegal input:nth-of-type(1) {
@@ -702,7 +712,7 @@ Acces-Control-Allow-Origin: *
     #universes li input {
         width: 100%;
         position: relative;
-        font-size: var(--font-size-medium);
+        font-size: clamp(var(--font-size-small), 2vw, var(--font-size-medium)); 
         text-align: center;
     }
 
@@ -717,28 +727,18 @@ Acces-Control-Allow-Origin: *
         z-index: 1000;
     }
 
-    #universes li span {
-        font-size: var(--font-size-small);
-        position: absolute;
-        padding: 5px;
-        top: 25px;
-        left: 50px;
-        border-radius: 10px;
-        z-index: -1;
-    }
-
     #universe-filter-container {
         padding-top: 10px;
         grid-row: 8;
         z-index: 10;
-        width: 70%;
+        width: 90%;
         margin: 0px auto 0px auto;
     }
 
     #universe-filter {
         display: flex;
         flex-direction: row;
-        justify-content: space-between;
+        justify-content: space-around;
     }
 
     #universe-filter h3 {
@@ -918,7 +918,6 @@ Acces-Control-Allow-Origin: *
         height: fit-content;
         padding: 5px 5px 0px 5px;
         font-size: clamp(var(--font-size-xs), 1vw, var(--font-size-small)); 
-        font-weight: lighter;
         text-align: center;
     }
 
@@ -1073,11 +1072,12 @@ Acces-Control-Allow-Origin: *
     }
 
     #upload-container, #download-container {
+        position: relative;
         text-decoration: none;
-        margin-left: var(--padding-medium);
         grid-column: 2;
         grid-row: 1;
         align-self: end;
+        left: var(--padding-medium)
     }
 
     #upload-container {
@@ -1693,7 +1693,7 @@ Acces-Control-Allow-Origin: *
 
                 
                     const a = document.createElement("div");
-                    a.style.marginLeft = `${this.#accMargin}px`;
+                    // a.style.marginLeft = `${this.#accMargin}px`;
                     a.id = `accolade-${counter}`;
                     a.classList.add("accolade");
                     a.appendChild(svg);
@@ -1703,12 +1703,7 @@ Acces-Control-Allow-Origin: *
                 counter++;
             });
 
-            // calculating the height of the accolades
-            let accDiv = document.querySelector(".accolade");
-            let accHeight = accDiv.getBoundingClientRect()["height"];
-            for(let i = 0; i < this.accoladesElement.children.length; i++) {
-                this.accoladesElement.children[i].children[0].style.height = accHeight;
-            }
+            this.setAccHeight()
             
             // mark double universes in red
             this.checkDoubleUnis();
@@ -1732,14 +1727,19 @@ Acces-Control-Allow-Origin: *
             }
         }
 
+        setAccHeight() {
+            let accDiv = document.querySelector(".accolade");
+            let accHeight = accDiv.getBoundingClientRect()["height"];
+            for(let i = 0; i < this.accoladesElement.children.length; i++) {
+                this.accoladesElement.children[i].children[0].style.height = accHeight;
+                this.accoladesElement.children[i].children[0].style.marginLeft = -130 + (this.shownUniverses * 10) + (accHeight/62 * 10)
+            }
+        }
+
         eventInit() {
             window.onresize = (e) => {
                 // calculating the height of the accolades
-                let accDiv = document.querySelector(".accolade");
-                let accHeight = accDiv.getBoundingClientRect()["height"];
-                for(let i = 0; i < this.accoladesElement.children.length; i++) {
-                    this.accoladesElement.children[i].children[0].style.height = accHeight;
-                }
+                this.setAccHeight()
 
                 if (this.textConfig) {
                     let fieldbusContainers = document.querySelectorAll(".fieldbus");
@@ -1774,7 +1774,7 @@ Acces-Control-Allow-Origin: *
                     if (button.id === "increment") {
                         if (this.shownUniverses < this.maxShownUniverses) {
                             this.changeShownUni(true);
-                            this.#accMargin += 5;
+                            // this.#accMargin += 5;
                         }
                     } else if (button.id === "decrement") {
                         if (this.shownUniverses > this.minShownUniverses) {
@@ -1786,7 +1786,7 @@ Acces-Control-Allow-Origin: *
                             }
                             if (!overLap) {
                                 this.changeShownUni(false);
-                                this.#accMargin -= 5;
+                                // this.#accMargin -= 5;
                             }        
                         }
                     }
@@ -1905,7 +1905,6 @@ Acces-Control-Allow-Origin: *
                     break;
                 case "push":
                     console.log("pushing to node");
-                    console.log(this.textArea.value);
                     this.activeNode.configuration.postXmlConfig(this.textArea.value)
                     break;
                 default:
@@ -2771,8 +2770,9 @@ Acces-Control-Allow-Origin: *
         }
 
         async postXmlConfig(xml) {
-            installation.configElement.classList.add("loading")
+            installation.configElement.classList.add("loading");
             let trimmedXml = xml.replaceAll("\n", "");
+            trimmedXml = trimmedXml.replaceAll("\t", "");
             console.log(trimmedXml);
             try {
                 const response = await fetch(`http://${installation.activeNode.ip}/xml`, {
@@ -2903,7 +2903,7 @@ Acces-Control-Allow-Origin: *
             xmlText     += `  <sys>\n`
             xmlText     += `    <ip>${ipToHex(node.ip)}</ip>\n`
             xmlText     += `    <mask>${ipToHex(node.netmask)}</mask>\n`
-            xmlText     += `    <mac>${macToHex(node.mac)}</mac>\n`
+            // xmlText     += `    <mac>${macToHex(node.mac)}</mac>\n` not needed
             xmlText     += `    <name>${node.name}</name>\n`
             xmlText     += `  </sys>\n`
             xmlText     += '  <artnet>\n'
@@ -3201,7 +3201,7 @@ Acces-Control-Allow-Origin: *
         </template>
         <div id="fieldbusses"></div>
         <div id="text-config-container">
-            <textarea id="xml-text-area"></textarea>
+            <textarea id="xml-text-area" spellcheck="false"></textarea>
             <p id="help-text">
                 Editing the node parameters is possible by directly editing the fields within the tags. The values are in hex format where 2 characters represent a byte. 2 bytes after each other are MSB. different parameters are separated by a space.
                 <br><br>
