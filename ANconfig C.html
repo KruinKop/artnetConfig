@@ -710,7 +710,7 @@ Acces-Control-Allow-Origin: *
     }
 
     #universes li input {
-        width: 100%;
+        width: clamp(70px, 9vw, 90px);
         position: relative;
         font-size: clamp(var(--font-size-small), 2vw, var(--font-size-medium)); 
         text-align: center;
@@ -718,11 +718,10 @@ Acces-Control-Allow-Origin: *
 
     #universes li input:last-child {
         position: absolute;
-        min-width: 60%;
-        height: 60%;
-        width: 70%;
-        top: 31px;
-        left: 40px;
+        width: 55px;
+        /* height: 70%; */
+        top: 95%;
+        left: 60%;
         font-size: var(--font-size-small);
         z-index: 1000;
     }
@@ -1020,7 +1019,7 @@ Acces-Control-Allow-Origin: *
     }
 
     #text-config-container.card {
-        min-width: 430px;
+        min-width: 530px;
         position: relative;
         display: grid;
         grid-template-columns: 2fr 1fr;
@@ -1750,16 +1749,16 @@ Acces-Control-Allow-Origin: *
                     }
                 }
             }
-            const dmSwitch = document.querySelector("#dark-mode-switch input");
-            const configSwitch = document.querySelector("#edit-switch");
-            const savedDarkMode = localStorage.getItem("darkMode");
+            const dmSwitch          = document.querySelector("#dark-mode-switch input");
+            const configSwitch      = document.querySelector("#edit-switch");
+            const savedDarkMode     = localStorage.getItem("darkMode");
 
             if (this.config) {
-                configSwitch.checked = true;
+                configSwitch.checked    = true;
             } else configSwitch.checked = false;
 
             if (savedDarkMode === "enabled") {
-                dmSwitch.checked = true;
+                dmSwitch.checked    = true;
             } else dmSwitch.checked = false;
 
             this.switchDarkMode(dmSwitch);
@@ -1847,8 +1846,9 @@ Acces-Control-Allow-Origin: *
                 if (this.activeNode.mac === "7B:A6:80:7F:EC:7D") {
                     this.activeNode.configuration.setXmlConfig(this.activeNode);
                     this.textArea.value = this.activeNode.configuration.textConfig;
-                } else {
-                    this.textArea.value = this.activeNode.configuration.setXmlConfig(this.activeNode);
+                } 
+                else {
+                    this.textArea.value = this.activeNode.configuration.textConfig;
                 }          
                 this.textArea.hidden = false;
 
@@ -1905,7 +1905,15 @@ Acces-Control-Allow-Origin: *
                     break;
                 case "push":
                     console.log("pushing to node");
-                    this.activeNode.configuration.postXmlConfig(this.textArea.value)
+                    if (this.activeNode.mac !== "7B:A6:80:7F:EC:7D") {
+                        this.activeNode.configuration.postXmlConfig(this.textArea.value);
+                    } else {
+                        console.log("generating config object");
+                        this.activeNode.configuration.generateConfigObject(this.textArea.value);
+                        this.activeNode.initialiseNode(true);
+                        this.updateNav(false);
+                        this.navSwitcher();
+                    }
                     break;
                 default:
                     break;
@@ -2284,13 +2292,16 @@ Acces-Control-Allow-Origin: *
             }    
         }
 
-        initialiseNode() {
+        initialiseNode(demo = false) {
             if (this.#configuration !== null) {
                 this.#name = this.#configuration.name;
-                this.#mac = this.#configuration.mac;
-                if (localStorage.getItem("activeNode") === this.#mac) {
-                    this.#active = true;
+                if (!demo) {
+                    this.#mac = this.#configuration.mac;
+                    if (localStorage.getItem("activeNode") === this.#mac) {
+                        this.#active = true;
+                    }
                 }
+
 
                 this.#switch = this.#configuration.switch;
                 this.#netmask = this.#configuration.mask;
@@ -2302,8 +2313,11 @@ Acces-Control-Allow-Origin: *
                     console.log(prevNode);
                 }
                 let counter = 0;
+                let fbIndex = 0;
                 let resetFb = false;
-                let fbIndex = 0
+                let fieldbusses = [];
+                let artnet = [];
+                let codecs = [];
                 for (const [key, value] of Object.entries(this.#configuration.fieldbus)) {
                     let params = [];
                     for (let v of Object.values(value)) {
@@ -2321,20 +2335,24 @@ Acces-Control-Allow-Origin: *
                             this.configuration.handleInputChange(fieldbus);
                         }
                     }
-                    this.#fieldbusses.push(fieldbus);
+                    fieldbusses.push(fieldbus);
                     counter++;
-                } 
+                }
+                this.#fieldbusses = fieldbusses; 
 
                 for (const [key, value] of Object.entries(this.#configuration.artnet)) {
                     let params = [];
                     for (let v of Object.values(value)){
                         params.push(v);
                     }
-                    this.#universes.push(new Universe(key, ...params));
+                    artnet.push(new Universe(key, ...params));
                 }
+                this.#universes = artnet;
+                
                 for (const value of Object.values(this.#configuration.codec)) {
-                    this.codecs.push(value);
-                }                          
+                    codecs.push(value);
+                }
+                this.#codecs = codecs;                          
             }
         }
 
@@ -2851,27 +2869,35 @@ Acces-Control-Allow-Origin: *
         }
 
         static parseConfig(xmlObj) {
-        let config = {};
-        
-        // Recursieve functie die over all nodes gaat en het config object vult
-        function traverseConfig(xmlNode, config) {
-            if (xmlNode !== null && typeof xmlNode === 'object') {
-                for (let i = 0; i < xmlNode.childNodes.length; i++) {
-                    const childNode = xmlNode.childNodes.item(i);
-                    if (childNode.nodeType === 1) {
-                        if (childNode.childElementCount > 0) {
-                            config[childNode.nodeName] = {};
-                            traverseConfig(childNode, config[childNode.nodeName]);
-                        } else {
-                            config[childNode.nodeName] = childNode.textContent.trim();
+            let config = {};
+            
+            // Recursieve functie die over all nodes gaat en het config object vult
+            function traverseConfig(xmlNode, config) {
+                if (xmlNode !== null && typeof xmlNode === 'object') {
+                    for (let i = 0; i < xmlNode.childNodes.length; i++) {
+                        const childNode = xmlNode.childNodes.item(i);
+                        if (childNode.nodeType === 1) {
+                            if (childNode.childElementCount > 0) {
+                                config[childNode.nodeName] = {};
+                                traverseConfig(childNode, config[childNode.nodeName]);
+                            } else {
+                                config[childNode.nodeName] = childNode.textContent.trim();
+                            }
                         }
                     }
                 }
             }
+
+            traverseConfig(xmlObj.documentElement, config);
+            return config;
         }
 
-        traverseConfig(xmlObj.documentElement, config);
-            return config;
+        generateConfigObject(xmlText) {
+            console.log(xmlText);
+            let parser = new DOMParser();
+            let xmlObj = parser.parseFromString(xmlText, "text/xml");
+            this.#configObject = Configuration.parseConfig(xmlObj);
+            this.generateTextConfig();
         }
 
         generateTextConfig() {
@@ -2903,7 +2929,7 @@ Acces-Control-Allow-Origin: *
             xmlText     += `  <sys>\n`
             xmlText     += `    <ip>${ipToHex(node.ip)}</ip>\n`
             xmlText     += `    <mask>${ipToHex(node.netmask)}</mask>\n`
-            // xmlText     += `    <mac>${macToHex(node.mac)}</mac>\n` not needed
+            // xmlText     += `    <mac>${macToHex(node.mac)}</mac>\n`
             xmlText     += `    <name>${node.name}</name>\n`
             xmlText     += `  </sys>\n`
             xmlText     += '  <artnet>\n'
@@ -3209,11 +3235,11 @@ Acces-Control-Allow-Origin: *
             </p>
             <button class="card xml-text-button" id="push">push to node</button>
             <label id="upload-container" for="upload" class="card xml-text-button">
-                Upload
+                Open file
             </label>
             <input id="upload" type="file">
             <a id="download-container" download="XML.conf" href="">
-                <button class="card xml-text-button" id="download">download</button>
+                <button class="card xml-text-button" id="download">download config file</button>
             </a>
             <button class="card" id="text-config">text config</button>
         </div>
