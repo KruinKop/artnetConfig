@@ -2815,7 +2815,21 @@ Acces-Control-Allow-Origin: *
         async postXmlConfig(xml) {
             installation.removeEventHandlers();
             installation.configElement.classList.add("loading");
-            let trimmedXml = xml.replaceAll("\n", "");
+
+            // Deleting the codec from the xml
+            let startIndex = xml.indexOf("<codec>");
+            let stopIndex = xml.indexOf("</codec>");
+            let newXml = xml.substring(0, startIndex)+xml.substring(stopIndex+8);
+
+            let xmlArr = newXml.split("\n");
+            console.log(xmlArr);
+            let trimmedXml = "";
+            let tagFound = false;
+            for (const line of xmlArr) {
+                let trimmedLine = line.trim();
+                trimmedXml+=trimmedLine;
+            }
+
             console.log(trimmedXml);
             try {
                 const response = await fetch(`http://${installation.activeNode.ip}/xml`, {
@@ -2831,17 +2845,19 @@ Acces-Control-Allow-Origin: *
                 console.log("Changed parameters: " + hexToDec(responseObj["changed"]));
                 let errPos = hexToDec(responseObj["fault"])
                 console.log("Fault detected at: " + errPos);
-                let errString = "";
-                for (let i = errPos - 10; i < errPos + 10; i++) {
-                    if (i !== errPos) {
-                        errString += trimmedXml[i];
-                    } else {
-                        errString += " >>> ";
-                        errString += trimmedXml[i];
-                        errString += " <<< "
-                    }            
+                if (errPos !== 0) {
+                    let errString = "";
+                    for (let i = errPos - 10; i < errPos + 10; i++) {
+                        if (i !== errPos) {
+                            errString += trimmedXml[i];
+                        } else {
+                            errString += " >>> ";
+                            errString += trimmedXml[i];
+                            errString += " <<< "
+                        }            
+                    }
+                    console.log(errString);
                 }
-                console.log(errString)
 
                 if (!response.ok) {
                     throw new Error(`Response status: ${response.status}`);
