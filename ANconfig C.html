@@ -112,10 +112,6 @@ Acces-Control-Allow-Origin: *
         user-select: none; /* Standard syntax */ 
     }
 
-    body.loading * {
-        cursor: progress !important;
-    }
-
     body.light {
         --ll-yellow: rgb(82, 82, 82);
         --ll-light-yellow: #4d4d4d;
@@ -374,8 +370,8 @@ Acces-Control-Allow-Origin: *
         align-self: end;
         grid-row: 1;
         position: relative;
-        top: -40px;
-        left: 145px;
+        top: 20px;
+        left: 130px;
     }
 
     #edit label {
@@ -594,10 +590,15 @@ Acces-Control-Allow-Origin: *
         grid-template-rows: subgrid;
         margin: var(--padding-large) var(--padding-small) 0;
         transition: opacity 500ms;
+        font-family: var(--font-regular);
     }
 
     body.loading #main-config {
         opacity: 50%;
+    }
+
+    body.loading #main-config * {
+        cursor: progress !important;
     }
 
     .range {
@@ -665,7 +666,6 @@ Acces-Control-Allow-Origin: *
         grid-template-rows: subgrid;
         grid-template-columns: subgrid;
         position: relative;
-        font-family: var(--font-regular);
     }
 
     #universe-container #tab {
@@ -674,7 +674,6 @@ Acces-Control-Allow-Origin: *
         width: 51px;
         margin-left: -46px;
         top: 17.7px;
-        font-family: var(--font-regular);
         content: "Universes";
         transform: rotate(-90deg);
         font-size: var(--font-size-small);
@@ -770,13 +769,9 @@ Acces-Control-Allow-Origin: *
     .accolade .info {
         display: block;
         fill: var(--ll-yellow);
-        font-family: var(--font-regular);
         font-size: var(--font-size-xs);
     }
 
-    /* .accolade .info.light {
-        fill: black;
-    } */
 
     #fieldbusses{
         position: relative;
@@ -796,7 +791,6 @@ Acces-Control-Allow-Origin: *
         max-width: 125px;
         min-width: 50px;
         color: var(--ll-yellow);
-        font-family: var(--font-regular);
     }
 
     
@@ -918,6 +912,7 @@ Acces-Control-Allow-Origin: *
         padding: 5px 5px 0px 5px;
         font-size: clamp(var(--font-size-xs), 1vw, var(--font-size-small)); 
         text-align: center;
+        font-weight: 400;
     }
 
     #fieldbusses h2.stream {
@@ -1027,7 +1022,6 @@ Acces-Control-Allow-Origin: *
         grid-column: 2/8;
         align-self: inherit;
         color: var(--ll-yellow-font);
-        font-family: var(--font-regular);   
     }
 
     #text-config, .xml-text-button {
@@ -1724,6 +1718,16 @@ Acces-Control-Allow-Origin: *
             if (this.configElement.classList.contains("loading")) {
                 this.configElement.classList.remove("loading");
             }
+
+            if (this.activeNode.online) {
+                console.log("adding event handlers")
+                this.addEventHandlers();
+                installation.configElement.classList.remove("loading");
+                
+            } else {
+                this.removeEventHandlers();
+                installation.configElement.classList.add("loading");
+            }
         }
 
         setAccHeight() {
@@ -1743,11 +1747,15 @@ Acces-Control-Allow-Origin: *
                 if (this.textConfig) {
                     let fieldbusContainers = document.querySelectorAll(".fieldbus");
                     for (let i=0; i<fieldbusContainers.length; i++) {
-                        if (i > 0) {
-                            fieldbusContainers[i].style.left = `${(i-1)*(this.fieldbussesElement.clientWidth/8)}px`
-                        }                   
+                        fieldbusContainers[i].style.left = `${(i-1)*(this.fieldbussesElement.clientWidth/7.5)}px`;
+                        // fieldbusContainers[i].style.marginRight = `${10/6}px`;      
                     }
                 }
+
+                this.activeNode.fieldbusses.forEach((fb) => {
+                    fb.addressHeight = fb.addressRange.getBoundingClientRect()["height"]*(fb.streamLength/(512*installation.shownUniverses));
+                    if (fb.codec !== 0 && fb.codec !== 1) checkOverflow(fb.addressBlock, !this.config, fb.addressHeight);
+                })
             }
             const dmSwitch          = document.querySelector("#dark-mode-switch input");
             const configSwitch      = document.querySelector("#edit-switch");
@@ -1812,8 +1820,12 @@ Acces-Control-Allow-Origin: *
             })
 
             this.textConfigButton = document.querySelector("#text-config");
-            this.textConfigButton.addEventListener("click", this.switchTextConfig)
+            this.textConfigButton.addEventListener("click", this.switchTextConfig);
 
+            this.addEventHandlers()
+        }
+        
+        addEventHandlers() {
             this.configElement.addEventListener("click", this.handleFbEvent);
             this.configElement.addEventListener("mousedown", this.handleFbEvent);
             this.configElement.addEventListener("change", this.handleFbEvent);
@@ -1821,7 +1833,17 @@ Acces-Control-Allow-Origin: *
             this.configElement.addEventListener("focusout", this.handleFbEvent)
             this.configElement.addEventListener("mousemove", this.handleFbEvent);
             this.configElement.addEventListener("mouseup", this.handleFbEvent);
-        }     
+        }
+
+        removeEventHandlers() {
+            this.configElement.removeEventListener("click", this.handleFbEvent);
+            this.configElement.removeEventListener("mousedown", this.handleFbEvent);
+            this.configElement.removeEventListener("change", this.handleFbEvent);
+            this.configElement.removeEventListener("input", this.handleFbEvent);
+            this.configElement.removeEventListener("focusout", this.handleFbEvent)
+            this.configElement.removeEventListener("mousemove", this.handleFbEvent);
+            this.configElement.removeEventListener("mouseup", this.handleFbEvent);
+        }
 
         switchTextConfig = (e) => {
             this.textConfig = !this.textConfig;
@@ -1830,14 +1852,13 @@ Acces-Control-Allow-Origin: *
                 this.universesContainer.style.display = "none";
                 this.accoladesElement.style.display = "none";
                 this.fieldbussesElement.style.gridColumn = "8/10";
-                for (let i=0; i<fieldbusContainers.length; i++) {
+                for (let i=0; i < fieldbusContainers.length; i++) {
                     fieldbusContainers[i].style.position = "relative";
                     fieldbusContainers[i].style.zIndex = `${1000 + fieldbusContainers.length-i}`;
                     fieldbusContainers[i].style.gridColumn = "1";
-                    fieldbusContainers[i].style.justifySelf = "stretch";
-                    if (i > 0) {
-                        fieldbusContainers[i].style.left = `${(i-1)*(this.fieldbussesElement.clientWidth/6.5)}px`;
-                    }
+                    fieldbusContainers[i].style.justifySelf = "center";
+                    fieldbusContainers[i].style.left = `${(i-1)*(this.fieldbussesElement.clientWidth/7.5)}px`;
+                    fieldbusContainers[i].style.marginRight = `${10/6}px`;
                     
                 }
                 this.textConfigElement.classList.add("card");
@@ -1857,7 +1878,7 @@ Acces-Control-Allow-Origin: *
                 this.accoladesElement.style.display = "grid";
                 this.textConfigElement.classList.remove("card");
                 this.fieldbussesElement.style.gridColumn = "4/10";
-                for (let i=0; i<fieldbusContainers.length; i++) {
+                for (let i=0; i < fieldbusContainers.length; i++) {
                     fieldbusContainers[i].style.position = "relative";
                     fieldbusContainers[i].style.zIndex = `${fieldbusContainers.length-i}`;
                     fieldbusContainers[i].style.gridColumn = `${i + 1}`;
@@ -1868,7 +1889,7 @@ Acces-Control-Allow-Origin: *
                 let accHeight = accDiv.getBoundingClientRect()["height"];
                 for(let i = 0; i < this.accoladesElement.children.length; i++) {
                     this.accoladesElement.children[i].children[0].style.height = accHeight;
-            }
+                }
             }
 
             // adding event listeners for the buttons
@@ -2276,8 +2297,10 @@ Acces-Control-Allow-Origin: *
                 if ((this.#timestamp-this.#prevTimestampOn) > 1) {
                     this.#online = o;
                     node.classList.remove("disconnected");
+                    installation.configElement.classList.remove("loading");
                     this.#prevTimestampOn = new Date().getTime;
                     this.#prevTimestampOff = null;
+                    installation.addEventHandlers();
                 }         
             } else {
                 if (this.#prevTimestampOff === null) {
@@ -2286,8 +2309,10 @@ Acces-Control-Allow-Origin: *
                 if ((this.#timestamp-this.#prevTimestampOff) > 1) {
                     this.#online = o;
                     node.classList.add("disconnected");
+                    installation.configElement.classList.add("loading");
                     this.#prevTimestampOff = new Date().getTime;
                     this.#prevTimestampOn = null;
+                    installation.removeEventHandlers();
                 }         
             }    
         }
@@ -2788,9 +2813,9 @@ Acces-Control-Allow-Origin: *
         }
 
         async postXmlConfig(xml) {
+            installation.removeEventHandlers();
             installation.configElement.classList.add("loading");
             let trimmedXml = xml.replaceAll("\n", "");
-            trimmedXml = trimmedXml.replaceAll("\t", "");
             console.log(trimmedXml);
             try {
                 const response = await fetch(`http://${installation.activeNode.ip}/xml`, {
@@ -2803,9 +2828,20 @@ Acces-Control-Allow-Origin: *
                 const parser = new DOMParser();
                 const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
                 let responseObj = Configuration.parseConfig(xmlDoc);
-                console.log("configuration changed at: " + hexToDec(responseObj["changed"]));
-                // console.log("Fault detected at: " + hexToDec(responseObj["fault"]));
-                console.log("Fault detected at: " + responseObj["fault"]);
+                console.log("Changed parameters: " + hexToDec(responseObj["changed"]));
+                let errPos = hexToDec(responseObj["fault"])
+                console.log("Fault detected at: " + errPos);
+                let errString = "";
+                for (let i = errPos - 10; i < errPos + 10; i++) {
+                    if (i !== errPos) {
+                        errString += trimmedXml[i];
+                    } else {
+                        errString += " >>> ";
+                        errString += trimmedXml[i];
+                        errString += " <<< "
+                    }            
+                }
+                console.log(errString)
 
                 if (!response.ok) {
                     throw new Error(`Response status: ${response.status}`);
