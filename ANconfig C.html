@@ -798,7 +798,7 @@ Acces-Control-Allow-Origin: *
         position: relative;
         justify-self: center;
         grid-row: 1/7;
-        width: 90%;
+        width: 92%;
         border-radius: 25px;
         box-shadow: 0px -10px 35px 3px var(--bg-coal) inset;
         outline: 3px solid var(--bg-coal);
@@ -1575,7 +1575,6 @@ Acces-Control-Allow-Origin: *
                         arrow.style.gridRow = "1";
                     }
                 } else {
-                    console.log(fb.codec)
                     let arrow = document.querySelector(`#fb-${counter} #arrowSvg`);
                     if (arrow) {
                         arrow.parentNode.removeChild(arrow);
@@ -1720,7 +1719,6 @@ Acces-Control-Allow-Origin: *
             }
 
             if (this.activeNode.online) {
-                console.log("adding event handlers")
                 this.addEventHandlers();
                 installation.configElement.classList.remove("loading");
                 
@@ -1916,7 +1914,6 @@ Acces-Control-Allow-Origin: *
         }
 
         handleTextConfig = (e) => {
-            console.log(e.target.id);
             switch(e.target.id) {
                 case "download":
                     console.log("downloading");
@@ -1925,9 +1922,8 @@ Acces-Control-Allow-Origin: *
                     e.target.parentElement.href = fileURL;
                     break;
                 case "push":
-                    console.log("pushing to node");
                     if (this.activeNode.mac !== "7B:A6:80:7F:EC:7D") {
-                        this.activeNode.configuration.postXmlConfig(this.textArea.value);
+                        this.activeNode.configuration.postXmlConfig(this.textArea.value, true);
                     } else {
                         console.log("generating config object");
                         this.activeNode.configuration.generateConfigObject(this.textArea.value);
@@ -2335,7 +2331,6 @@ Acces-Control-Allow-Origin: *
                 let prevNode;
                 if (this.#oldNodes[0] !== undefined) {
                     prevNode = this.#oldNodes[0].find((node) => node.mac === this.#mac)
-                    console.log(prevNode);
                 }
                 let counter = 0;
                 let fbIndex = 0;
@@ -2594,7 +2589,6 @@ Acces-Control-Allow-Origin: *
                         patch.style.height = String((this.newRange/(512*installation.shownUniverses))*100)+"%";
 
                         checkOverflow(patch, status);
-
                     }
                     if (newStart !== undefined) {
                         this.newStart = Math.floor(newStart);
@@ -2812,30 +2806,31 @@ Acces-Control-Allow-Origin: *
             }
         }
 
-        async postXmlConfig(xml) {
+        async postXmlConfig(xml, xmlConfig = false) {
             installation.removeEventHandlers();
             installation.configElement.classList.add("loading");
 
-            // Deleting the codec from the xml
-            let startIndex = xml.indexOf("<codec>");
-            let stopIndex = xml.indexOf("</codec>");
-            let newXml = xml.substring(0, startIndex)+xml.substring(stopIndex+8);
-
-            let xmlArr = newXml.split("\n");
-            console.log(xmlArr);
             let trimmedXml = "";
-            let tagFound = false;
-            for (const line of xmlArr) {
-                let trimmedLine = line.trim();
-                trimmedXml+=trimmedLine;
-            }
+            if (xmlConfig) {
+                 // Deleting the codec from the xml
+                let startIndex = xml.indexOf("<codec>");
+                let stopIndex = xml.indexOf("</codec>");
+                let newXml = xml.substring(0, startIndex)+xml.substring(stopIndex+8);
 
-            console.log(trimmedXml);
+                let xmlArr = newXml.split("\n");
+                let tagFound = false;
+                for (const line of xmlArr) {
+                    let trimmedLine = line.trim();
+                    trimmedXml+=trimmedLine;
+                }
+                console.log(trimmedXml);
+            } else console.log(xml);    
+               
             try {
                 const response = await fetch(`http://${installation.activeNode.ip}/xml`, {
                     signal: AbortSignal.timeout(2000),
                     method: "POST",
-                    body: trimmedXml
+                    body: xmlConfig? trimmedXml: xml
                 })
 
                 const xmlText = await response.text();
