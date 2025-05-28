@@ -115,20 +115,20 @@ Acces-Control-Allow-Origin: *
     body.light {
         --ll-yellow: rgb(82, 82, 82);
         --ll-light-yellow: #4d4d4d;
-        --ll-mustard: #f1d44b;
+        --ll-mustard: #efde89;
         --ll-yellow-font: #646464;
         --nav-font: #4d4d4d;
-        --bg-coal: #f8f5e5;
-        --bg-dmx-box: #2F2F2F;
-        --bg-grey: #cccccc;
-        --bg-input-grey: #e5e5e5;
+        --bg-coal: #f5f2ec;
+        --bg-dmx-box: #6f5239;
+        --bg-grey: #ebddc3;
+        --bg-input-grey: #fdf4e3;
         --bg-button-grey: #f0f0e7;
-        --bg-grey-focus: #9e9e97;
-        --bg-grey-pressed: #63635e;
+        --bg-grey-focus: #e8ddb2;
+        --bg-grey-pressed: #cdbd8c;
         --bg-light-card-grey: #DDDDDD;
         --bg-light-address: #FDFFF9;
-        --bg-card-grey: #DDDDDD;
-        --bg-error-red: #c75454;
+        --bg-card-grey: #d8ccb5;
+        --bg-error-red: #d28383;
     }
 
     nav, .info, #banner span, #title {
@@ -137,6 +137,10 @@ Acces-Control-Allow-Origin: *
 
     #title h2:nth-child(2), h1 {
         color: var(--bg-coal);
+    }
+
+    #title h2 {
+        font-weight: 400;
     }
 
     .info {
@@ -161,6 +165,7 @@ Acces-Control-Allow-Origin: *
 
     .light header {
         box-shadow: 5px 10px 15px rgba(179, 179, 179, 0.5);
+        background-color: ;
     }
 
     #banner {
@@ -187,13 +192,14 @@ Acces-Control-Allow-Origin: *
         justify-self: center;
         position: relative;
         bottom: 2px;
-        font-size: var(--font-size-xxl);
-        font-family: Brush Script MT;
-        font-weight: lighter;
+        font-size: var(--font-size-xl);
+        font-family: 'Courier New', Courier, monospace;
+        font-weight: 400;
+        color: #363633;
     }
 
     h3 {
-        font-weight: 400;
+        font-weight: 300;
     }
 
     /* ============= Dark mode switch ============== */
@@ -289,7 +295,6 @@ Acces-Control-Allow-Origin: *
         border: 2px solid var(--ll-yellow);
         color: var(--ll-yellow);
         border-radius: 100%;
-        transition: background-color 0.1s;
     }
 
     #pen {
@@ -383,8 +388,8 @@ Acces-Control-Allow-Origin: *
 
     #edit label {
         position: relative;
-        bottom: 4px;
-        left: 2px;
+        bottom: 9px;
+        left: 20px;
     }
 
     #node-list {
@@ -701,6 +706,10 @@ Acces-Control-Allow-Origin: *
         box-shadow: 0px 5px 15px 2px rgba(0,0,0,0.5);
     }
 
+    .light #universes li {
+        box-shadow: 0px 5px 15px 2px rgba(171, 171, 171, 0.5);
+    }
+
     #universes li span {
         font-size: var(--font-size-small);
         position: absolute;
@@ -812,6 +821,10 @@ Acces-Control-Allow-Origin: *
         outline-offset: -2px;
     }
 
+    .light .address.range {
+        box-shadow: 0px -10px 35px 3px rgb(237, 230, 219) inset;
+    }
+
     .address.range h1 {
         position: absolute;
         left: 50%;
@@ -834,6 +847,10 @@ Acces-Control-Allow-Origin: *
         border-radius: 15px;
         outline: 3px solid var(--ll-yellow);
         outline-offset: -2px;
+    }
+
+    .light .address.range div.patch {
+        background: rgb(255, 255, 255);
     }
 
     .draggable {
