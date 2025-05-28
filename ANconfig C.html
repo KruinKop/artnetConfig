@@ -165,7 +165,6 @@ Acces-Control-Allow-Origin: *
 
     .light header {
         box-shadow: 5px 10px 15px rgba(179, 179, 179, 0.5);
-        background-color: ;
     }
 
     #banner {
@@ -559,7 +558,7 @@ Acces-Control-Allow-Origin: *
     form input {
         margin-top: calc(var(--padding-small)/3);
         margin-bottom: calc(var(--padding-small)/2);
-        width: 99%;
+        width: 95%;
         min-width: 95px;
     }
 
@@ -780,7 +779,16 @@ Acces-Control-Allow-Origin: *
         overflow: hidden;
     }
 
-    .accolade {position: relative; grid-column: 1/8; overflow: hidden; z-index: -10;}
+    #accolades svg {
+        height: 100%;
+    }
+
+    .accolade {
+        position: relative; 
+        grid-column: 1/8; 
+        overflow: hidden; 
+        z-index: -10;
+    }
 
     .accolade .info {
         display: block;
@@ -1235,7 +1243,7 @@ Acces-Control-Allow-Origin: *
         #lightMode = false;
         // activeNode and activeNodeElement public property is available
 
-        #accMargin = -50;
+        #accMargin = -40;
         #maxShownUniverses = 10;
         #minShownUniverses = 6;
         #shownUniverses = 8;
@@ -1697,7 +1705,7 @@ Acces-Control-Allow-Origin: *
 
                 
                     const a = document.createElement("div");
-                    // a.style.marginLeft = `${this.#accMargin}px`;
+                    a.style.marginLeft = `${this.#accMargin}px`;
                     a.id = `accolade-${counter}`;
                     a.classList.add("accolade");
                     a.appendChild(svg);
@@ -1707,7 +1715,7 @@ Acces-Control-Allow-Origin: *
                 counter++;
             });
 
-            this.setAccHeight()
+            // this.setAccHeight()
             
             // mark double universes in red
             this.checkDoubleUnis();
@@ -1744,7 +1752,7 @@ Acces-Control-Allow-Origin: *
             let accDiv = document.querySelector(".accolade");
             let accHeight = accDiv.getBoundingClientRect()["height"];
             for(let i = 0; i < this.accoladesElement.children.length; i++) {
-                this.accoladesElement.children[i].children[0].style.height = accHeight;
+                // this.accoladesElement.children[i].children[0].style.height = accHeight+"px";
                 this.accoladesElement.children[i].children[0].style.marginLeft = -130 + (this.shownUniverses * 10) + (accHeight/62 * 10)
             }
         }
@@ -1791,7 +1799,7 @@ Acces-Control-Allow-Origin: *
         eventInit() {
             window.onresize = (e) => {
                 // calculating the height of the accolades
-                this.setAccHeight()
+                // this.setAccHeight();
 
                 if (this.textConfig) {
                     let fieldbusContainers = document.querySelectorAll(".fieldbus");
@@ -1830,7 +1838,7 @@ Acces-Control-Allow-Origin: *
                     if (button.id === "increment") {
                         if (this.shownUniverses < this.maxShownUniverses) {
                             this.changeShownUni(true);
-                            // this.#accMargin += 5;
+                            this.#accMargin += 5;
                         }
                     } else if (button.id === "decrement") {
                         if (this.shownUniverses > this.minShownUniverses) {
@@ -1842,7 +1850,7 @@ Acces-Control-Allow-Origin: *
                             }
                             if (!overLap) {
                                 this.changeShownUni(false);
-                                // this.#accMargin -= 5;
+                                this.#accMargin -= 5;
                             }        
                         }
                     }
