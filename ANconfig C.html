@@ -313,7 +313,7 @@ Acces-Control-Allow-Origin: *
 
     #sidebar {
         display: grid;
-        grid-template-rows: 150px 10fr 1fr;
+        grid-template-rows: 100px 10fr 1fr;
         grid-row: 1/2;
         grid-column: 1/2;
         margin: var(--padding-small) 0 var(--padding-small) var(--padding-small);
@@ -330,10 +330,17 @@ Acces-Control-Allow-Origin: *
     }
 
     nav {
-        margin-top: var(--padding-small);
+        padding-top: var(--padding-large);
         grid-column: 1;
         grid-row: 2;      
         font-size: 2rem;
+        overflow-y: auto;
+        overflow-x: hidden;
+        direction: rtl;
+    }
+
+    nav ul {
+        direction: ltr;
     }
 
     #title {
@@ -477,7 +484,6 @@ Acces-Control-Allow-Origin: *
 
     .node.selected #top-curve:after {
         content: "";
-        float: right;
         position: absolute;
         left: calc(var(--grid-nav-width) - 105px);
         bottom: 15px;
@@ -542,12 +548,13 @@ Acces-Control-Allow-Origin: *
         border: 2px solid var(--ll-yellow);
         border-radius: 5px;
         background-color: var(--bg-input-grey);
+        z-index: 2000;
     }
 
     form input {
         margin-top: calc(var(--padding-small)/3);
         margin-bottom: calc(var(--padding-small)/2);
-        width: calc(var(--grid-nav-width) - 3*var(--padding-small)) ;
+        width: 99%;
         min-width: 95px;
     }
 
@@ -1196,11 +1203,13 @@ Acces-Control-Allow-Origin: *
 
 </style>
 <script>
-    let nodeIp = "http://10.20.24.124"
+    let nodeIp = "http://2.121.17.247"
 
     const SWITCHPARAMS = ["status", "rxByteCount", "txByteCount", "rxBroadcast", "txBroadcast", "rxUnicast", "txUnicast", "rxMulticast", "txMulticast", "rxPause", "txPause"]
     const ARTNETPARAMS = ["universe", "keep", "framecounter"];
     const FIELDBUSPARAMS = ["codec", "startAddress", "streamLength", "finetuningParams"];
+
+    const REFRESHINTERVAL = 20000000;  
 
     class Installation {
         #customer;
@@ -1221,7 +1230,13 @@ Acces-Control-Allow-Origin: *
             return (async () => {
                 this.#customer = customer;
                 await this.fetchNodes(true);
-                this.addDemo();
+                for (let i = 0; i < 1; i++) {
+                    let hexValue = i.toString(16);
+                    if (hexValue.length < 2) {
+                        hexValue = hexValue.padStart(2, '0');
+                    }
+                    this.addDemo(hexValue);
+                }
                 // this.#prevNodes.push(this.#nodes);
                 if (localStorage.getItem("configuration") === "enabled") {
                     this.config = true;
@@ -1254,6 +1269,10 @@ Acces-Control-Allow-Origin: *
             return this.#minShownUniverses;
         }
 
+        set shownUniverses(su) {
+            this.#shownUniverses = su;
+        }
+
         changeShownUni(up){
             up? this.#shownUniverses++ : this.#shownUniverses--;
         }
@@ -1281,7 +1300,9 @@ Acces-Control-Allow-Origin: *
                     let node;
                     try {
                         node = await new Node(ip, false, [...this.#prevNodes] );    
-                    } catch(error) {console.error(error)};
+                    } catch(error) {
+                        continue;
+                    };
                                    
                     foundNodes.push(node);
                 }
@@ -1307,7 +1328,7 @@ Acces-Control-Allow-Origin: *
             }
         }
 
-        addDemo(){
+        addDemo(mac){
             let universes = [];
             let fieldbusses = [];
             for (let i=0; i<10; i++){
@@ -1316,7 +1337,7 @@ Acces-Control-Allow-Origin: *
             for (let i=0; i<6; i++){
                 fieldbusses.push(new Fieldbus(`out${i}`, 2, i == 0? 1 : (i*512)+1, 512, 0));
             }
-            let demoNode = new NodeTemplate("127.0.0.1", null, "Demo", "7b:a6:80:7f:ec:7d", {}, "255.255.255.0", universes, fieldbusses, ["Disabled", "Used-by-previous-channel", "DMX-512", "DMX-RDM"], "v3.1", new Configuration(null, true))
+            let demoNode = new NodeTemplate("127.0.0.1", null, "Demo", `7b:a6:80:7f:ec:${mac}`, {}, "255.255.255.0", universes, fieldbusses, ["Disabled", "Used-by-previous-channel", "DMX-512", "DMX-RDM"], "v3.1", new Configuration(null, true));
             demoNode.configuration.setXmlConfig(demoNode);
             if (demoNode.mac === localStorage.getItem("activeNode")) {
                 this.nodes.map((node) => node.active = false);
@@ -1351,7 +1372,7 @@ Acces-Control-Allow-Origin: *
                     <h3 id="name">${node.name}</h3>
                     <form class="node-form">
                         <label for="new-name"> Name:</label><br>
-                        <input type="text" id="new-name" value=${node.name}><br>
+                        <input type="text" id="new-name" value="${node.name}"><br>
                         <label class="form-label" for="new-ip"> IP:</label><br>
                         <input type="text" id="new-ip" value=${node.ip}><br>
                         <label class="form-label" for="new-mask"> Netmask:</label><br>
@@ -1397,7 +1418,7 @@ Acces-Control-Allow-Origin: *
                 const fpsInterval = setInterval(() => this.activeNode.updateFps(), 1000);
                 const statusInterval = setInterval(async () => {
                     for (const node of this.nodes) {
-                        if (node.mac !== "7B:A6:80:7F:EC:7D" && node.active === false) {
+                        if (!isDemo(node.mac) && node.active === false) {
                             try {
                                 const response = await fetch(`http://${node.ip}/xart`, {signal: AbortSignal.timeout(2000)});
                                 if (!response.ok) {
@@ -1452,6 +1473,10 @@ Acces-Control-Allow-Origin: *
             })
 
             this.showActiveNode();
+            
+            this.fetchConfigInterval ??= setInterval(async () => {
+                await this.refreshPage();
+            }, REFRESHINTERVAL);
         }
 
         showActiveNode() {
@@ -1466,7 +1491,16 @@ Acces-Control-Allow-Origin: *
             this.activeNodeElement  = document.getElementById(`${this.activeNode.UID}`);  
             this.universesElement   = document.getElementById("universes");
 
-            
+            const requiredUniverses = this.activeNode.fieldbusses.reduce((maxUniverses, fieldbus) => {
+                const endAddress = (fieldbus.startAddress + fieldbus.streamLength) -1;
+                const universesForFieldbus = Math.ceil(endAddress / 512);
+                return Math.max(maxUniverses, universesForFieldbus);
+            }, 0);
+
+            if (installation.shownUniverses < requiredUniverses) {
+                installation.shownUniverses = requiredUniverses;
+            }
+
             this.universesElement.innerHTML = '';
             main.style.gridTemplateRows     = `repeat(${installation.shownUniverses}, 1fr) 25px 120px`; 
             firmwareVersion.innerHTML       = this.activeNode.firmware;
@@ -1480,8 +1514,8 @@ Acces-Control-Allow-Origin: *
                     if (this.lm) u.classList.add("light");
                     if (this.config) {
                         // let inputU = document.createElement("input");
-                        let inputU = generateDomTree("input", null, {id: "universe", universe: uni.id, type: "number", value: uni.universe, min: 1, max: 32468 });
-                        let inputK = generateDomTree("input", null, {id: "keep", universe: uni.id, type: "number", value: uni.keep, min: 1, max: 512});
+                        let inputU = generateDomTree("input", null, {id: `universe-${counter}`, universe: uni.id, type: "number", value: uni.universe, min: 1, max: 32468 });
+                        let inputK = generateDomTree("input", null, {id: `keep-${counter}`, universe: uni.id, type: "number", value: uni.keep, min: 1, max: 512});
                         u.appendChild(inputU);
                         u.appendChild(inputK);
                     } else {
@@ -1554,11 +1588,11 @@ Acces-Control-Allow-Origin: *
                 if (this.config) {
                     fb.addressBlock.classList.add("config");
                     startElement    =   generateDomTree("h2", null, {class: "configurable start"}, [
-                                            generateDomTree("label", "start: <br>", {for: "startAddress", class: "draggable"}, [
-                                                generateDomTree("input", null, {id: "startAddress", fieldbus: fb.id, type: "number", min: "1", max: "5119", value: `${fb.startAddress}`}, null)])]);
+                                            generateDomTree("label", "start: <br>", {for: `fb${counter}-startAddress`, class: "draggable"}, [
+                                                generateDomTree("input", null, {id: `fb${counter}-startAddress`, fieldbus: fb.id, type: "number", min: "1", max: "5119", value: `${fb.startAddress}`}, null)])]);
                     streamElement   =   generateDomTree("h2", null, {class: "configurable stream"}, [
-                                            generateDomTree("label", "length: <br>", {for: "streamLength", class: "draggable"}, [
-                                                generateDomTree("input", null, {id: "streamLength", fieldbus: fb.id, type: "number", min: "1", max: "1024", value: `${fb.streamLength}`}, null)])]);
+                                            generateDomTree("label", "length: <br>", {for: `fb${counter}-streamLength`, class: "draggable"}, [
+                                                generateDomTree("input", null, {id: `fb${counter}-streamLength`, fieldbus: fb.id, type: "number", min: "1", max: "1024", value: `${fb.streamLength}`}, null)])]);
                 } else {
                     fb.addressBlock.classList.remove("config");
                     startElement    =   generateDomTree("h2", "start: ", { class: "draggable non-configurable start" }, [
@@ -1591,9 +1625,9 @@ Acces-Control-Allow-Origin: *
 
                 const ACTIVECODEC = this.activeNode.codecs[fb.codec].split(" ")[0];
 
-                const LABEL = generateDomTree("label", null,  {for: "codec"});
+                const LABEL = generateDomTree("label", null,  {for: `fb-${counter}-codec`});
                     LABEL.innerHTML = "Codec: "
-                    const SELECT = generateDomTree("select", null, {name: "codec", id: "codec"});
+                    const SELECT = generateDomTree("select", null, {name: "codec", id: `fb-${counter}-codec`});
                     for (let i=0; i<this.activeNode.codecs.length; i++) {
                         const OPTION = document.createElement("option", {value: `${this.activeNode.codecs[i].split(" ")[0]}`});
                         const CONTENT = document.createTextNode(`${this.activeNode.codecs[i].split(" ")[0]}`);
@@ -1847,6 +1881,7 @@ Acces-Control-Allow-Origin: *
             this.textConfig = !this.textConfig;
             let fieldbusContainers = document.querySelectorAll(".fieldbus");
             if (this.textConfig) {
+                clearInterval(installation.fetchConfigInterval);
                 this.universesContainer.style.display = "none";
                 this.accoladesElement.style.display = "none";
                 this.fieldbussesElement.style.gridTemplateColumns = "subgrid";
@@ -1862,7 +1897,7 @@ Acces-Control-Allow-Origin: *
                 this.textConfigElement.classList.add("card");
                 this.textConfigElement.style.gridRow = `1/${installation.shownUniverses+3}`
                 this.textArea = document.querySelector("#xml-text-area");
-                if (this.activeNode.mac === "7B:A6:80:7F:EC:7D") {
+                if (isDemo(this.activeNode.mac)) {
                     this.activeNode.configuration.setXmlConfig(this.activeNode);
                     this.textArea.value = this.activeNode.configuration.textConfig;
                 } 
@@ -1888,6 +1923,9 @@ Acces-Control-Allow-Origin: *
                 for(let i = 0; i < this.accoladesElement.children.length; i++) {
                     this.accoladesElement.children[i].children[0].style.height = accHeight;
                 }
+                installation.fetchConfigInterval ??= setInterval(async () => {
+                    await this.refreshPage();
+                }, REFRESHINTERVAL);
             }
 
             // adding event listeners for the buttons
@@ -1922,7 +1960,7 @@ Acces-Control-Allow-Origin: *
                     e.target.parentElement.href = fileURL;
                     break;
                 case "push":
-                    if (this.activeNode.mac !== "7B:A6:80:7F:EC:7D") {
+                    if (!isDemo(this.activeNode.mac)) {
                         this.activeNode.configuration.postXmlConfig(this.textArea.value, true);
                     } else {
                         console.log("generating config object");
@@ -1947,15 +1985,16 @@ Acces-Control-Allow-Origin: *
             }
 
             if (e.type === "click" && e.target.tagName === "INPUT") {
+                clearInterval(installation.fetchConfigInterval)
                 e.target.focus();
                 e.target.select();
             }
 
             if (e.type !== "mousemove" && e.type !== "mouseup" && e.type !== "click") {
-                if ((e.target.id === "universe" || e.target.id === "keep")) {
+                if ((e.target.id.split("-")[0] === "universe" || e.target.id.split("-")[0] === "keep")) {
                     if (e.type === "input") {
                         let min, max;
-                        if (e.target.id === "universe") {
+                        if (e.target.id.split("-")[0] === "universe") {
                             min = 1, max = 32767;
                         } else min = 500, max = 512;
                         let inputValue = e.target.value;
@@ -2123,6 +2162,17 @@ Acces-Control-Allow-Origin: *
                 body.classList.remove("light");
             }
         }
+
+        async refreshPage() {
+            let demoNodes = [];
+            for (const n of this.nodes) {
+                if (isDemo(n.mac)) demoNodes.push(n) ;
+            }
+            await this.fetchNodes(false);
+            demoNodes.forEach((node) => this.nodes.push(node))
+            this.updateNav(false);
+            this.navSwitcher();
+        }
     }
 
     class Node {
@@ -2151,6 +2201,7 @@ Acces-Control-Allow-Origin: *
             if (!skipConfig) {
                 return (async () => {
                     this.#configuration = await new Configuration(ip);
+                    
                     if (oldNodes !== null) {
                         this.#oldNodes = [...oldNodes];
                     };       
@@ -2357,17 +2408,7 @@ Acces-Control-Allow-Origin: *
                         params.push(v);
                     }
                     let fieldbus = new Fieldbus(key, ...params);
-                    if (this.#oldNodes[0] !== undefined) {
-                        if (prevNode.fieldbusses[counter].startAddress === 0 && prevNode.fieldbusses[counter].streamLength === 0
-                            && prevNode.fieldbusses[counter].codec !== 0
-                        ) {
-                            console.log("found fb at number " + counter);
-                            fieldbus.startAddress = 1;
-                            fieldbus.streamLength = 512;
-                            console.log(fieldbus);
-                            this.configuration.handleInputChange(fieldbus);
-                        }
-                    }
+
                     fieldbusses.push(fieldbus);
                     counter++;
                 }
@@ -2391,7 +2432,7 @@ Acces-Control-Allow-Origin: *
 
         async updateFps() {
             // if not demo
-            if (this.mac !== "7B:A6:80:7F:EC:7D") {
+            if (!isDemo(this.mac)) {
                 try {
                     const response = await fetch(`http://${this.ip}/xart`, {signal: AbortSignal.timeout(2000)});
                     if (!response.ok) {
@@ -2448,7 +2489,7 @@ Acces-Control-Allow-Origin: *
             this.netmask = mask.value;
             this.ip = ip.value;
             console.log(this.name);
-            if (this.mac !== "7B:A6:80:7F:EC:7D") this.configuration.handleFormChange(this);
+            if (!isDemo(this.mac)) this.configuration.handleFormChange(this);
         }
     }
 
@@ -2559,6 +2600,7 @@ Acces-Control-Allow-Origin: *
         }
 
         setStart = (e) => {
+            clearInterval(installation.fetchConfigInterval);
             switch (e.target.classList[0]) {
                 case "top-handle": 
                     this.start = "top"
@@ -2698,7 +2740,7 @@ Acces-Control-Allow-Origin: *
             if (this.newRange !== undefined) this.#streamLength = this.newRange;
             if (this.newStart !== undefined) this.#startAddress = this.newStart;
             
-            if (installation.activeNode.mac !== "7B:A6:80:7F:EC:7D" && e.target.tagName !== "LABEL") {
+            if (!isDemo(installation.activeNode.mac) && e.target.tagName !== "LABEL") {
                 installation.activeNode.configuration.handleInputChange(this);
             }
         }
@@ -2709,8 +2751,8 @@ Acces-Control-Allow-Origin: *
 
                 this.codec = target.selectedIndex;
 
-                if (installation.activeNode.mac !== "7B:A6:80:7F:EC:7D") {
-                    installation.activeNode.configuration.handleInputChange(this);
+                if (!isDemo(installation.activeNode.mac)) {
+                    installation.activeNode.configuration.handleInputChange(this, true);
                 } else installation.showActiveNode();
             }
     }
@@ -2738,7 +2780,12 @@ Acces-Control-Allow-Origin: *
         constructor(ip, skipConfig = false){
             if (!skipConfig) {
                 return( async () => {
-                    this.#xmlConfig = await this.fetchXmlConfig(ip);
+                    try {
+                        this.#xmlConfig = await this.fetchXmlConfig(ip);
+                    }
+                    catch (error) {
+                        return;
+                    }
                     this.#configObject = Configuration.parseConfig(this.#xmlConfig);
                     // filling a text config blob for download with XML button
                     this.#textConfigBlob = new Blob([this.generateTextConfig()], {type: 'text/plain'});    
@@ -2812,7 +2859,7 @@ Acces-Control-Allow-Origin: *
                 } else if (error.name === "AbortError") {
                     console.error("Fetch aborted by user");
                 } else if (error.name === "TypeError") {
-                    console.error("AbortSignal.timeout() method is not supported");
+                    console.log("One or more nodes were found where CORS is not enabled, please contact system administrator Jeff Van Themsche")
                 } else {
                     console.error("Failed to fetch XML configuration:", error.message);
                 }
@@ -2867,16 +2914,12 @@ Acces-Control-Allow-Origin: *
                     console.log(errString);
                 }
 
+                await installation.refreshPage();
+
                 if (!response.ok) {
                     throw new Error(`Response status: ${response.status}`);
                 }
 
-                let demoNode = installation.nodes.find((node) => node.mac === "7B:A6:80:7F:EC:7D");
-                // installation.pushPrevNodes(installation.nodes);
-                await installation.fetchNodes(false);
-                if (!installation.nodes.some((node) => node.mac === "7B:A6:80:7F:EC:7D")) installation.nodes.push(demoNode);
-                installation.updateNav(false);
-                installation.navSwitcher();
             }
             
             catch (error) {
@@ -2904,11 +2947,12 @@ Acces-Control-Allow-Origin: *
             this.postXmlConfig(xmlText);
         }
 
-        handleInputChange(io) {   
+        handleInputChange(io, codec = false) {   
             let xmlText = '<node>'
             io.id[0] === "i"? xmlText += '<artnet>' : xmlText += '<fieldbus>';
             xmlText += `<${io.id}>`
-            io.id[0] === "i"? xmlText += hexConverter(this.#ioHexCount["artnet"], io.universe, io.keep) : xmlText += hexConverter(this.#ioHexCount["fieldbus"], io.codec, io.startAddress, io.streamLength);
+            io.id[0] === "i"? xmlText += hexConverter(this.#ioHexCount["artnet"], io.universe, io.keep) : xmlText += 
+                !codec? hexConverter(this.#ioHexCount["fieldbus"], io.codec, io.startAddress, io.streamLength) : hexConverter(this.#ioHexCount["fieldbus"], io.codec);
             xmlText += `</${io.id}>`
             io.id[0] === "i"? xmlText += '</artnet>' : xmlText += '</fieldbus>';
             xmlText += '</node>';
@@ -3136,6 +3180,12 @@ Acces-Control-Allow-Origin: *
                 patch.classList.add("extreme");
             } else patch.classList.remove("extreme");
         }
+    }
+
+    function isDemo(demoMac) {
+        if (demoMac.substring(0, 15) === "7B:A6:80:7F:EC:") {
+            return true;
+        } return false;
     }
 
     
