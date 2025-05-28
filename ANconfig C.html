@@ -206,7 +206,7 @@ Acces-Control-Allow-Origin: *
         width: 70px;
         height: 30px;
         position: relative;
-        bottom: 6px;
+        bottom: 4px;
         display: block;
         background-color: var(--bg-coal);
         border-radius: 200px;
@@ -1421,14 +1421,14 @@ Acces-Control-Allow-Origin: *
                     }      
                 }, 5000);
                 
-                this.initaliseConfig();
-            } else this.showActiveNode();
+                // this.initaliseConfig();
+            } // else this.showActiveNode();
+            this.initialiseConfig();
         }
 
-        initaliseConfig() {
-            this.activeNodeElement = document.getElementById(`${this.activeNode.UID}`);
-
+        initialiseConfig() {
             this.fieldbussesElement = document.getElementById("fieldbusses");
+            this.fieldbussesElement.setAttribute('style', `grid-template-columns: repeat(${this.activeNode.fieldbusses.length}, 2fr)` )
             this.fieldbussesElement.innerHTML = '';
             
             let counter = 1;
@@ -1452,45 +1452,6 @@ Acces-Control-Allow-Origin: *
             })
 
             this.showActiveNode();
-        }
-
-        checkDoubleUnis() {
-            let unis = document.querySelectorAll("#universes li");
-            let uni;
-            let keep;
-            
-            unis.forEach((uni) => uni.classList.remove("illegal"));
-            
-            let uniArr = [];
-            for (const uni of unis) {
-                this.config? uniArr.push(uni.children[0].value) : uniArr.push((uni.innerHTML).split("<")[0]);
-            }
-            let dupObj = {};
-            uniArr.forEach((element, index, array) => {
-                dupObj[element] = Array.from(array.entries()).reduce((indices, [i, e]) => {
-                    if (element === e) {
-                        indices.push(i);
-                    }
-                    return indices;
-                }, []);
-            });
-            
-            const setDuplicateError = (i) => {
-                let uni = document.querySelector(`#universes li:nth-child(${i+1})`);
-                uni.classList.add("illegal")
-            }
-
-            for (const duplicates of Object.values(dupObj)){
-                if (duplicates.length === 2) {
-                    setDuplicateError(duplicates[1])
-                }
-                else if (duplicates.length > 2) {
-                    duplicates.shift();
-                    for (const i in duplicates) {
-                        setDuplicateError(duplicates[i])
-                    }
-                }           
-            }
         }
 
         showActiveNode() {
@@ -1737,6 +1698,45 @@ Acces-Control-Allow-Origin: *
             }
         }
 
+        checkDoubleUnis() {
+            let unis = document.querySelectorAll("#universes li");
+            let uni;
+            let keep;
+            
+            unis.forEach((uni) => uni.classList.remove("illegal"));
+            
+            let uniArr = [];
+            for (const uni of unis) {
+                this.config? uniArr.push(uni.children[0].value) : uniArr.push((uni.innerHTML).split("<")[0]);
+            }
+            let dupObj = {};
+            uniArr.forEach((element, index, array) => {
+                dupObj[element] = Array.from(array.entries()).reduce((indices, [i, e]) => {
+                    if (element === e) {
+                        indices.push(i);
+                    }
+                    return indices;
+                }, []);
+            });
+            
+            const setDuplicateError = (i) => {
+                let uni = document.querySelector(`#universes li:nth-child(${i+1})`);
+                uni.classList.add("illegal")
+            }
+
+            for (const duplicates of Object.values(dupObj)){
+                if (duplicates.length === 2) {
+                    setDuplicateError(duplicates[1])
+                }
+                else if (duplicates.length > 2) {
+                    duplicates.shift();
+                    for (const i in duplicates) {
+                        setDuplicateError(duplicates[i])
+                    }
+                }           
+            }
+        }
+
         eventInit() {
             window.onresize = (e) => {
                 // calculating the height of the accolades
@@ -1795,7 +1795,7 @@ Acces-Control-Allow-Origin: *
                             }        
                         }
                     }
-                    this.initaliseConfig();
+                    this.initialiseConfig();
                 })
             }
 
@@ -1849,6 +1849,7 @@ Acces-Control-Allow-Origin: *
             if (this.textConfig) {
                 this.universesContainer.style.display = "none";
                 this.accoladesElement.style.display = "none";
+                this.fieldbussesElement.style.gridTemplateColumns = "subgrid";
                 this.fieldbussesElement.style.gridColumn = "8/10";
                 for (let i=0; i < fieldbusContainers.length; i++) {
                     fieldbusContainers[i].style.position = "relative";
@@ -1856,8 +1857,7 @@ Acces-Control-Allow-Origin: *
                     fieldbusContainers[i].style.gridColumn = "1";
                     fieldbusContainers[i].style.justifySelf = "center";
                     fieldbusContainers[i].style.left = `${(i-1)*(this.fieldbussesElement.clientWidth/7.5)}px`;
-                    fieldbusContainers[i].style.marginRight = `${10/6}px`;
-                    
+                    fieldbusContainers[i].style.marginRight = `${10/fieldbusContainers.length}px`;
                 }
                 this.textConfigElement.classList.add("card");
                 this.textConfigElement.style.gridRow = `1/${installation.shownUniverses+3}`
@@ -2068,6 +2068,19 @@ Acces-Control-Allow-Origin: *
             if (this.textConfig) {
                 this.textArea.value = this.activeNode.configuration.textConfig;
                 this.textConfigElement.style.gridRow = `1/${this.shownUniverses+3}`
+                let fieldbusContainers = document.querySelectorAll(".fieldbus");
+                this.universesContainer.style.display = "none";
+                this.accoladesElement.style.display = "none";
+                this.fieldbussesElement.style.gridTemplateColumns = "subgrid";
+                this.fieldbussesElement.style.gridColumn = "8/10";
+                for (let i=0; i < fieldbusContainers.length; i++) {
+                    fieldbusContainers[i].style.position = "relative";
+                    fieldbusContainers[i].style.zIndex = `${1000 + fieldbusContainers.length-i}`;
+                    fieldbusContainers[i].style.gridColumn = "1";
+                    fieldbusContainers[i].style.justifySelf = "center";
+                    fieldbusContainers[i].style.left = `${(i-1)*(this.fieldbussesElement.clientWidth/7.5)}px`;
+                    fieldbusContainers[i].style.marginRight = `${10/fieldbusContainers.length}px`;
+                }
             }
             this.navSwitcher();
 
