@@ -1228,7 +1228,7 @@ Acces-Control-Allow-Origin: *
 
 </style>
 <script>
-    let nodeIp = "http://2.121.17.23"
+    let nodeIp = "http://2.121.17.247"
 
     const SWITCHPARAMS = ["status", "rxByteCount", "txByteCount", "rxBroadcast", "txBroadcast", "rxUnicast", "txUnicast", "rxMulticast", "txMulticast", "rxPause", "txPause"]
     const ARTNETPARAMS = ["universe", "keep", "framecounter"];
@@ -1309,7 +1309,7 @@ Acces-Control-Allow-Origin: *
         async fetchNodes(init) {
             try {
                 // ${nodeIp}/
-                const response = await fetch(`${nodeIp}/xdev`, {signal: AbortSignal.timeout(2000)});
+                const response = await fetch(`${init? nodeIp : "http://" + this.activeNode.ip}/xdev`, {signal: AbortSignal.timeout(2000)});
                 if (!response.ok) {
                     throw new Error(`Response status: ${response.status}`);
                 }
@@ -1334,9 +1334,19 @@ Acces-Control-Allow-Origin: *
                     foundNodes[0].active = true;
                     this.activeNode = foundNodes[0];
                 }
-                this.#nodes = foundNodes;
-                this.pushPrevNodes(this.#nodes);  
 
+                this.pushPrevNodes(foundNodes);
+
+                if (init) {
+                    this.nodeOrder = foundNodes;
+                    this.#nodes = foundNodes;
+                } else {
+                    this.#nodes = [];
+                    this.nodeOrder.forEach((n) => {
+                        let newNode = foundNodes.find((fn) => fn.ip === n.ip)
+                        if (newNode) this.#nodes.push(newNode);
+                    })
+                }
 
             } catch (error) {
                 if (error.name === "TimeoutError") {
@@ -1554,7 +1564,13 @@ Acces-Control-Allow-Origin: *
             uniC.style.gridRow          = `1/${installation.shownUniverses+2}`;
             uni.style.gridRow           = fieldbusses.style.gridRow = `1/${installation.shownUniverses+3}`;
             uniFilter.style.gridRow     = textC.style.gridRow = `${installation.shownUniverses+2}`;
-            if (!this.textConfig) textC.style.gridRow = `${installation.shownUniverses+2}`;
+            
+            if (!this.textConfig) {
+                textC.style.gridRow = `${installation.shownUniverses+2}`;
+            } else {
+                this.fieldbussesElement.style.gridTemplateColumns = "subgrid";
+                this.fieldbussesElement.style.gridColumn = "8/10"
+            }
 
             counter = 1;
             this.activeNode.fieldbusses.forEach((fb) => {
@@ -1569,6 +1585,15 @@ Acces-Control-Allow-Origin: *
                 if (fb.codec === 0) {
                     fb.addressBlock.hidden = true;
                 } else fb.addressBlock.hidden = false;
+
+                if (this.textConfig) {
+                    fb.fieldbusElement.style.position = "relative";
+                    fb.fieldbusElement.style.zIndex = `${1000 + this.activeNode.fieldbusses.length-(counter-1)}`;
+                    fb.fieldbusElement.style.gridColumn = "1";
+                    fb.fieldbusElement.style.justifySelf = "center";
+                    fb.fieldbusElement.style.left = `${(counter-2)*(this.fieldbussesElement.clientWidth/7.5)}px`;
+                    fb.fieldbusElement.style.marginRight = `${10/this.activeNode.fieldbusses.length}px`;
+                }
 
                 // setting all the gridRows
                 fb.fieldbusElement.style.gridRow = `1/${installation.shownUniverses+3}`
@@ -1867,7 +1892,8 @@ Acces-Control-Allow-Origin: *
                     this.config = false;
                     localStorage.setItem("configuration", "disabled");
                     this.updateNav(false);
-                };
+                }
+                
                 if (this.textConfig) {
                     this.textConfigElement.style.gridRow = `1/${this.shownUniverses+3}`
                 }  
@@ -1913,13 +1939,13 @@ Acces-Control-Allow-Origin: *
                 this.accoladesElement.style.display = "none";
                 this.fieldbussesElement.style.gridTemplateColumns = "subgrid";
                 this.fieldbussesElement.style.gridColumn = "8/10";
-                for (let i=0; i < fieldbusContainers.length; i++) {
+                for (let i=0; i < this.activeNode.fieldbusses.length; i++) {
                     fieldbusContainers[i].style.position = "relative";
-                    fieldbusContainers[i].style.zIndex = `${1000 + fieldbusContainers.length-i}`;
+                    fieldbusContainers[i].style.zIndex = `${1000 + this.activeNode.fieldbusses.length-i}`;
                     fieldbusContainers[i].style.gridColumn = "1";
                     fieldbusContainers[i].style.justifySelf = "center";
                     fieldbusContainers[i].style.left = `${(i-1)*(this.fieldbussesElement.clientWidth/7.5)}px`;
-                    fieldbusContainers[i].style.marginRight = `${10/fieldbusContainers.length}px`;
+                    fieldbusContainers[i].style.marginRight = `${10/this.activeNode.fieldbusses.length}px`;
                 }
                 this.textConfigElement.classList.add("card");
                 this.textConfigElement.style.gridRow = `1/${installation.shownUniverses+3}`
@@ -1937,10 +1963,11 @@ Acces-Control-Allow-Origin: *
                 this.universesContainer.style.display = "grid";
                 this.accoladesElement.style.display = "grid";
                 this.textConfigElement.classList.remove("card");
-                this.fieldbussesElement.style.gridColumn = "4/10";
-                for (let i=0; i < fieldbusContainers.length; i++) {
+                this.fieldbussesElement.setAttribute('style', `grid-template-columns: repeat(${this.activeNode.fieldbusses.length}, 2fr)` )
+                this.fieldbussesElement.style.gridRow = `1/${this.shownUniverses+3}`
+                for (let i=0; i < this.activeNode.fieldbusses.length; i++) {
                     fieldbusContainers[i].style.position = "relative";
-                    fieldbusContainers[i].style.zIndex = `${fieldbusContainers.length-i}`;
+                    fieldbusContainers[i].style.zIndex = `${this.activeNode.fieldbusses.length-i}`;
                     fieldbusContainers[i].style.gridColumn = `${i + 1}`;
                     fieldbusContainers[i].style.left = "0px";
                     fieldbusContainers[i].style.justifySelf = "end";
@@ -2007,22 +2034,30 @@ Acces-Control-Allow-Origin: *
         }
 
         handleFbEvent = (e) => {
+            e.stopPropagation();
             if (e.target.classList.contains("e-button") || e.target.tagName === "OPTION") {
                 return;
             }
 
             if (e.key === "Enter") {
+                e.preventDefault();
                 let elements = document.querySelectorAll("input");
                 console.log(elements);
-                let focussedElement = elements[1].toArray().find((element) => {
-                    Document.hasFocus(element);
-                })
-                console.log(focussedElement);
-                if (this.target) this.activeNode.configuration.handleInputChange(this.target);
+                let illegalChecker = () => {
+                    for (const element of elements) {
+                        if (document.activeElement === element) {
+                            return element.classList.contains("illegal") ? true : false;
+                        }
+                    }
+                }
+                console.log(illegalChecker())
+                if (this.target && !illegalChecker()) this.activeNode.configuration.handleInputChange(this.target);
             }
 
-            if (e.type === "focusin") {
-                console.log("focussing")
+            if (e.type === "focusin" && (e.target.id !== "text-config" 
+                                            && e.target.closest("div").id !== "text-config-container"
+                                            && e.target !== undefined)
+                                            && e.target.name !== "codec") {
                 clearInterval(installation.fetchConfigInterval);;
                 let focusedElement = e.target.id.split('-')[0][0] === "f" ? "fieldbus" : "universe";
                 if (focusedElement === "fieldbus") {
@@ -2031,12 +2066,16 @@ Acces-Control-Allow-Origin: *
                 else {
                     this.target = this.activeNode.universes.find((uni) => uni.id === e.target.getAttribute("universe"));
                 }
+                console.log(this.target);
                 e.target.select();
+                console.log("selected")
             }
+            // ======================== UNIVERSES =======================
 
             if (e.type !== "mousemove" && e.type !== "mouseup" && e.type !== "click") {
                 if ((e.target.id.split("-")[0] === "universe" || e.target.id.split("-")[0] === "keep")) {
                     if (e.type === "input") {
+                        if (!this.target) this.target = this.activeNode.universes.find((uni) => uni.id === e.target.getAttribute("universe"));
                         let min, max;
                         if (e.target.id.split("-")[0] === "universe") {
                             min = 1, max = 32767;
@@ -2068,20 +2107,22 @@ Acces-Control-Allow-Origin: *
                             return;
                         }
                         let param = e.target.id.split("-")[0];
-                        
                         this.target[param] = parseInt(e.target.value);
                         return;
                     }
                     
-                    
+            // ======================== FIELDBUSSES =======================
+               
                 } else if (e.target.classList.contains("draggable") || e.target.tagName === "SELECT" && e.type === "change" || e.target.tagName === "INPUT" && e.target.hasAttribute("fieldbus")) {
                     this.targetFb = e.target.closest(".fieldbus").id.slice(-1)-1;
                     this.targetFb = this.activeNode.fieldbusses.find((fb) => fb.id === `out${this.targetFb}`);
                     if (e.target.tagName === "INPUT") {
                         if (e.type === "input") {
-                            let inputStream = e.target.offsetParent.querySelector(".stream input").value
-                            let inputStart  = e.target.offsetParent.querySelector(".start input").value
-                            let min = 1, max = e.target.id.split("-")[1] === "startAddress" ? installation.shownUniverses*512 - inputStream : installation.shownUniverses*512 - inputStart;
+                            console.log(e.target)
+                            if (!this.target) this.target = this.activeNode.fieldbusses.find((fb) => fb.id === e.target.getAttribute("fieldbus"));
+                            let inputStream = e.target.closest(".address-container").querySelector(".stream input").value;
+                            let inputStart  = e.target.closest(".address-container").querySelector(".start input").value;
+                            let min = 1, max = e.target.id.split("-")[1] === "startAddress" ? installation.shownUniverses*512 - inputStream : installation.shownUniverses*512 - inputStart +1;
                             let inputValue = e.target.value;
                             if (inputValue < min || inputValue > max) {
                                 e.target.classList.add("illegal");
@@ -2431,7 +2472,9 @@ Acces-Control-Allow-Origin: *
                 if ((this.#timestamp-this.#prevTimestampOff) > 1) {
                     this.#online = o;
                     node.classList.add("disconnected");
-                    installation.configElement.classList.add("loading");
+                    if (this.ip === installation.activeNode.ip) {
+                        installation.configElement.classList.add("loading");
+                    }
                     this.#prevTimestampOff = new Date().getTime;
                     this.#prevTimestampOn = null;
                     installation.removeEventHandlers();
@@ -3044,7 +3087,7 @@ Acces-Control-Allow-Origin: *
         static parseConfig(xmlObj) {
             let config = {};
             
-            // Recursieve functie die over all nodes gaat en het config object vult
+            // Recursive function that traverses over each node and fills a config object
             function traverseConfig(xmlNode, config) {
                 if (xmlNode !== null && typeof xmlNode === 'object') {
                     for (let i = 0; i < xmlNode.childNodes.length; i++) {
