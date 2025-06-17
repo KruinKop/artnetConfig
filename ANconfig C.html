@@ -200,6 +200,7 @@ Acces-Control-Allow-Origin: *
 
     h3 {
         font-weight: 300;
+        word-break: break-all;
     }
 
     /* ============= Dark mode switch ============== */
@@ -1061,6 +1062,7 @@ Acces-Control-Allow-Origin: *
         grid-column: 2/8;
         align-self: inherit;
         color: var(--ll-yellow-font);
+        min-width: 620px;
     }
 
     #text-config, .xml-text-button {
@@ -1316,7 +1318,7 @@ Acces-Control-Allow-Origin: *
         async fetchNodes(init) {
             try {
                 // ${nodeIp}/
-                const response = await fetch(`${init? nodeIp : "http://" + this.activeNode.ip}/xdev`, {signal: AbortSignal.timeout(2000)});
+                const response = await fetch(`${init? `${nodeIp}` : "http://" + this.activeNode.ip}/xdev`, {signal: AbortSignal.timeout(2000)});
                 if (!response.ok) {
                     throw new Error(`Response status: ${response.status}`);
                 }
@@ -1337,6 +1339,7 @@ Acces-Control-Allow-Origin: *
                     };
                     if (node !== undefined) foundNodes.push(node);
                 }
+                
                 if (init && !localStorage.getItem("activeNode")) {
                     foundNodes[0].active = true;
                     this.activeNode = foundNodes[0];

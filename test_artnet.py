@@ -2,12 +2,12 @@ import socket
 import multiprocessing as mp
 from time import sleep
 # from colour import Color
-artnetip = "10.20.24.124"
+artnetip = "2.121.17.247"
 #artnetip = "127.0.0.1"
 #artnetip = "192.168.15.20"
 artnetport = 6454
 
-patchlst = [300]#,1,2,3,4,5,6,7,8,9]
+patchlst = [1]#,1,2,3,4,5,6,7,8,9]
 
 def write_artnet(qa,sync,patchlist):
     sock_out = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
@@ -45,7 +45,7 @@ if __name__ == "__main__":
         for lp_j in range(len(patchlst)):
             tosend = [lp_j,[]]
             for i in range(0,512,4):
-                tosend[1].extend([int(255),int(0),int(0),int(0)])
+                tosend[1].extend([int(0),int(255),int(255),int(0)])
             aro_qa.put(tosend)
         for i in range(5):
             sleep(0.01)
