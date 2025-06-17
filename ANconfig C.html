@@ -83,7 +83,7 @@ Acces-Control-Allow-Origin: *
         --banner-height: 85px;
         --padding-small: 15px;
         --padding-medium: 20px;
-        --padding-large: 40px;
+        --padding-large: 30px;
     }   
 
     body {
@@ -110,6 +110,7 @@ Acces-Control-Allow-Origin: *
         -webkit-user-select: none; /* Safari */
         -ms-user-select: none; /* IE 10 and IE 11 */
         user-select: none; /* Standard syntax */ 
+
     }
 
     body.light {
@@ -322,7 +323,7 @@ Acces-Control-Allow-Origin: *
         grid-column: 1/2;
         margin: var(--padding-small) 0 var(--padding-small) var(--padding-small);
         height: calc(100vh - 2*var(--padding-small));
-        min-height: calc(768px - 2*var(--padding-small));
+        min-height: calc(520px + var(--padding-large) + var(--banner-height) - var(--padding-small));
         min-width: 120px;
         background-color: var(--bg-grey);
         border-radius: 20px;
@@ -602,6 +603,7 @@ Acces-Control-Allow-Origin: *
         margin: var(--padding-large) var(--padding-small) 0;
         transition: opacity 500ms;
         font-family: var(--font-regular);
+        min-height: 520px;
     }
 
     body.loading #main-config {
@@ -701,7 +703,7 @@ Acces-Control-Allow-Origin: *
         padding: 8px 0;
         font-size: clamp(var(--font-size-small), 2vw, var(--font-size-medium)); 
         border-radius: 10px;
-        z-index: 2;
+        /* z-index: 2; */
         box-shadow: 0px 5px 15px 2px rgba(0,0,0,0.5);
     }
 
@@ -716,7 +718,7 @@ Acces-Control-Allow-Origin: *
         top: 60%;
         left: 75%;
         border-radius: 10px;
-        z-index: -1;
+        z-index: 1;
     }
 
     #universes li.illegal, #universes li.illegal span, #universes li.illegal input:nth-of-type(1) {
@@ -730,6 +732,11 @@ Acces-Control-Allow-Origin: *
         text-align: center;
     }
 
+    #universes li input:first-child {
+        position: relative;
+        z-index: 999 !important;
+    }
+
     #universes li input:last-child {
         position: absolute;
         width: 55px;
@@ -737,7 +744,7 @@ Acces-Control-Allow-Origin: *
         top: 95%;
         left: 60%;
         font-size: var(--font-size-small);
-        z-index: 1000;
+        /* z-index: -1000 !important; */
     }
 
     #universe-filter-container {
@@ -1017,11 +1024,11 @@ Acces-Control-Allow-Origin: *
     }
 
     .fb-protocol.info {
-        grid-row: 8;
+        /* grid-row: 8; */
         text-align: center;
         display: flex;
         flex-direction: column;
-        justify-content: space-evenly;
+        justify-content: space-around;
         align-items: center;
         font-size: clamp(var(--font-size-xs), 1vw, var(--font-size-small));
     }
@@ -1212,18 +1219,18 @@ Acces-Control-Allow-Origin: *
         }
     }
 
-    @media screen and (min-height: 1000px) {
+    /* @media screen and (min-height: 1000px) {
         #accolades h3 {
             left: 20px;
             bottom: -4vh
         }
-    }
+    } */
 
-    @media screen and (max-height: 768px) {
+    /* @media screen and (max-height: 668px) {
         body {
             grid-template-rows: var(--banner-height) calc(768px - var(--banner-height) - var(--padding-small));
         }
-    }
+    } */
 
 
 </style>
@@ -1536,7 +1543,7 @@ Acces-Control-Allow-Origin: *
             }
 
             this.universesElement.innerHTML = '';
-            main.style.gridTemplateRows     = `repeat(${installation.shownUniverses}, 1fr) 25px 120px`; 
+            main.style.gridTemplateRows     = `repeat(${installation.shownUniverses}, 1fr) 25px 75px`; 
             firmwareVersion.innerHTML       = this.activeNode.firmware;
 
             let counter = 1;
@@ -1628,7 +1635,7 @@ Acces-Control-Allow-Origin: *
                 }
 
                 fb.addressRange.style.gridRow   = `1/${installation.shownUniverses+1}`;
-                fb.codecElement.style.gridRow   = `${installation.shownUniverses +2}`;
+                fb.codecElement.style.gridRow   = `${installation.shownUniverses+1}/${installation.shownUniverses +3}`;
 
                 // Config elements for start and streamlength
                 let startElement;
@@ -1688,7 +1695,7 @@ Acces-Control-Allow-Origin: *
                     }
                 LABEL.appendChild(SELECT);
                 
-                let rj45 = generateDomTree("div", `<svg width="75%" viewBox="0 0 512 490.43">  
+                let rj45 = generateDomTree("div", `<svg width="60%" viewBox="0 0 512 490.43">  
                                             <use href="#ethernet-port"/>
                                         </svg>`, { id: "ethernet" })
                 
