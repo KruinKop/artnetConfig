@@ -83,7 +83,7 @@ Acces-Control-Allow-Origin: *
         --banner-height: 85px;
         --padding-small: 15px;
         --padding-medium: 20px;
-        --padding-large: 40px;
+        --padding-large: 30px;
     }   
 
     body {
@@ -205,6 +205,7 @@ Acces-Control-Allow-Origin: *
 
     h3 {
         font-weight: 300;
+        word-break: break-all;
     }
 
     /* ============= Dark mode switch ============== */
@@ -328,7 +329,7 @@ Acces-Control-Allow-Origin: *
         grid-column: 1/2;
         margin: var(--padding-small) 0 var(--padding-small) var(--padding-small);
         height: calc(100vh - 2*var(--padding-small));
-        min-height: calc(768px - 2*var(--padding-small));
+        min-height: calc(520px + var(--padding-large) + var(--banner-height) - var(--padding-small));
         min-width: 120px;
         background-color: var(--bg-grey);
         border-radius: 20px;
@@ -612,6 +613,7 @@ Acces-Control-Allow-Origin: *
         margin: var(--padding-large) var(--padding-small) 0;
         transition: opacity 500ms;
         font-family: var(--font-regular);
+        min-height: 520px;
     }
 
     body.loading #main-config {
@@ -711,7 +713,7 @@ Acces-Control-Allow-Origin: *
         padding: 8px 0;
         font-size: clamp(var(--font-size-small), 2vw, var(--font-size-medium)); 
         border-radius: 10px;
-        z-index: 2;
+        /* z-index: 2; */
         box-shadow: 0px 5px 15px 2px rgba(0,0,0,0.5);
     }
 
@@ -726,7 +728,7 @@ Acces-Control-Allow-Origin: *
         top: 60%;
         left: 75%;
         border-radius: 10px;
-        z-index: -1;
+        z-index: 1;
     }
 
     #universes li.illegal, #universes li.illegal span, #universes li.illegal input:nth-of-type(1) {
@@ -740,6 +742,11 @@ Acces-Control-Allow-Origin: *
         text-align: center;
     }
 
+    #universes li input:first-child {
+        position: relative;
+        z-index: 999 !important;
+    }
+
     #universes li input:last-child {
         position: absolute;
         width: 55px;
@@ -747,7 +754,7 @@ Acces-Control-Allow-Origin: *
         top: 95%;
         left: 60%;
         font-size: var(--font-size-small);
-        z-index: 1000;
+        /* z-index: -1000 !important; */
     }
 
     #universe-filter-container {
@@ -803,7 +810,7 @@ Acces-Control-Allow-Origin: *
     .accolade .info {
         display: block;
         fill: var(--ll-yellow);
-        font-size: var(--font-size-xs);
+        /* font-size: var(--font-size-xs); */
     }
 
 
@@ -1027,13 +1034,17 @@ Acces-Control-Allow-Origin: *
     }
 
     .fb-protocol.info {
-        grid-row: 8;
+        /* grid-row: 8; */
         text-align: center;
         display: flex;
         flex-direction: column;
-        justify-content: space-evenly;
+        justify-content: space-around;
         align-items: center;
         font-size: clamp(var(--font-size-xs), 1vw, var(--font-size-small));
+    }
+
+    .fb-protocol.info label {
+        margin-top: 15px;
     }
 
     .fb-protocol.info select {
@@ -1045,7 +1056,8 @@ Acces-Control-Allow-Origin: *
     .fb-protocol #ethernet {
         display: flex;
         justify-content: center;
-        max-width: 60%;
+        width: 70%;
+        max-width: 3.5rem;
     }
 
     .rdm-button {
@@ -1058,7 +1070,7 @@ Acces-Control-Allow-Origin: *
     }
 
     .fieldbus .rdm-button {
-        bottom: -120px;
+        bottom: -55px;
         right: -10px;
     }
 
@@ -1095,6 +1107,7 @@ Acces-Control-Allow-Origin: *
         grid-column: 2/8;
         align-self: inherit;
         color: var(--ll-yellow-font);
+        min-width: 620px;
     }
 
     #text-config, .xml-text-button {
@@ -1274,18 +1287,18 @@ Acces-Control-Allow-Origin: *
         }
     }
 
-    @media screen and (min-height: 1000px) {
+    /* @media screen and (min-height: 1000px) {
         #accolades h3 {
             left: 20px;
             bottom: -4vh
         }
-    }
+    } */
 
-    @media screen and (max-height: 768px) {
+    /* @media screen and (max-height: 668px) {
         body {
             grid-template-rows: var(--banner-height) calc(768px - var(--banner-height) - var(--padding-small));
         }
-    }
+    } */
 
 
 </style>
@@ -1406,6 +1419,7 @@ Acces-Control-Allow-Origin: *
                     };
                     if (node !== undefined) foundNodes.push(node);
                 }
+                
                 if (init && !localStorage.getItem("activeNode")) {
                     foundNodes[0].active = true;
                     this.activeNode = foundNodes[0];
@@ -1621,7 +1635,7 @@ Acces-Control-Allow-Origin: *
             }
 
             this.universesElement.innerHTML = '';
-            main.style.gridTemplateRows     = `repeat(${installation.shownUniverses}, 1fr) 25px 120px`; 
+            main.style.gridTemplateRows     = `repeat(${installation.shownUniverses}, 1fr) 25px 75px`; 
             firmwareVersion.innerHTML       = this.activeNode.firmware;
 
             let counter = 1;
@@ -1706,6 +1720,7 @@ Acces-Control-Allow-Origin: *
                         arrow.style.justifySelf = "center"
                         arrow.style.gridColumn = "1";
                         arrow.style.gridRow = "1";
+
                     }
                 } else {
                     let arrow = document.querySelector(`#fb-${counter} #arrowSvg`);
@@ -1717,7 +1732,7 @@ Acces-Control-Allow-Origin: *
                 }
 
                 fb.addressRange.style.gridRow   = `1/${installation.shownUniverses+1}`;
-                fb.codecElement.style.gridRow   = `${installation.shownUniverses +2}`;
+                fb.codecElement.style.gridRow   = `${installation.shownUniverses+1}/${installation.shownUniverses +3}`;
 
                 // Config elements for start and streamlength
                 let startElement;
@@ -1777,7 +1792,7 @@ Acces-Control-Allow-Origin: *
                     }
                 LABEL.appendChild(SELECT);
                 
-                let rj45 = generateDomTree("div", `<svg width="75%" viewBox="0 0 512 490.43">  
+                let rj45 = generateDomTree("div", `<svg width="60%" viewBox="0 0 512 490.43">  
                                             <use href="#ethernet-port"/>
                                         </svg>`, { id: "ethernet" })
                 
@@ -1791,7 +1806,7 @@ Acces-Control-Allow-Origin: *
                     fb.codecElement.appendChild(h2);
                     fb.codecElement.appendChild(h3);
                 }
-                fb.codecElement.appendChild(rj45);
+                if (fb.codec !== 1) fb.codecElement.appendChild(rj45);
                 
                 counter++;
             });
@@ -1816,7 +1831,8 @@ Acces-Control-Allow-Origin: *
                     // Replace color placeholders
                     svg.innerHTML = svg.innerHTML
                         .replaceAll("__COLOR__", braceColor)
-                        .replace("__CLASS__", className);
+                        .replace("__CLASS__", className)
+                        .replace("__FS__", this.shownUniverses * Math.pow(2, 0.8)+"px");
   
                     const a = document.createElement("div");
                     // a.style.marginLeft = `${this.#accMargin}px`;
@@ -2144,8 +2160,15 @@ Acces-Control-Allow-Origin: *
                         }
                     }
                 }
-                console.log(illegalChecker())
-                if (this.target && !illegalChecker()) this.activeNode.configuration.handleInputChange(this.target);
+
+                if (!illegalChecker()) {
+                    let param = e.target.id.split("-")[1];
+                    this.target[param] = parseInt(e.target.value);
+                    if (this.target) {
+                        this.activeNode.configuration.handleInputChange(this.target);
+                    }
+                    this.inputSelection = false;
+                }
             }
 
             if (e.type === "focusin" && (e.target.id !== "text-config" 
@@ -2160,9 +2183,8 @@ Acces-Control-Allow-Origin: *
                 else {
                     this.target = this.activeNode.universes.find((uni) => uni.id === e.target.getAttribute("universe"));
                 }
-                console.log(this.target);
+                this.inputSelection = true;
                 e.target.select();
-                console.log("selected")
             }
             // ======================== UNIVERSES =======================
 
@@ -2225,17 +2247,21 @@ Acces-Control-Allow-Origin: *
                                 e.target.classList.remove("illegal");
                             }
 
-                            if (!e.target.classList.contains("illegal")) {
-                                let param = e.target.id.split("-")[1];
-                                this.target[param] = parseInt(e.target.value);
-                            }
+                            // if (!e.target.classList.contains("illegal")) {
+                            //     let param = e.target.id.split("-")[1];
+                            //     this.target[param] = parseInt(e.target.value);
+                            // }
                         }
 
                         if (e.type === "focusout") {
                             if (e.target.classList.contains("illegal")) {
                                 e.target.value = this.activeNode.fieldbusses.find((fb) => fb.id === e.target.getAttribute("fieldbus"))[e.target.id];
                                 e.target.classList.remove("illegal");
+                            } else {
+                                this.activeNode.configuration.handleInputChange(this.target);
                             }
+                            this.inputSelection = false;
+                            return
                         }
 
                         if (e.type === "change") {
@@ -2252,7 +2278,7 @@ Acces-Control-Allow-Origin: *
                 }            
             }
 
-            if (this.targetFb !== undefined) {
+            if (this.targetFb !== undefined && !this.inputSelection) {
                 switch(e.type) {
                     case "mousedown":
                         this.targetFb.setStart(e);
@@ -2984,7 +3010,7 @@ Acces-Control-Allow-Origin: *
         }
 
         updateValues = (e) => {
-            if ((e.target.tagName === "INPUT" & !this.startedMove) | e.target.tagName === "SELECT" | e.target.tagName === "OPTION") {
+            if (e.target.tagName === "INPUT" && !this.startedMove) {
                 return;
             }
             let fbs = document.querySelectorAll(".patch");
@@ -3751,12 +3777,13 @@ Acces-Control-Allow-Origin: *
         </div>
         <!-- svg definition of the accolades -->
         <template id="brace-template">
-            <svg viewBox="0 0 2000 72" xmlns="http://www.w3.org/2000/svg">
-                <path d="M61.4318 1.72424H2637.06" stroke="__COLOR__" stroke-width="2"/>
-                <path d="M61.4318 70.7244H2637.06" stroke="__COLOR__" stroke-width="2"/>
-                <path d="M46.4779 36.2288C51.7241 36.3106 59.3583 35.2166 56.7341 28.1965C55.0324 23.6442 50.049 20.9121 50.049 12.6052C50.049 5.20797 54.2605 1.72424 61.4318 1.72424M46.4779 36.2288C51.7241 36.1469 59.3583 37.2492 56.7341 44.2693C55.0324 48.8216 50.049 51.5537 50.049 59.8606C50.049 67.2579 54.2605 70.7416 61.4318 70.7416M46.4779 36.2288H5" fill="none" stroke="__COLOR__" stroke-width="2"/>
-                <text class="info __CLASS__" x="60px" y="40px">0fps</text>
-            </svg>
+        <?xml version="1.0" encoding="UTF-8"?>
+        <svg viewBox="0 0 2000 72" xmlns="http://www.w3.org/2000/svg">
+            <path d="M61.4 1.7H2637.1" stroke="__COLOR__" stroke-width="2"/>
+            <path d="M61.4 70.7H2637.1" stroke="__COLOR__" stroke-width="2"/>
+            <path d="M5 36.2H46.5M61.4 70.7C54.3 70.7 50 67.3 50 59.9c0-8.3 5-11.1 6.7-15.6 2.7-7.1-5-8.2-10.2-8.1M61.4 1.7C54.3 1.7 50 5.2 50 12.6c0 8.3 5 11 6.7 15.6 2.7 7-5 8.1-10.2 8" fill="none" stroke="__COLOR__" stroke-width="2"/>
+            <text class="info __CLASS__" x="60px" y="40px" style="font-size: __FS__">0fps</text>
+        </svg>
         </template>
         <!-- end of accolade definition -->
         <div id="accolades"></div>
