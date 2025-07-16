@@ -110,6 +110,12 @@ Acces-Control-Allow-Origin: *
         -webkit-user-select: none; /* Safari */
         -ms-user-select: none; /* IE 10 and IE 11 */
         user-select: none; /* Standard syntax */ 
+
+        
+        input[type=number]::-webkit-inner-spin-button {
+            opacity: 1
+        }
+
     }
 
     body.light {
@@ -461,6 +467,10 @@ Acces-Control-Allow-Origin: *
 
     .node h2 {
         font-weight: 200;
+    }
+
+    .node.selected #name {
+        word-break: break-all;
     }
 
     .node.selected.disconnected h3 {
@@ -1038,6 +1048,37 @@ Acces-Control-Allow-Origin: *
         max-width: 60%;
     }
 
+    .rdm-button {
+        position: relative;
+        justify-self: end;
+        font-family: 'Courier New', Courier, monospace;
+        font-weight: 600;
+        line-height: 25px;
+        text-align: center;
+    }
+
+    .fieldbus .rdm-button {
+        bottom: -120px;
+        right: -10px;
+    }
+
+    #rdm-config {
+        padding: var(--padding-large) var(--padding-small) 0 var(--padding-small);
+        display: grid;
+        grid-column: 2/3;
+        grid-row: 2/3;
+    }
+
+    #rdm-config .card {
+        position: relative;
+    }
+
+    #rdm-config .rdm-button {
+        position: absolute;
+        bottom: -5px;
+        right: -5px;
+    }
+
     #text-config-container {
         z-index: 2000;
         margin-right: var(--padding-large);
@@ -1126,6 +1167,27 @@ Acces-Control-Allow-Origin: *
     .card #xml-text-area, .card p#help-text, .card .xml-text-button {
         display: inline-block;
     }
+
+    /* ============= RDM-Table ============== */
+
+    #rdm-table {
+        font-family: var(--font-regular);
+        margin: var(--padding-large);
+    }
+
+    #rdm-table tr:nth-child(odd) {
+        background-color: #575757;
+    }
+
+    #rdm-table #headerRow {
+        font-size: 1.5rem;
+        color: var(--ll-yellow-font);
+    }
+
+    #rdm-table td {
+        padding:  0.5rem 1rem;
+    }
+
 
     /* ============= Dynamic resizing ============== */
     
@@ -1247,6 +1309,8 @@ Acces-Control-Allow-Origin: *
         #minShownUniverses = 4;
         #shownUniverses = 6;
 
+        #rdmCounter = 0;
+
         // Immediately Invoked Async Function Expression zorgt ervoor dat we de nodes kunnen ophalen en nieuwe
         // object instanties kunnen aanmaken zonder then-chaining of extra async functies te gebruiken 
         // https://itnext.io/1-minute-to-become-a-better-developer-4-aeabd6586396
@@ -1269,6 +1333,7 @@ Acces-Control-Allow-Origin: *
                 this.universesContainer = document.querySelector("#universe-container");
                 this.textConfigElement = document.querySelector("#text-config-container");
                 this.textConfig = false;
+                this.rdmConfig = false;
                 return this;
             })();
         }
@@ -1293,6 +1358,17 @@ Acces-Control-Allow-Origin: *
             return this.#minShownUniverses;
         }
 
+        get rdmCounter() {
+            let prevCount = this.#rdmCounter;
+            this.#rdmCounter++;
+            if (this.#rdmCounter = 256) this.#rdmCounter = 0;
+            return prevCount.toString(16).toUpperCase();
+        }
+
+        set rdmCounter(rdc) {
+            this.#rdmCounter = rdc;
+        }
+
         set shownUniverses(su) {
             this.#shownUniverses = su;
         }
@@ -1308,8 +1384,8 @@ Acces-Control-Allow-Origin: *
 
         async fetchNodes(init) {
             try {
-                // ${nodeIp}/
-                const response = await fetch(`${init? nodeIp : "http://" + this.activeNode.ip}/xdev`, {signal: AbortSignal.timeout(2000)});
+                //      `${init? "" : "http://" + this.activeNode.ip}/xdev`
+                const response = await fetch(`${nodeIp}/xdev`, {signal: AbortSignal.timeout(2000)});
                 if (!response.ok) {
                     throw new Error(`Response status: ${response.status}`);
                 }
@@ -1333,6 +1409,7 @@ Acces-Control-Allow-Origin: *
                 if (init && !localStorage.getItem("activeNode")) {
                     foundNodes[0].active = true;
                     this.activeNode = foundNodes[0];
+                    localStorage.setItem("activeNode", this.activeNode.mac);
                 }
 
                 this.pushPrevNodes(foundNodes);
@@ -1389,8 +1466,8 @@ Acces-Control-Allow-Origin: *
                 if (!this.config | node.active === false) {
                     nodeElement.innerHTML = `
                     <div id="top-curve"></div>
-                    <div id="status"></div>
-                    <h3 id="name">${node.name}</h3>
+                        <div id="status"></div>
+                        <h3 id="name">${node.name}</h3>
                         <ul class="info ${lm} configurable">
                             <li class="IP">IP: <p>${node.ip}</p></li>
                             <li class="netMask">Netmask: <p>${node.netmask}</p></li>
@@ -1498,10 +1575,11 @@ Acces-Control-Allow-Origin: *
                                                     generateDomTree("span")
                                                 ]),
                                                 generateDomTree("h2", null, { class: "draggable stream" })]),
-                                            generateDomTree("div", null, { class: "bottom-handle draggable" })
+                                            generateDomTree("div",null, { class: "bottom-handle draggable" })
                                         ])
                                 ]), 
-                                generateDomTree("div", null, { class: "fb-protocol info" })])
+                                generateDomTree("div", null, { class: "fb-protocol info" }),
+                                generateDomTree("div", "i", {class: "rdm-button e-button", style: "visibility: hidden"}, null, {"click": installation.toggleRdmConfig})])
                 this.fieldbussesElement.appendChild(fb.fbElement);
                 counter++;    
             })
@@ -1524,6 +1602,13 @@ Acces-Control-Allow-Origin: *
             
             this.activeNodeElement  = document.getElementById(`${this.activeNode.UID}`);  
             this.universesElement   = document.getElementById("universes");
+
+            let ePort2 = document.querySelector("#eth2");
+            if (Object.keys(this.activeNode.switch).length === 0) {
+                ePort2.hidden = true;
+            } else {
+                ePort2.hidden = false;
+            }
 
             const requiredUniverses = this.activeNode.fieldbusses.reduce((maxUniverses, fieldbus) => {
                 const endAddress = (fieldbus.startAddress + fieldbus.streamLength) -1;
@@ -1585,6 +1670,10 @@ Acces-Control-Allow-Origin: *
                 if (fb.codec === 0) {
                     fb.addressBlock.hidden = true;
                 } else fb.addressBlock.hidden = false;
+
+                if (this.activeNode.codecs[fb.codec].toLowerCase().includes("rdm")) {
+                    fb.fieldbusElement.querySelector(".rdm-button").style.visibility = "visible";
+                }
 
                 if (this.textConfig) {
                     fb.fieldbusElement.style.position = "relative";
@@ -1839,6 +1928,7 @@ Acces-Control-Allow-Origin: *
                     if (fb.codec !== 0 && fb.codec !== 1) checkOverflow(fb.addressBlock, !this.config, fb.addressHeight);
                 })
             }
+            
             const dmSwitch          = document.querySelector("#dark-mode-switch input");
             const configSwitch      = document.querySelector("#edit-switch");
             const savedDarkMode     = localStorage.getItem("darkMode");
@@ -1903,7 +1993,10 @@ Acces-Control-Allow-Origin: *
             this.textConfigButton = document.querySelector("#text-config");
             this.textConfigButton.addEventListener("click", this.switchTextConfig);
 
-            this.addEventHandlers()
+            this.addEventHandlers();
+
+            console.log(this.configElement.querySelector("#rdm-config .rdm-button"));
+            this.configElement.querySelector("#rdm-config .rdm-button").addEventListener(("click"), this.toggleRdmConfig);
         }
         
         addEventHandlers() {
@@ -2235,6 +2328,52 @@ Acces-Control-Allow-Origin: *
             })       
         }
 
+        toggleRdmConfig = async (e) => {
+            let targetFb = e.target.closest(".fieldbus.card");
+            console.log(targetFb);
+            // Todo get the id of the fieldbus were trying to get information frome
+            this.rdmConfig = !this.rdmConfig;
+            if (this.rdmConfig) {
+                this.configElement.querySelector("#main-config").innerHTML = "";
+                this.configElement.querySelector("#rdm-config").style.visibility = "visible";
+
+                // fetching all the devices
+                await this.showRdmConfig(0)
+
+            } else {
+                this.configElement.querySelector("#rdm-config").style.visibility = "hidden";
+                this.showActiveNode();
+            }      
+        }
+
+        async showRdmConfig(fieldbus) {
+            try {
+                const response = await fetch(`${nodeIp}/xtod`, {signal: AbortSignal.timeout(2000)});
+                if (!response.ok) {
+                    throw new Error(`Response status: ${response.status}`);
+                }
+                const xmlText = await response.text();
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
+                let rdmConfig = Configuration.parseConfig(xmlDoc);
+                let rdmDevices = rdmConfig[`out${fieldbus}`].split(" ");
+                console.log(rdmDevices);
+                sendRdmPacket(nodeIp, 0, rdmDevices[0], "GET", "DEVICE_INFO");
+                // let devices = xmlDoc.getElementsByTagName("dev")[0].innerHTML.split(" ");               
+            } 
+            catch (error) {
+                if (error.name === "TimeoutError") {
+                    console.error("Request timed out");    
+                } else if (error.name === "AbortError") {
+                    console.error("Fetch aborted by user");
+                } else if (error.name === "TypeError") {
+                    console.error("AbortSignal.timeout() method is not supported");
+                } else {
+                    console.error("Failed to update fps:", error.message);
+                } 
+            }
+        }
+
         switchDarkMode(sw) {
             let accolades = document.querySelectorAll(".accolade path");
             let buttonSvgs = document.querySelector("#edit svg path");
@@ -2362,6 +2501,10 @@ Acces-Control-Allow-Origin: *
 
         get online() {
             return this.#online;
+        }
+
+        get switch() {
+            return this.#switch;
         }
 
         
@@ -3170,6 +3313,164 @@ Acces-Control-Allow-Origin: *
         }
     }
 
+    let mockRdmData = {
+        UUID1: {
+                parameter1: "value1",
+                parameter2: "value2",
+                parameter3: "value3"
+        },
+        UUID2: {
+                parameter1: "2value1",
+                parameter2: "2value2",
+                parameter3: "2value3"
+        },
+        UUID3: {
+                parameter1: "3value1",
+                parameter2: "3value2",
+                parameter3: "3value3"
+        }
+    }
+
+    class Table {
+        constructor(parentNode, rdmInfo) {
+            this.rdmHeader = ["Device", "Parameters", "Values"]
+            this.rdmInfo = rdmInfo;
+            this.parentNode = parentNode;
+            this.addFilters();
+            this.generateBaseTable();
+            this.addRowEvents();
+        }
+
+        addFilters() {
+            this.filters = [];
+            for (const KEY of Object.keys(this.rdmInfo)){
+                console.log(KEY)
+                console.log(Object.keys(KEY))
+                for(const KEY2 of Object.keys(this.rdmInfo[KEY])){
+                    console.log(KEY2)
+                    if(!this.filters.includes(KEY2)){
+                        this.filters.push(KEY2)
+                    }
+                }
+            }
+            console.log(this.filters);
+        }
+
+        generateBaseTable() {
+            console.log(this.rdmInfo);
+            let table = document.createElement("table");
+            table.id = "rdm-table"
+            let headerRow = document.createElement("tr");
+            headerRow.id = "headerRow";
+            let counter = 0;
+            for (const HEADER of this.rdmHeader) {
+                let hTd = document.createElement("td");     
+                hTd.innerHTML = HEADER;
+                // param filter
+                if (counter == 1) {
+                    hTd.innerHTML += "<br>"
+                    let paramDD = document.createElement("select");
+                    paramDD.addEventListener("change", this.applyFilter)
+                    paramDD.id = "param-dropdown";
+                    let filterItem = document.createElement("option");
+                    filterItem.innerHTML = "--Filter--"
+                    paramDD.appendChild(filterItem);
+                    for (const FILTER of this.filters) {
+                        filterItem = document.createElement("option");
+                        filterItem.value = FILTER;
+                        filterItem.innerHTML = FILTER;
+                        paramDD.appendChild(filterItem);
+                    }
+                    hTd.appendChild(paramDD);
+                }
+                headerRow.appendChild(hTd)
+                counter++;
+            }
+            table.appendChild(headerRow);
+
+            for (const DEVID of Object.keys(this.rdmInfo)) {
+                let dataRow = document.createElement("tr");
+                dataRow.id = DEVID;
+                for (let i = 0; i < this.rdmHeader.length; i++) {
+                    let dTd = document.createElement("td");
+                    if (i == 0) {
+                        dTd.innerHTML = DEVID;
+                        dTd.openedRow = false;
+                    } else dTd.innerHTML = null;
+                    dataRow.appendChild(dTd);
+                }
+                table.appendChild(dataRow);
+                
+            }
+            this.parentNode.appendChild(table);
+            this.table = document.querySelector("#rdm-table");
+            console.log(this.table);
+        }
+
+        addRowEvents() {
+            let devices = document.querySelectorAll("tr:not(#headerRow) > td:first-child");
+            console.log(devices);
+            for (const DEVICE of devices) {
+                DEVICE.addEventListener("click", this.toggleParameters)
+            }
+        }
+
+        toggleParameters = (e) => {
+            console.log("clicked on " + e.target.innerHTML);
+            let targetRow = e.target.closest("tr");
+            let parentNode = targetRow.parentNode;
+            if (e.target.openedRow === false) {
+                console.log(targetRow);
+                // let rowsExceptHeader = document.querySelectorAll("#rdm-table tr:not(:first-child)");
+                // for (const ROW of rowsExceptHeader) {
+                //     this.table.removeChild(ROW);
+                // }
+
+                let counter = 0;
+                for (const [KEY, VAL] of Object.entries(mockRdmData[e.target.innerHTML])) {
+                    console.log(KEY + " " + VAL)
+                    let dataRow = document.createElement("tr");
+                    dataRow.id = e.target.innerHTML;
+                    let data = document.createElement("td");
+                    if (counter == 0) {
+                            data.innerHTML = e.target.innerHTML
+                            data.addEventListener("click", this.toggleParameters)
+                            data.openedRow = true;
+                        } else {
+                            data.innerHTML = ""
+                    };
+                    dataRow.appendChild(data);
+                    data = document.createElement("td");
+                    data.innerHTML = KEY;
+                    dataRow.appendChild(data);
+                    data = document.createElement("td");
+                    data.innerHTML = VAL;
+                    dataRow.appendChild(data);
+                    console.log(targetRow);
+                    this.table.insertBefore(dataRow, targetRow);
+                    counter++;
+                }
+                console.log(this.table);
+                console.log(targetRow);
+                this.table.removeChild(targetRow);
+            } else {
+                for (let i = 0; i < Object.keys(mockRdmData[e.target.innerHTML]).length-1; i++) {
+                    let nr = targetRow.nextSibling;
+                    this.table.removeChild(nr)
+                }
+                let dataWithoutUID = targetRow.querySelectorAll("td:not(:first-child)");
+                for (const DATA of dataWithoutUID) {
+                    DATA.innerHTML = "";
+                }
+                targetRow.querySelector("td:first-child").openedRow = false;
+            }
+        }
+
+        applyFilter = (e) => {
+            console.log("changed filter to " + e.target.value)
+        }
+    }
+
     // Helper functie om de gewenste value te verkrijgen vanuit een object
     // https://www.30secondsofcode.org/js/s/get-nested-object-value/#search-for-a-deeply-nested-property-in-an-object
     const dig = (obj, target) => 
@@ -3301,9 +3602,53 @@ Acces-Control-Allow-Origin: *
         } return false;
     }
 
-    
-    let installation;
+    async function sendRdmPacket(nodeIp, fbId, destinationUID, getSet, param) {
+        const PIDMAP = {
+            "DEVICE_INFO": {
+                "PID": "0060",
+                "PDL": "00",
+                "PD" : "00"
+            },
+            "IDENTIFY_DEVICE": {
+                "PID": "1000",
+                "PDL": "00",
+                "PD" : "00"
+            }
+        }
+        let payload = 
+`CC0125${destinationUID}123456789ABC${installation.rdmCounter.padStart(2, "0")}00000000${getSet = "GET"? 20 : 30}${PIDMAP[param]["PID"]}${PIDMAP[param]["PDL"]}${PIDMAP[param]["PD"]}`
+        
+        let CS = (function () {
+            let byteArr = []
+            for (let i=0; i < payload.length; i+=2) {
+                byteArr.push(payload.substring(i,i+2))
+            }
+            const intArr = byteArr.map((h) => parseInt(h,16));
+            let intCS = intArr.reduce((acc, cv) => {return acc + cv}, 0);
+            let finalCS = intCS.toString(16).padStart(4, '0');
+            console.log(finalCS);
+            payload = "<rdm>" + payload + finalCS.toUpperCase() + "</rdm>";
+        })();
 
+        try {
+            const response = await fetch(`${nodeIp}/xrdm`, {
+                method:'POST',
+                mode: 'cors', 
+                headers: {
+                    'Content-Type': 'text/xml',
+                    'bindindex': '1'
+                },         
+                body: `${payload}`
+            })
+        } catch (error) {
+            console.error(error);
+        }
+    }
+    
+    // =========================== Program entry point =========================
+                                                                               
+    let installation;                                                          
+                                                                               
     async function intitialise(init) {
         installation = await new Installation("Lux-Lumen");
         installation.updateNav(init);
@@ -3313,11 +3658,9 @@ Acces-Control-Allow-Origin: *
         
     document.addEventListener("DOMContentLoaded", async () => {
         await intitialise(true);
+        let rdmTable = new Table(document.querySelector("#rdm-config .card"), mockRdmData);
     })
     
-    
-
-
 </script>
 <body>
     <header>
@@ -3465,6 +3808,11 @@ Acces-Control-Allow-Origin: *
                 <button class="card xml-text-button" id="download">download config file</button>
             </a>
             <button class="card" id="text-config">text config</button>
+        </div>
+    </div>
+    <div id="rdm-config" style="visibility: hidden">
+        <div class="card">
+            <div class="rdm-button e-button">i</div>
         </div>
     </div>
 </body>
