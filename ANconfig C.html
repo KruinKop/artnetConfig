@@ -99,6 +99,8 @@ Acces-Control-Allow-Origin: *
         --bg-button-grey: #5d5d44;
         --bg-grey-focus: #777761;
         --bg-grey-pressed: #63635e;
+        --bg-first-row: #454545;
+        --bg-table-separator: #656565;
         --bg-card-grey: #4d4d4d;
         --bg-error-red: #8a3838;
         --bg-status-green: #2Aff00;
@@ -131,6 +133,8 @@ Acces-Control-Allow-Origin: *
         --bg-button-grey: #f0f0e7;
         --bg-grey-focus: #e8ddb2;
         --bg-grey-pressed: #cdbd8c;
+        --bg-table-separator: #cac1a2;
+        --bg-first-row: #b7b39d;
         --bg-light-card-grey: #DDDDDD;
         --bg-light-address: #FDFFF9;
         --bg-card-grey: #d8ccb5;
@@ -341,7 +345,7 @@ Acces-Control-Allow-Origin: *
     }
 
     nav {
-        padding-top: var(--padding-large);
+        padding-top: 2.5rem;
         grid-column: 1;
         grid-row: 2;      
         font-size: 2rem;
@@ -605,7 +609,7 @@ Acces-Control-Allow-Origin: *
     /* ============= Center configuration ============== */
 
     #main-config {
-        display: grid;
+        display: none;
         grid-column: 2/3;
         grid-row: 2/3;
         grid-template-columns: calc(40px - var(--padding-medium)) clamp(60px, 10vw, 100px) calc(3*var(--padding-medium)) repeat(6,2fr); 
@@ -850,7 +854,7 @@ Acces-Control-Allow-Origin: *
         box-shadow: 0px -10px 35px 3px rgb(237, 230, 219) inset;
     }
 
-    .address.range h1 {
+    .address.range h1, .fieldbus-name {
         position: absolute;
         left: 50%;
         width: 0;
@@ -1074,23 +1078,6 @@ Acces-Control-Allow-Origin: *
         right: -10px;
     }
 
-    #rdm-config {
-        padding: var(--padding-large) var(--padding-small) 0 var(--padding-small);
-        display: grid;
-        grid-column: 2/3;
-        grid-row: 2/3;
-    }
-
-    #rdm-config .card {
-        position: relative;
-    }
-
-    #rdm-config .rdm-button {
-        position: absolute;
-        bottom: -5px;
-        right: -5px;
-    }
-
     #text-config-container {
         z-index: 2000;
         margin-right: var(--padding-large);
@@ -1181,24 +1168,84 @@ Acces-Control-Allow-Origin: *
         display: inline-block;
     }
 
-    /* ============= RDM-Table ============== */
+    /* ============= RDM-config ============== */
+
+    #rdm-config {
+        padding: var(--padding-large) var(--padding-small) 0 var(--padding-large);
+        display: grid;
+        grid-column: 2/3;
+        grid-row: 2/3;
+    }
+
+    #rdm-config .card {
+        position: relative;
+        min-height: calc(515px + 2*var(--padding-large) - var(--banner-height) + 2*var(--padding-small));
+    }
+
+    #rdm-config .rdm-button {
+        position: absolute;
+        bottom: -5px;
+        right: -5px;
+    }
 
     #rdm-table {
+        border-collapse: separate;
+        border-spacing: 0;
+        width: 90%;
         font-family: var(--font-regular);
+        color: var(--ll-yellow-font);
         margin: var(--padding-large);
     }
 
-    #rdm-table tr:nth-child(odd) {
-        background-color: #575757;
+    #rdm-table input {
+        width: 100%;
+    }
+
+    #rdm-table tr td:first-of-type:hover{
+        cursor:pointer;
+    }
+
+    #rdm-table tr:nth-child(odd):not(tr:first-child) {
+        background-color: var(--bg-table-separator);
     }
 
     #rdm-table #headerRow {
         font-size: 1.5rem;
-        color: var(--ll-yellow-font);
+        color: var(--ll-light-yellow);
+    }
+
+    #rdm-table #headerRow th {
+        padding: 1rem;
     }
 
     #rdm-table td {
+        width: 100%;
         padding:  0.5rem 1rem;
+    }
+
+    #headerRow th {
+        background-color: var(--bg-first-row);
+    }
+
+    #headerRow th:first-of-type {
+        border-top: 0px solid black;
+        border-top-left-radius: 50px;
+    }
+
+    #rdm-table th:last-of-type {
+        border-top-right-radius: 10px;
+    }
+
+    .fieldbus-name {
+        padding: 0.5rem;
+        position: absolute;
+        text-align: right;
+        align-self: end;
+        width: 100%;
+        left: -50px;
+        font-size: 5rem;
+        color: var(--bg-coal);
+        transform: none;
     }
 
 
@@ -1346,7 +1393,7 @@ Acces-Control-Allow-Origin: *
                 this.universesContainer = document.querySelector("#universe-container");
                 this.textConfigElement = document.querySelector("#text-config-container");
                 this.textConfig = false;
-                this.rdmConfig = false;
+                this.rdmConfig = true;
                 return this;
             })();
         }
@@ -1687,6 +1734,8 @@ Acces-Control-Allow-Origin: *
 
                 if (this.activeNode.codecs[fb.codec].toLowerCase().includes("rdm")) {
                     fb.fieldbusElement.querySelector(".rdm-button").style.visibility = "visible";
+                } else {
+                    fb.fieldbusElement.querySelector(".rdm-button").style.visibility = "hidden";
                 }
 
                 if (this.textConfig) {
@@ -1993,12 +2042,16 @@ Acces-Control-Allow-Origin: *
                 if (checkBox.checked) {
                     this.config = true;
                     localStorage.setItem("configuration", "enabled");
-                    this.updateNav(false)
+                    this.updateNav(false);
                 } else {
                     this.config = false;
                     localStorage.setItem("configuration", "disabled");
                     this.updateNav(false);
                 }
+
+                if (this.rdmConfig) {
+                        this.rdmTable.toggleInput();
+                    }
                 
                 if (this.textConfig) {
                     this.textConfigElement.style.gridRow = `1/${this.shownUniverses+3}`
@@ -2145,7 +2198,7 @@ Acces-Control-Allow-Origin: *
 
         handleFbEvent = (e) => {
             e.stopPropagation();
-            if (e.target.classList.contains("e-button") || e.target.tagName === "OPTION") {
+            if (e.target.classList.contains("e-button") || e.target.tagName === "OPTION" || this.rdmConfig) {
                 return;
             }
 
@@ -2310,6 +2363,12 @@ Acces-Control-Allow-Origin: *
                 n.classList.remove("selected");
             }
 
+            if (this.rdmConfig) {
+                this.configElement.querySelector("#rdm-config").style.visibility = "hidden";
+                this.configElement.querySelector("#main-config").style.display = "grid";
+                this.rdmConfig = false;
+            }
+
             if (!nodeElement.classList.contains("selected")) {
                 nodeElement.classList.add("selected");
                 let node = this.#nodes.find((n) => n.UID === nodeElement.id);
@@ -2360,14 +2419,18 @@ Acces-Control-Allow-Origin: *
             // Todo get the id of the fieldbus were trying to get information frome
             this.rdmConfig = !this.rdmConfig;
             if (this.rdmConfig) {
-                this.configElement.querySelector("#main-config").innerHTML = "";
+                this.configElement.querySelector("#main-config").style.display = "none";
                 this.configElement.querySelector("#rdm-config").style.visibility = "visible";
+                this.configElement.querySelector("#rdm-config h1").innerHTML = "FIELDBUS " + targetFb.id.split("-")[1];
 
                 // fetching all the devices
                 await this.showRdmConfig(0)
 
+                this.addRdmEvents();
+
             } else {
                 this.configElement.querySelector("#rdm-config").style.visibility = "hidden";
+                this.configElement.querySelector("#main-config").style.display = "grid";
                 this.showActiveNode();
             }      
         }
@@ -2397,6 +2460,49 @@ Acces-Control-Allow-Origin: *
                 } else {
                     console.error("Failed to update fps:", error.message);
                 } 
+            }
+        }
+
+        addRdmEvents() {
+            let rdmConfig = this.configElement.querySelector("#rdm-config");
+
+            rdmConfig.addEventListener("click", this.handleRdmEvents);
+            rdmConfig.addEventListener("change", this.handleRdmEvents);
+            rdmConfig.addEventListener("input", this.handleRdmEvents);
+            rdmConfig.addEventListener("focusin", this.handleRdmEvents);
+            rdmConfig.addEventListener("focusout", this.handleRdmEvents);
+            rdmConfig.addEventListener("keydown", this.handleRdmEvents);
+        }
+
+        handleRdmEvents = (e) => {
+            console.log(e.type);
+            this.min;
+            this.max;
+            switch (e.type) {
+                case "click":
+                    break;
+                case "focusin":
+                    e.target.select();
+                    this.target = e.target.parentElement.previousSibling;
+                    // parameter1 as a substitute for DMX start address
+                    if (this.target.innerHTML === "parameter1") {
+                        this.min = 1, this.max = 512;
+                    }
+                    break;
+                case "input":
+                    if (e.target.value > this.max || e.target.value < this.min) {
+                        e.target.classList.add("illegal")
+                    } else if (e.target.classList.contains("illegal")) {
+                        e.target.classList.remove("illegal");
+                    }
+                    break;
+                case "focusout":
+                case "keydown":
+                    if ((e.key === "Enter" || e.type === "focusout") && !e.target.classList.contains("illegal")) {
+                        console.log("sending rdm packet");
+                    }
+                default:
+                    break;
             }
         }
 
@@ -3341,17 +3447,18 @@ Acces-Control-Allow-Origin: *
 
     let mockRdmData = {
         UUID1: {
-                parameter1: "value1",
+                parameter1: "1",
                 parameter2: "value2",
                 parameter3: "value3"
         },
         UUID2: {
-                parameter1: "2value1",
+                parameter1: "1",
                 parameter2: "2value2",
-                parameter3: "2value3"
+                parameter3: "2value3",
+                parameter4: "2value4"
         },
         UUID3: {
-                parameter1: "3value1",
+                parameter1: "1",
                 parameter2: "3value2",
                 parameter3: "3value3"
         }
@@ -3390,7 +3497,7 @@ Acces-Control-Allow-Origin: *
             headerRow.id = "headerRow";
             let counter = 0;
             for (const HEADER of this.rdmHeader) {
-                let hTd = document.createElement("td");     
+                let hTd = document.createElement("th");     
                 hTd.innerHTML = HEADER;
                 // param filter
                 if (counter == 1) {
@@ -3399,7 +3506,7 @@ Acces-Control-Allow-Origin: *
                     paramDD.addEventListener("change", this.applyFilter)
                     paramDD.id = "param-dropdown";
                     let filterItem = document.createElement("option");
-                    filterItem.innerHTML = "--Filter--"
+                    filterItem.innerHTML = "--No filter--"
                     paramDD.appendChild(filterItem);
                     for (const FILTER of this.filters) {
                         filterItem = document.createElement("option");
@@ -3442,11 +3549,9 @@ Acces-Control-Allow-Origin: *
         }
 
         toggleParameters = (e) => {
-            console.log("clicked on " + e.target.innerHTML);
             let targetRow = e.target.closest("tr");
             let parentNode = targetRow.parentNode;
             if (e.target.openedRow === false) {
-                console.log(targetRow);
                 // let rowsExceptHeader = document.querySelectorAll("#rdm-table tr:not(:first-child)");
                 // for (const ROW of rowsExceptHeader) {
                 //     this.table.removeChild(ROW);
@@ -3454,9 +3559,10 @@ Acces-Control-Allow-Origin: *
 
                 let counter = 0;
                 for (const [KEY, VAL] of Object.entries(mockRdmData[e.target.innerHTML])) {
-                    console.log(KEY + " " + VAL)
                     let dataRow = document.createElement("tr");
                     dataRow.id = e.target.innerHTML;
+
+                    // ========== UUID or names ============
                     let data = document.createElement("td");
                     if (counter == 0) {
                             data.innerHTML = e.target.innerHTML
@@ -3466,18 +3572,30 @@ Acces-Control-Allow-Origin: *
                             data.innerHTML = ""
                     };
                     dataRow.appendChild(data);
+
+                    // ============ Parameters =============
                     data = document.createElement("td");
                     data.innerHTML = KEY;
                     dataRow.appendChild(data);
+
+                    // =============== Values ==============
                     data = document.createElement("td");
-                    data.innerHTML = VAL;
+                    data.classList.add("parameter-values");
+                    if (installation.config) {
+                        let inputField = document.createElement("input");
+                        // provide lookup table for numbered fields?
+                        if (KEY === "parameter1") {
+                            inputField.type = "number";
+                            inputField.value = parseInt(VAL);
+                        } else inputField.value = VAL;        
+                        data.appendChild(inputField);
+                    } else {
+                        data.innerHTML = VAL;
+                    }                  
                     dataRow.appendChild(data);
-                    console.log(targetRow);
                     this.table.insertBefore(dataRow, targetRow);
                     counter++;
                 }
-                console.log(this.table);
-                console.log(targetRow);
                 this.table.removeChild(targetRow);
             } else {
                 for (let i = 0; i < Object.keys(mockRdmData[e.target.innerHTML]).length-1; i++) {
@@ -3493,7 +3611,73 @@ Acces-Control-Allow-Origin: *
         }
 
         applyFilter = (e) => {
-            console.log("changed filter to " + e.target.value)
+            console.log("changed filter to " + e.target.value);
+            if (e.target.value === "--No filter--") {
+                let oldTable = document.querySelector("#rdm-table");
+                this.parentNode.removeChild(oldTable);
+                this.generateBaseTable();
+                this.addRowEvents();
+            } else {
+                let dataWithoudHeader = this.table.querySelectorAll("tr:not(:first-child)");
+                for (const row of dataWithoudHeader) {
+                    this.table.removeChild(row);
+                }
+
+                for (const [KEY, VALUE] of Object.entries(mockRdmData)) {
+                    let row = document.createElement("tr");
+                    row.id = KEY;
+                    if (Object.hasOwn(VALUE, e.target.value)) {
+                        let nData = document.createElement("td");
+                        let pData = document.createElement("td");
+                        let vData = document.createElement("td");
+                        vData.classList.add("parameter-values")
+                        nData.innerHTML = KEY;
+                        pData.innerHTML = e.target.value;
+                        if (installation.config) {
+                            let inputField = document.createElement("input");
+                            if (e.target.value === "parameter1") {
+                                inputField.type = "number";
+                                inputField.value = parseInt(e.target.value);
+                            } else inputField.value = VALUE[e.target.value];       
+                            vData.appendChild(inputField);
+                        } else {
+                            vData.innerHTML = VALUE[e.target.value];
+                        }
+                        row.appendChild(nData);
+                        row.appendChild(pData);
+                        row.appendChild(vData);
+                        this.table.appendChild(row);
+                    }
+                }
+            }
+        }
+
+        toggleInput() {
+            let values = this.table.querySelectorAll(".parameter-values");
+            if (installation.config) {
+                for (const value of values) {
+                    let parentRow = value.parentElement;
+                    let targetElement = parentRow.children[2];
+                    if (targetElement.innerHTML !== "") {
+                        let inputField = document.createElement("input");
+                            if (parentRow.children[1].innerHTML === "parameter1") {
+                                inputField.type = "number";
+                                inputField.value = parseInt(value.innerHTML);
+                            } else inputField.value = value.innerHTML;            
+                        targetElement.innerHTML = "";
+                        targetElement.appendChild(inputField);
+                    }   
+                }           
+            } else {
+                for (const value of values) {
+                    let parentRow = value.parentElement;
+                    let targetElement = parentRow.children[2];
+                    console.log(parentRow);
+                    if (targetElement.innerHTML !== "") {
+                        targetElement.innerHTML = this.rdmInfo[parentRow.id][parentRow.children[1].innerHTML]
+                    }    
+                }
+            }
         }
     }
 
@@ -3628,8 +3812,8 @@ Acces-Control-Allow-Origin: *
         } return false;
     }
 
-    async function sendRdmPacket(nodeIp, fbId, destinationUID, getSet, param) {
-        const PIDMAP = {
+    async function sendRdmPacket(nodeIp, fbId, destinationUID, getSet, param, data = null) {
+        let pidmap = {
             "DEVICE_INFO": {
                 "PID": "0060",
                 "PDL": "00",
@@ -3639,10 +3823,25 @@ Acces-Control-Allow-Origin: *
                 "PID": "1000",
                 "PDL": "00",
                 "PD" : "00"
+            },
+            "DMX_START_ADDRESS": {
+                "PID": "00F0",
+                "PDL": "02",
+                "PD": "00"
+            }
+        }
+
+        if (getSet == "SET") {
+            switch(param) {
+                case "DMX_START_ADDRESS": 
+                    pidmap[param]["PD"] = data;
+                    break;
+                default:
+                    break;
             }
         }
         let payload = 
-`CC0125${destinationUID}123456789ABC${installation.rdmCounter.padStart(2, "0")}00000000${getSet = "GET"? 20 : 30}${PIDMAP[param]["PID"]}${PIDMAP[param]["PDL"]}${PIDMAP[param]["PD"]}`
+`CC0125${destinationUID}123456789ABC${installation.rdmCounter.padStart(2, "0")}00000000${getSet = "GET"? 20 : 30}${pidmap[param]["PID"]}${pidmap[param]["PDL"]}${pidmap[param]["PD"]}`
         
         let CS = (function () {
             let byteArr = []
@@ -3684,7 +3883,8 @@ Acces-Control-Allow-Origin: *
         
     document.addEventListener("DOMContentLoaded", async () => {
         await intitialise(true);
-        let rdmTable = new Table(document.querySelector("#rdm-config .card"), mockRdmData);
+        installation.rdmTable = new Table(document.querySelector("#rdm-config .card"), mockRdmData);
+        installation.addRdmEvents();
     })
     
 </script>
@@ -3837,9 +4037,10 @@ Acces-Control-Allow-Origin: *
             <button class="card" id="text-config">text config</button>
         </div>
     </div>
-    <div id="rdm-config" style="visibility: hidden">
+    <div id="rdm-config" style="visibility: visible">
         <div class="card">
             <div class="rdm-button e-button">i</div>
+            <h1 class="fieldbus-name">FIELDBUS #</h1>
         </div>
     </div>
 </body>
