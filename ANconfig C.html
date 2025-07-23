@@ -609,7 +609,7 @@ Acces-Control-Allow-Origin: *
     /* ============= Center configuration ============== */
 
     #main-config {
-        display: none;
+        display: grid;
         grid-column: 2/3;
         grid-row: 2/3;
         grid-template-columns: calc(40px - var(--padding-medium)) clamp(60px, 10vw, 100px) calc(3*var(--padding-medium)) repeat(6,2fr); 
@@ -801,7 +801,7 @@ Acces-Control-Allow-Origin: *
     }
 
     #accolades svg {
-        height: 100%;
+        height: 104%;
     }
 
     .accolade {
@@ -1393,7 +1393,7 @@ Acces-Control-Allow-Origin: *
                 this.universesContainer = document.querySelector("#universe-container");
                 this.textConfigElement = document.querySelector("#text-config-container");
                 this.textConfig = false;
-                this.rdmConfig = true;
+                this.rdmConfig = false;
                 return this;
             })();
         }
@@ -1790,11 +1790,11 @@ Acces-Control-Allow-Origin: *
                 if (this.config) {
                     fb.addressBlock.classList.add("config");
                     startElement    =   generateDomTree("h2", null, {class: "configurable start"}, [
-                                            generateDomTree("label", "start: <br>", {for: `fb${counter}-startAddress`, class: "draggable"}, [
-                                                generateDomTree("input", null, {id: `fb${counter}-startAddress`, fieldbus: fb.id, type: "number", min: "1", max: `${(this.shownUniverses*512)-1}`, value: `${fb.startAddress}`}, null)])]);
+                                            generateDomTree("label", "start: <br>", {for: `startAddress-fb${counter}`, class: "draggable"}, [
+                                                generateDomTree("input", null, {id: `startAddress-fb${counter}`, fieldbus: fb.id, type: "number", min: "1", max: `${(this.shownUniverses*512)-1}`, value: `${fb.startAddress}`}, null)])]);
                     streamElement   =   generateDomTree("h2", null, {class: "configurable stream"}, [
-                                            generateDomTree("label", "length: <br>", {for: `fb${counter}-streamLength`, class: "draggable"}, [
-                                                generateDomTree("input", null, {id: `fb${counter}-streamLength`, fieldbus: fb.id, type: "number", min: "1", max: `${(this.shownUniverses*512)-1}`, value: `${fb.streamLength}`}, null)])]);
+                                            generateDomTree("label", "length: <br>", {for: `streamLength-fb${counter}`, class: "draggable"}, [
+                                                generateDomTree("input", null, {id: `streamLength-fb${counter}`, fieldbus: fb.id, type: "number", min: "1", max: `${(this.shownUniverses*512)-1}`, value: `${fb.streamLength}`}, null)])]);
                 } else {
                     fb.addressBlock.classList.remove("config");
                     startElement    =   generateDomTree("h2", "start: ", { class: "draggable non-configurable start" }, [
@@ -1874,7 +1874,7 @@ Acces-Control-Allow-Origin: *
                     // Clone the template content
                     const clone = template.content.cloneNode(true);
                     const svg = clone.querySelector("svg");
-                    let vb = 55 - this.shownUniverses * Math.pow(2, 0.8);
+                    let vb = Math.round(55 - this.shownUniverses * Math.pow(2, 0.8));
                     svg.setAttribute("viewBox", `${vb} 0 2000 72`);
                 
                     // Replace color placeholders
@@ -1883,13 +1883,13 @@ Acces-Control-Allow-Origin: *
                         .replace("__CLASS__", className)
                         .replace("__FS__", this.shownUniverses * Math.pow(2, 0.8)+"px");
   
-                    const a = document.createElement("div");
+                    // const a = document.createElement("div");
                     // a.style.marginLeft = `${this.#accMargin}px`;
-                    a.id = `accolade-${counter}`;
-                    a.classList.add("accolade");
-                    a.appendChild(svg);
+                    svg.id = `accolade-${counter}`;
+                    svg.classList.add("accolade");
+                    // a.appendChild(svg);
                     
-                    this.accoladesElement.appendChild(a);
+                    this.accoladesElement.appendChild(svg);
                 }
                 counter++;
             });
@@ -2061,10 +2061,7 @@ Acces-Control-Allow-Origin: *
 
             this.textConfigButton = document.querySelector("#text-config");
             this.textConfigButton.addEventListener("click", this.switchTextConfig);
-
             this.addEventHandlers();
-
-            console.log(this.configElement.querySelector("#rdm-config .rdm-button"));
             this.configElement.querySelector("#rdm-config .rdm-button").addEventListener(("click"), this.toggleRdmConfig);
         }
         
@@ -2198,14 +2195,13 @@ Acces-Control-Allow-Origin: *
 
         handleFbEvent = (e) => {
             e.stopPropagation();
-            if (e.target.classList.contains("e-button") || e.target.tagName === "OPTION" || this.rdmConfig) {
+            if (e.target.id === "edit-switch" || e.target.tagName === "OPTION" || this.rdmConfig) {
                 return;
             }
 
             if (e.key === "Enter") {
                 e.preventDefault();
                 let elements = document.querySelectorAll("input");
-                console.log(elements);
                 let illegalChecker = () => {
                     for (const element of elements) {
                         if (document.activeElement === element) {
@@ -2215,9 +2211,11 @@ Acces-Control-Allow-Origin: *
                 }
 
                 if (!illegalChecker()) {
-                    let param = e.target.id.split("-")[1];
+                    let param = e.target.id.split("-")[0];
                     this.target[param] = parseInt(e.target.value);
+                    console.log(this.target[param]);
                     if (this.target) {
+                        console.log(this.target)
                         this.activeNode.configuration.handleInputChange(this.target);
                     }
                     this.inputSelection = false;
@@ -2229,107 +2227,96 @@ Acces-Control-Allow-Origin: *
                                             && e.target !== undefined)
                                             && e.target.name !== "codec") {
                 clearInterval(installation.fetchConfigInterval);;
-                let focusedElement = e.target.id.split('-')[0][0] === "f" ? "fieldbus" : "universe";
-                if (focusedElement === "fieldbus") {
-                    this.target = this.activeNode.fieldbusses.find((fb) => fb.id === e.target.getAttribute("fieldbus"));
-                }
-                else {
+                e.target.id.split('-')[1][0] === "f" ?
+                    this.target = this.activeNode.fieldbusses.find((fb) => fb.id === e.target.getAttribute("fieldbus")) : 
                     this.target = this.activeNode.universes.find((uni) => uni.id === e.target.getAttribute("universe"));
-                }
                 this.inputSelection = true;
                 e.target.select();
             }
             // ======================== UNIVERSES =======================
 
-            if (e.type !== "mousemove" && e.type !== "mouseup" && e.type !== "click") {
-                if ((e.target.id.split("-")[0] === "universe" || e.target.id.split("-")[0] === "keep")) {
-                    if (e.type === "input") {
-                        if (!this.target) this.target = this.activeNode.universes.find((uni) => uni.id === e.target.getAttribute("universe"));
-                        let min, max;
-                        if (e.target.id.split("-")[0] === "universe") {
-                            min = 1, max = 32767;
-                        } else min = 500, max = 512;
-                        let inputValue = e.target.value;
-                        if (inputValue < min || inputValue > max) {
-                            e.target.classList.add("illegal");
-                        }
-                        else {
-                            e.target.classList.remove("illegal");
-                        }
-                        installation.checkDoubleUnis();
-                        if (!e.target.classList.contains("illegal")) {
-                            let param = e.target.id.split("-")[0];
-                            this.target[param] = parseInt(e.target.value);
-                        }
-                    }
-
-                    if (e.type === "focusout") {
-                        if (e.target.classList.contains("illegal")) {
-                            e.target.value = this.activeNode.universes.find((uni) => uni.id === e.target.getAttribute("universe"))[e.target.id];
-                            e.target.classList.remove("illegal");
-                        }
-                    }
-                    
-                    if (e.type === "change") {
-                        e.target.select();
-                        if (e.target.classList.contains("illegal")) {
-                            return;
-                        }
+            if (e.type === "input" && (e.target.id.split("-")[0] === "universe" || e.target.id.split("-")[0] === "keep")) {
+                if (!this.target) this.target = this.activeNode.universes.find((uni) => uni.id === e.target.getAttribute("universe"));
+                let min, max;
+                if (e.target.id.split("-")[0] === "universe") {
+                    min = 1, max = 32767;
+                } else min = 500, max = 512;
+                let inputValue = e.target.value;
+                if (inputValue < min || inputValue > max) {
+                    e.target.classList.add("illegal");
+                }
+                else {
+                    e.target.classList.remove("illegal");
+                }                    
+                installation.checkDoubleUnis();
+            }
+            
+            if (e.type === "focusout") {
+                if (e.target.classList.contains("illegal")) {
+                    e.target.value = this.activeNode.universes.find((uni) => uni.id === e.target.getAttribute("universe"))[e.target.id];
+                    e.target.classList.remove("illegal");
+                } else {
+                    if (this.target && !e.target.classList.contains("illegal")) {
                         let param = e.target.id.split("-")[0];
-                        this.target[param] = parseInt(e.target.value);
-                        return;
+                        if (this.target[param] !== parseInt(e.target.value)) {
+                            this.target[param] = parseInt(e.target.value);
+                            this.activeNode.configuration.handleInputChange(this.target);
+                        }                            
                     }
+                    this.inputSelection = false;
+                }
+            }
+            
+            if (e.type === "change" && e.target.id.split("-")[2] !== "codec") {
+                console.log(e.target)
+                e.target.select();
+                if (e.target.classList.contains("illegal")) {
+                    return;
+                }
+                let param = e.target.id.split("-")[0];
+                this.target[param] = parseInt(e.target.value);
+                return;
+            }
                     
             // ======================== FIELDBUSSES =======================
-               
-                } else if (e.target.classList.contains("draggable") || e.target.tagName === "SELECT" && e.type === "change" || e.target.tagName === "INPUT" && e.target.hasAttribute("fieldbus")) {
-                    this.targetFb = e.target.closest(".fieldbus").id.slice(-1)-1;
-                    this.targetFb = this.activeNode.fieldbusses.find((fb) => fb.id === `out${this.targetFb}`);
-                    if (e.target.tagName === "INPUT") {
-                        if (e.type === "input") {
-                            console.log(e.target)
-                            if (!this.target) this.target = this.activeNode.fieldbusses.find((fb) => fb.id === e.target.getAttribute("fieldbus"));
-                            let inputStream = e.target.closest(".address-container").querySelector(".stream input").value;
-                            let inputStart  = e.target.closest(".address-container").querySelector(".start input").value;
-                            let min = 1, max = e.target.id.split("-")[1] === "startAddress" ? installation.shownUniverses*512 - inputStream : installation.shownUniverses*512 - inputStart +1;
-                            let inputValue = e.target.value;
-                            if (inputValue < min || inputValue > max) {
-                                e.target.classList.add("illegal");
-                            }
-                            else {
-                                e.target.classList.remove("illegal");
-                            }
-
-                            // if (!e.target.classList.contains("illegal")) {
-                            //     let param = e.target.id.split("-")[1];
-                            //     this.target[param] = parseInt(e.target.value);
-                            // }
-                        }
-
-                        if (e.type === "focusout") {
-                            if (e.target.classList.contains("illegal")) {
-                                e.target.value = this.activeNode.fieldbusses.find((fb) => fb.id === e.target.getAttribute("fieldbus"))[e.target.id];
-                                e.target.classList.remove("illegal");
-                            } else {
-                                this.activeNode.configuration.handleInputChange(this.target);
-                            }
-                            this.inputSelection = false;
-                            return
-                        }
-
-                        if (e.type === "change") {
-                            e.target.select();
-
-                            if (e.target.classList.contains("illegal")) {
-                                return;
-                            }
-                            let param = e.target.id.split("-")[1];
-                            this.target[param] = parseInt(e.target.value);
-                            return;
-                        }
+            if (e.target.classList.contains("draggable") || e.target.tagName === "SELECT" && e.type === "change" || e.target.tagName === "INPUT" && e.target.hasAttribute("fieldbus")) {
+                this.targetFb = e.target.closest(".fieldbus").id.slice(-1)-1;
+                this.targetFb = this.activeNode.fieldbusses.find((fb) => fb.id === `out${this.targetFb}`);
+                if (e.type === "input") {
+                    console.log(e.target)
+                    if (!this.target) this.target = this.activeNode.fieldbusses.find((fb) => fb.id === e.target.getAttribute("fieldbus"));
+                    let inputStream = e.target.closest(".address-container").querySelector(".stream input").value;
+                    let inputStart  = e.target.closest(".address-container").querySelector(".start input").value;
+                    let min = 1, max = e.target.id.split("-")[0] === "startAddress" ? installation.shownUniverses*512 - inputStream : installation.shownUniverses*512 - inputStart +1;
+                    let inputValue = e.target.value;
+                    if (inputValue < min || inputValue > max) {
+                        e.target.classList.add("illegal");
                     }
-                }            
-            }
+                    else {
+                        e.target.classList.remove("illegal");
+                    }
+                }
+                if (e.type === "focusout") {
+                    if (e.target.classList.contains("illegal")) {
+                        e.target.value = this.activeNode.fieldbusses.find((fb) => fb.id === e.target.getAttribute("fieldbus"))[e.target.id];
+                        e.target.classList.remove("illegal");
+                    } else {
+                        this.activeNode.configuration.handleInputChange(this.target);
+                    }
+                    this.inputSelection = false;
+                    this.targetFb = undefined;
+                    return
+                }
+                if (e.type === "change" && e.target.id.split("-")[2] !== "codec") {
+                    e.target.select();
+                    if (e.target.classList.contains("illegal")) {
+                        return;
+                    }
+                    let param = e.target.id.split("-")[1];
+                    this.target[param] = parseInt(e.target.value);
+                    return;
+                }
+            }            
 
             if (this.targetFb !== undefined && !this.inputSelection) {
                 switch(e.type) {
@@ -2350,7 +2337,7 @@ Acces-Control-Allow-Origin: *
                     default:
                         break;
                 }
-            } 
+            }
         }
 
         handleNavClick = (e) => {
@@ -2414,18 +2401,15 @@ Acces-Control-Allow-Origin: *
         }
 
         toggleRdmConfig = async (e) => {
-            let targetFb = e.target.closest(".fieldbus.card");
-            console.log(targetFb);
-            // Todo get the id of the fieldbus were trying to get information frome
+            let targetFb = e.target.closest(".fieldbus");
             this.rdmConfig = !this.rdmConfig;
             if (this.rdmConfig) {
                 this.configElement.querySelector("#main-config").style.display = "none";
                 this.configElement.querySelector("#rdm-config").style.visibility = "visible";
                 this.configElement.querySelector("#rdm-config h1").innerHTML = "FIELDBUS " + targetFb.id.split("-")[1];
-
+                let fieldbusNr = targetFb.id.split("-")[1];
                 // fetching all the devices
-                await this.showRdmConfig(0)
-
+                await this.showRdmConfig(fieldbusNr);
                 this.addRdmEvents();
 
             } else {
@@ -2445,8 +2429,7 @@ Acces-Control-Allow-Origin: *
                 const parser = new DOMParser();
                 const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
                 let rdmConfig = Configuration.parseConfig(xmlDoc);
-                let rdmDevices = rdmConfig[`out${fieldbus}`].split(" ");
-                console.log(rdmDevices);
+                let rdmDevices = rdmConfig[`out${fieldbus-1}`].split(" ");
                 sendRdmPacket(nodeIp, 0, rdmDevices[0], "GET", "DEVICE_INFO");
                 // let devices = xmlDoc.getElementsByTagName("dev")[0].innerHTML.split(" ");               
             } 
@@ -3477,20 +3460,15 @@ Acces-Control-Allow-Origin: *
         addFilters() {
             this.filters = [];
             for (const KEY of Object.keys(this.rdmInfo)){
-                console.log(KEY)
-                console.log(Object.keys(KEY))
                 for(const KEY2 of Object.keys(this.rdmInfo[KEY])){
-                    console.log(KEY2)
                     if(!this.filters.includes(KEY2)){
                         this.filters.push(KEY2)
                     }
                 }
             }
-            console.log(this.filters);
         }
 
         generateBaseTable() {
-            console.log(this.rdmInfo);
             let table = document.createElement("table");
             table.id = "rdm-table"
             let headerRow = document.createElement("tr");
@@ -3537,12 +3515,10 @@ Acces-Control-Allow-Origin: *
             }
             this.parentNode.appendChild(table);
             this.table = document.querySelector("#rdm-table");
-            console.log(this.table);
         }
 
         addRowEvents() {
             let devices = document.querySelectorAll("tr:not(#headerRow) > td:first-child");
-            console.log(devices);
             for (const DEVICE of devices) {
                 DEVICE.addEventListener("click", this.toggleParameters)
             }
@@ -3858,10 +3834,8 @@ Acces-Control-Allow-Origin: *
         try {
             const response = await fetch(`${nodeIp}/xrdm`, {
                 method:'POST',
-                mode: 'cors', 
                 headers: {
-                    'Content-Type': 'text/xml',
-                    'bindindex': '1'
+                    'Content-Type': 'text/xml'
                 },         
                 body: `${payload}`
             })
@@ -3977,13 +3951,13 @@ Acces-Control-Allow-Origin: *
         </div>
         <!-- svg definition of the accolades -->
         <template id="brace-template">
-        <?xml version="1.0" encoding="UTF-8"?>
-        <svg viewBox="0 0 2000 72" xmlns="http://www.w3.org/2000/svg">
-            <path d="M61.4 1.7H2637.1" stroke="__COLOR__" stroke-width="2"/>
-            <path d="M61.4 70.7H2637.1" stroke="__COLOR__" stroke-width="2"/>
-            <path d="M5 36.2H46.5M61.4 70.7C54.3 70.7 50 67.3 50 59.9c0-8.3 5-11.1 6.7-15.6 2.7-7.1-5-8.2-10.2-8.1M61.4 1.7C54.3 1.7 50 5.2 50 12.6c0 8.3 5 11 6.7 15.6 2.7 7-5 8.1-10.2 8" fill="none" stroke="__COLOR__" stroke-width="2"/>
-            <text class="info __CLASS__" x="60px" y="40px" style="font-size: __FS__">0fps</text>
-        </svg>
+            <?xml version="1.0" encoding="UTF-8"?>
+                <svg viewBox="0 0 2000 72" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M61.4 1.7H2637.1" stroke="__COLOR__" stroke-width="2"/>
+                    <path d="M61.4 70.7H2637.1" stroke="__COLOR__" stroke-width="2"/>
+                    <path d="M5 36.2H46.5M61.4 70.7C54.3 70.7 50 67.3 50 59.9c0-8.3 5-11.1 6.7-15.6 2.7-7.1-5-8.2-10.2-8.1M61.4 1.7C54.3 1.7 50 5.2 50 12.6c0 8.3 5 11 6.7 15.6 2.7 7-5 8.1-10.2 8" fill="none" stroke="__COLOR__" stroke-width="2"/>
+                    <text class="info __CLASS__" x="60px" y="40px" style="font-size: __FS__">0fps</text>
+                </svg>
         </template>
         <!-- end of accolade definition -->
         <div id="accolades"></div>
@@ -4037,7 +4011,7 @@ Acces-Control-Allow-Origin: *
             <button class="card" id="text-config">text config</button>
         </div>
     </div>
-    <div id="rdm-config" style="visibility: visible">
+    <div id="rdm-config" style="visibility: hidden">
         <div class="card">
             <div class="rdm-button e-button">i</div>
             <h1 class="fieldbus-name">FIELDBUS #</h1>
