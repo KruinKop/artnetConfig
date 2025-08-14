@@ -428,7 +428,7 @@ Acces-Control-Allow-Origin: *
         font-size: var(--font-size-medium);
         padding: var(--padding-small) 0 var(--padding-small) var(--padding-small);
         color: var(--bg-coal);
-        transition: transform 0.3s ease-out;
+        transition: margin-left 0.3s ease-out;
     }
 
     .light .node {
@@ -439,9 +439,9 @@ Acces-Control-Allow-Origin: *
         opacity: 25%;
     }
 
-    .node:hover {
+    .node:not(.selected):hover {
+        margin-left: 5px;
         cursor: pointer;
-        transform: translateX(-5px);
     }
 
     .info {
@@ -475,15 +475,10 @@ Acces-Control-Allow-Origin: *
     .node.selected {
         position: relative;
         margin-left: var(--padding-small);
-        margin-right: -1px;
         border-radius: 10px 0px 0px 10px;
         background-color: var(--bg-coal);
         color: var(--ll-yellow);
         z-index: 5;
-    }
-
-    .node.selected:hover {
-        transform: none;
     }
 
     .node h2 {
@@ -510,7 +505,7 @@ Acces-Control-Allow-Origin: *
     .node.selected #top-curve::before {
         position: absolute;
         content: "";
-        left: calc(var(--grid-nav-width) - 83px);
+        left: var(--beforeLeft);
         bottom: 15px;
         width: 30px;
         height: 30px;
@@ -520,7 +515,7 @@ Acces-Control-Allow-Origin: *
     .node.selected #top-curve::after {
         content: "";
         position: absolute;
-        left: calc(var(--grid-nav-width) - 113px);
+        left: var(--afterLeft);
         bottom: 15px;
         width: 60px;
         height: 60px;
@@ -535,7 +530,7 @@ Acces-Control-Allow-Origin: *
     .node.selected #bottom-curve::before {
         content: "";
         position: absolute;
-        left: calc(var(--grid-nav-width) - 83px);;
+        left: var(--beforeLeft);
         top: 15px;
         width: 30px;
         height: 30px;
@@ -545,7 +540,7 @@ Acces-Control-Allow-Origin: *
     .node.selected #bottom-curve::after {
         content: "";
         position: absolute;
-        left: calc(var(--grid-nav-width) - 113px);
+        left: var(--afterLeft);
         top: 15px;
         width: 60px;
         height: 60px;
@@ -716,7 +711,7 @@ Acces-Control-Allow-Origin: *
         position: absolute;
         width: 51px;
         margin-left: -46px;
-        top: 17.7px;
+        top: 18.4px;
         content: "Universes";
         transform: rotate(-90deg);
         font-size: var(--font-size-small);
@@ -1270,11 +1265,23 @@ Acces-Control-Allow-Origin: *
 
     #rdm-table td {
         padding:  0.25rem 1rem;
+        position: relative;
     }
 
-    td:first-child svg {
+    .lamp-container {
+        position: absolute;
+        height: 30px;
+        width: 30px;
+        display: inline-block;
         margin-left: 1rem;
+        margin-top: -5px;
     }
+
+    .lamp-container svg {
+        margin-top: 3px;
+        margin-left: 4px;
+    }
+
 
     #headerRow th {
         background-color: var(--bg-first-row);
@@ -1293,9 +1300,9 @@ Acces-Control-Allow-Origin: *
         display: inline-block;
     }
 
-    select:has(+ #personality-paragraph) {
+    select:has(#personality-paragraph) {
         width: 20%;
-        margin-right: .5rem;
+        margin-right: .56rem;
     }
 
     .fieldbus-name {
@@ -1358,22 +1365,18 @@ Acces-Control-Allow-Origin: *
         }
 
         .node.selected #top-curve:before{
-            left: calc(var(--grid-nav-width) - 75px);
             bottom: 7.5px;
         }
 
         .node.selected #top-curve:after {
-            left: calc(var(--grid-nav-width) - 105px);
             bottom: 7.5px;
         }
 
         .node.selected #bottom-curve:before {
-            left: calc(var(--grid-nav-width) - 75px);
             top: 7px;
         }
 
         .node.selected #bottom-curve:after {
-            left: calc(var(--grid-nav-width) - 105px);
             top: 7.5px;
         }
     }
@@ -1381,14 +1384,6 @@ Acces-Control-Allow-Origin: *
     @media screen and (max-width: 641px) {
         body {
             grid-template-columns: 135px 1fr;
-        }
-        
-        .node.selected #top-curve:before, .node.selected #bottom-curve:before {
-            left: 60px;
-        }
-
-        .node.selected #top-curve:after, .node.selected #bottom-curve:after {
-            left: 30px;
         }
     }
 
@@ -1415,6 +1410,7 @@ Acces-Control-Allow-Origin: *
         #shownUniverses = 6;
 
         #rdmCounter = 0;
+        #demoNumber = 1;
 
         // Immediately Invoked Async Function Expression zorgt ervoor dat we de nodes kunnen ophalen en nieuwe
         // object instanties kunnen aanmaken zonder then-chaining of extra async functies te gebruiken 
@@ -1423,14 +1419,18 @@ Acces-Control-Allow-Origin: *
             return (async () => {
                 this.#customer = customer;
                 await this.fetchNodes(true);
-                for (let i = 0; i < 1; i++) {
-                    let hexValue = i.toString(16);
-                    if (hexValue.length < 2) {
-                        hexValue = hexValue.padStart(2, '0');
-                    }
-                    this.addDemo(hexValue);
-                }
+                // for (let i = 0; i < 1; i++) {
+                //     let hexValue = i.toString(16);
+                //     if (hexValue.length < 2) {
+                //         hexValue = hexValue.padStart(2, '0');
+                //     }
+                //     this.addDemo(hexValue);
+                // }
                 // this.#prevNodes.push(this.#nodes);
+                
+                let demoNode = this.#nodes.find(n => n.mac === "7B:A6:80:7F:EC:01");
+                if (!demoNode) this.addDemo(this.#demoNumber.toString(16).padStart(2, "0"));
+
                 if (localStorage.getItem("configuration") === "enabled") {
                     this.config = true;
                 } else this.config = false;
@@ -1555,7 +1555,7 @@ Acces-Control-Allow-Origin: *
             for (let i=0; i<6; i++){
                 fieldbusses.push(new Fieldbus(`out${i}`, 2, i == 0? 1 : (i*512)+1, 512, 0));
             }
-            let demoNode = new NodeTemplate("127.0.0.1", null, "Demo", `7b:a6:80:7f:ec:${mac}`, {}, "255.255.255.0", universes, fieldbusses, ["Disabled", "Used-by-previous-channel", "DMX-512", "DMX-RDM"], "v3.1", new Configuration(null, true));
+            let demoNode = new NodeTemplate("127.0.0.1", null, "Demo", `7B:A6:80:7F:EC:${mac}`, {}, "255.255.255.0", universes, fieldbusses, ["Disabled", "Used-by-previous-channel", "DMX-512", "DMX-RDM"], "v3.1", new Configuration(null, true));
             demoNode.configuration.setXmlConfig(demoNode);
             if (demoNode.mac === localStorage.getItem("activeNode")) {
                 this.nodes.map((node) => node.active = false);
@@ -2024,8 +2024,8 @@ Acces-Control-Allow-Origin: *
         eventInit() {
             window.onresize = (e) => {
                 // calculating the height of the accolades
-                // this.setAccHeight();
-
+                setCurvePosition();
+         
                 if (this.textConfig) {
                     let fieldbusContainers = document.querySelectorAll(".fieldbus");
                     for (let i=0; i<fieldbusContainers.length; i++) {
@@ -2111,6 +2111,7 @@ Acces-Control-Allow-Origin: *
             this.configElement.querySelector("#rdm-config .rdm-button").addEventListener(("click"), this.toggleRdmConfig);
         }
         
+        // TODO add touch input
         addEventHandlers() {
             this.configElement.addEventListener("click", this.handleFbEvent);
             this.configElement.addEventListener("mousedown", this.handleFbEvent);
@@ -2261,10 +2262,8 @@ Acces-Control-Allow-Origin: *
 
                 if (!illegalChecker()) {
                     let param = e.target.id.split("-")[0];
-                    this.target[param] = parseInt(e.target.value);
-                    console.log(this.target[param]);
-                    if (this.target) {
-                        console.log(this.target)
+                    if (this.target && this.target[param] !== parseInt(e.target.value)) {
+                        this.target[param] = parseInt(e.target.value);
                         this.activeNode.configuration.handleInputChange(this.target);
                     }
                     this.inputSelection = false;
@@ -2317,13 +2316,12 @@ Acces-Control-Allow-Origin: *
             }
             
             if (e.type === "change" && e.target.id.split("-")[2] !== "codec") {
-                console.log(e.target)
                 e.target.select();
-                if (e.target.classList.contains("illegal")) {
-                    return;
-                }
-                let param = e.target.id.split("-")[0];
-                this.target[param] = parseInt(e.target.value);
+                // if (e.target.classList.contains("illegal")) {
+                //     return;
+                // }
+                // let param = e.target.id.split("-")[0];
+                // this.target[param] = parseInt(e.target.value);
                 return;
             }
             // ======================== FIELDBUSSES =======================
@@ -2332,7 +2330,6 @@ Acces-Control-Allow-Origin: *
                 this.targetFb = this.activeNode.fieldbusses.find((fb) => fb.id === `out${this.targetFb}`);
                 console.log("setting target fb")
                 if (e.type === "input") {
-                    console.log(e.target)
                     if (!this.target) this.target = this.activeNode.fieldbusses.find((fb) => fb.id === e.target.getAttribute("fieldbus"));
                     let inputStream = e.target.closest(".address-container").querySelector(".stream input").value;
                     let inputStart  = e.target.closest(".address-container").querySelector(".start input").value;
@@ -2446,7 +2443,9 @@ Acces-Control-Allow-Origin: *
             inactiveNodes.forEach((nodeElement) => {
                 // Event listener to switch the active node
                 nodeElement.addEventListener("click", this.handleNavClick);
-            })       
+            })
+            
+            setCurvePosition();
         }
 
         toggleRdmConfig = async (e) => {
@@ -2490,9 +2489,13 @@ Acces-Control-Allow-Origin: *
                     }        
                 }
                 // let devices = xmlDoc.getElementsByTagName("dev")[0].innerHTML.split(" ");               
-                installation.rdmTable = await new Table(document.querySelector("#rdm-table-container"), this.targetFb.rdmDevices, fieldbus-1);
+                this.rdmTable = await new Table(document.querySelector("#rdm-table-container"), this.targetFb.rdmDevices, fieldbus-1);
                 this.rdmConfig = this.configElement.querySelector("#rdm-config");
-                installation.addRdmEvents();
+                this.addRdmEvents();
+
+                for(const DEV of this.targetFb.rdmDevices) {
+                    DEV.fetchSupportedParameters();
+                }
             } 
             catch (error) {
                 if (error.name === "TimeoutError") {
@@ -2526,11 +2529,18 @@ Acces-Control-Allow-Origin: *
                 case "click":
                     try {
                         fbId = this.targetFb.id.slice(3); 
-                        if(e.target.innerText === e.target.closest("tr").dataset.devid) {
+                        if(e.target.innerText === e.target.closest("tr").dataset.devid && !installation.rdm.filtered) {
                             installation.rdmTable.toggleParameters(e)
-                        } else if (e.target.tagName === "svg") {
-                            console.log("hello from the lamp " + e.target.closest("tr").dataset.devid);
-                            // installation.rdm.sendRdmPacket(installation.activeNode.ip, )
+                        } else if (e.target.closest("div").classList.contains("lamp-container") || e.target.id.split("-")[0] === "lamp") {
+                            let targetRow = e.target.closest("tr");
+                            let targetUUID = targetRow.dataset.devid;
+                            if (e.target.id === "lamp-icon-on" || e.target.closest("div").id === "lamp-icon-on") {
+                                installation.rdm.sendRdmPacket(installation.activeNode.ip, fbId, targetUUID, "SET", "1000", 0);
+                            } else {
+                                installation.rdm.sendRdmPacket(installation.activeNode.ip, fbId, targetUUID, "SET", "1000", 1);
+                            }
+                            //Updating the row from where the identify happened
+                            this.rdmTable.updateLamp(targetRow);
                         }
                     } catch (error) {}
                     break;
@@ -3311,6 +3321,7 @@ Acces-Control-Allow-Origin: *
         #startAddress;
         #subDevCount;
         #sensorCount;
+        #personalityDescription = [];
         #UIObject = {};
 
         constructor(id, fb) {
@@ -3318,11 +3329,11 @@ Acces-Control-Allow-Origin: *
                 this.#parentFbId = fb;
                 this.#UUID = id;
                 try {
-                    let deviceInfo = await installation.rdm.sendRdmPacket(installation.activeNode.ip, this.#parentFbId, this.#UUID, "GET", "DEVICE_INFO");
-                    if (deviceInfo.includes("<fault>")) {
+                    let deviceInfo = await installation.rdm.sendRdmPacket(installation.activeNode.ip, this.#parentFbId, this.#UUID, "GET", "0060");
+                    if (deviceInfo.includes("<fault>") || deviceInfo === undefined) {
                         return null
                     };
-                    let parameters = installation.rdm.decodeRdmPacket(deviceInfo, "DEVICE_INFO", "GET");
+                    let parameters = installation.rdm.decodeRdmPacket(deviceInfo, "0060", "GET");
                     this.#rdmProtocolVersion    = `v${parameters[0][0]}.${parameters[0][1]}`
                     this.#deviceModelId         = parameters[1];
                     this.#productCategory       = parameters[2];
@@ -3334,7 +3345,7 @@ Acces-Control-Allow-Origin: *
                     this.#sensorCount           = parameters[8];
                     
                     // Making an UI object for the table
-                    this.#UIObject[this.#UUID] = {
+                    this.#UIObject = {
                         "Name": {
                             "Value": "",
                             "Type": "String"
@@ -3352,7 +3363,7 @@ Acces-Control-Allow-Origin: *
                             "Type": "Integer"
                         }
                     };
-                    
+                        
                 } catch (error) {
                     console.error(error);
                 }
@@ -3398,138 +3409,140 @@ Acces-Control-Allow-Origin: *
             return this.#deviceLabel;
         }
 
+        
         set deviceLabel(dl) {
             this.#deviceLabel = dl;
-            this.#UIObject[this.#UUID]["Name"]["Value"] = dl;
+            this.#UIObject["Name"]["Value"] = dl;
             // Also updating the referenced table
-            installation.rdmTable.rdmInfo[this.#UUID] = this.#UIObject[this.#UUID];
+            installation.rdmTable.rdmInfo[this.#UUID] = this.#UIObject;
         }
-
+        
         set startAddress(sa) {
             this.#startAddress = sa;
-            this.#UIObject[this.#UUID]["DMX address"]["Value"] = sa;
-            installation.rdmTable.rdmInfo[this.#UUID] = this.#UIObject[this.#UUID];
+            this.#UIObject["DMX address"]["Value"] = sa;
+            installation.rdmTable.rdmInfo[this.#UUID] = this.#UIObject;
         }
-
+        
         set personality(p) {
             this.#personality = `${p[0]} of ${p[1]}`
-            this.#UIObject[this.#UUID]["Personality"]["Value"] = `${p[0]} of ${p[1]}`;
-            installation.rdmTable.rdmInfo[this.#UUID] = this.#UIObject[this.#UUID];
+            this.#UIObject["Personality"]["Value"] = `${p[0]} of ${p[1]}`;
+            installation.rdmTable.rdmInfo[this.#UUID] = this.#UIObject;
+        }
+        
+        getPersonalityDescription(p) {
+            let personality = this.#personalityDescription.find(pers => pers[0] === p);
+            return personality? personality : null; 
         }
 
+        personalityDescriptionSet() {
+            this.#personalityDescription? true : false;
+        }
+        
         async fetchLabel() {
             try {
-                let deviceLabel = await installation.rdm.sendRdmPacket(installation.activeNode.ip, this.#parentFbId, this.#UUID, "GET", "DEVICE_LABEL");
-                this.#deviceLabel = installation.rdm.decodeRdmPacket(deviceLabel, "DEVICE_LABEL", "GET");
+                let deviceLabel = await installation.rdm.sendRdmPacket(installation.activeNode.ip, this.#parentFbId, this.#UUID, "GET", "0082");
+                this.#deviceLabel = installation.rdm.decodeRdmPacket(deviceLabel, "0082", "GET");
                 console.log("fetching device label");
                 console.log(this.#deviceLabel);
-                this.#UIObject[this.#UUID]["Name"]["Value"] = this.#deviceLabel;
+                this.#UIObject["Name"]["Value"] = this.#deviceLabel;
                 return this.#deviceLabel;
             } catch (e) {
                 console.error(e)
             }
         }
+
+        async fetchSupportedParameters() {
+            // checking for other supported parameters
+            let supportedParameters = await installation.rdm.sendRdmPacket(installation.activeNode.ip, this.#parentFbId, this.#UUID, "GET", "0050");
+            if (!supportedParameters.includes("<fault>") && supportedParameters !== undefined) {
+                supportedParameters = installation.rdm.decodeRdmPacket(supportedParameters, "0050", "GET");
+                if (supportedParameters.includes("00E1")) {
+                    // DMX personality description is supported
+                    for (let i = 1; i < parseInt(this.#personality.slice(-1))+1; i++) {
+                        installation.rdm.sendRdmPacket(installation.activeNode.ip, this.#parentFbId, this.#UUID, "GET", "00E1", i.toString(16).padStart(2,"0")).then(res => {
+                            if (res) this.setResult(res)
+                        });
+                    }
+                }
+            }
+        }
+
+        setResult(res) {
+            let personalityDescription = installation.rdm.decodeRdmPacket(res, "00E1", "GET");
+            if (this.#personality[0] == personalityDescription[0]) {
+                this.#personality = `${personalityDescription[2]} - ${personalityDescription[0]} of ${this.#personality.slice(-1)}`
+                this.#UIObject["Personality"]["Value"] = this.#personality;
+            }
+            this.#personalityDescription.push(personalityDescription);
+        }
     }
 
     class Rdm {
         #pidmap = {
-            "GET": {
-                "DEVICE_INFO": {
-                    "controller": {
-                        "PID": "0060",
-                        "PDL": "00",
-                        "PD" : ""
-                    },
-                    "response": {
-                        "PDL": "13",
-                        "PD": [[8,8], 16, 16, 32, 16, [8,8], 16, 16, 8]
-                    }
-                },
-                "DEVICE_LABEL": {
-                    "controller": {
-                        "PID": "0082",
-                        "PDL": "00",
-                        "PD": "",
-                    },
-                    "response": {
-                        "PDL": "Variable"
-                    }
-                },
-                "IDENTIFY_DEVICE": {
-                    "controller": {
-                        "PID": "1000",
-                        "PDL": "00",
-                        "PD": ""
-                    },
-                    "response": {
-                        "PDL": "01",
-                        "PD": "1"
-                    }   
-                },
-                "DMX_START_ADDRESS": {
-                    "controller": {
-                        "PID": "00F0",
-                        "PDL": "00",
-                        "PD": ""
-                    },
-                    "response": {
-                        "PDL": "02",
-                        "PD": ""
-                    }
-                    
-                },
-                "DMX_PERSONALITY": {
-                    "controller": {
-                        "PID": "00E0",
-                        "PDL": "00",
-                        "PD": ""
-                    },
-                    "response": {
-                        "PDL": "02",
-                        "PD": [8,8]
-                    }
+            // DEVICE_INFO
+            "0060": {
+                "response": {
+                    "PD": [[8,8], 16, 16, 32, 16, [8,8], 16, 16, 8]
                 }
             },
-            "SET": {
-                "DEVICE_LABEL": {
-                    "controller": {
-                        "PID": "0082",
-                    }
-                },
-                "DMX_START_ADDRESS": {
-                    "controller": {
-                        "PID": "00F0",
-                        "PDL": "02"
-                    }
-                },
-                "DMX_PERSONALITY": {
-                    "controller": {
-                        "PID": "00E0",
-                        "PDL": "01"
-                    }
-                },
-                "IDENTIFY_DEVICE": {
-                    "controller": {
-
-                    },
-                    "response": {
-
-                    }
+            // DEVICE_LABEL
+            "0082": {
+                "response": {
+                    "PDL": "variable"
                 }
-            }
+            },
+            // IDENTIFY_DEVICE
+            "1000": {
+                "response": {
+                    "PDL": "01"
+                }
+            },
+            // DMX_START_ADDRESS
+            "00F0": {
+                "response": {
+                    "PDL": "02"
+                }
+            },
+            // DMX_PERSONALITY
+            "00E0": {
+                "response": {
+                    "PD": [8,8]
+                }
+            },
+            // SUPPORTED_PARAMETERS
+            "0050": {
+                "response": {
+                    "PDL": "variable",
+                    "PD": 16
+                }
+            },
+            // DMX_PERSONALITY_DESCRIPTION
+            "00E1": {
+                "controller": {
+                    "PDL": "01"
+                },
+                "response": {
+                    "PDL": "variable"
+                }
+            },
+
+
         }
 
         constructor(){}
         // PDL is the amount of bytes being sent in hex format. 
 
         sendRdmPacket = async (nodeIp, fbId, destinationUID, getSet, param, data = null) => {
+            console.log(param)
             if (getSet === "SET") {
                 let hexData = "";
                 switch(param) {
-                    case "DMX_START_ADDRESS": 
+                    // DMX_START_ADDRESS
+                    case "00F0": 
                         this.pd = Number(data).toString(16).padStart(4,"0").toUpperCase();
                         break;
-                    case "DEVICE_LABEL":
+                    // DEVICE_LABEL
+                    case "0082":
                         for (let i=0; i<data.length; i++) {
                             hexData+=data.charCodeAt(i).toString(16);
                             console.log(hexData)
@@ -3537,7 +3550,10 @@ Acces-Control-Allow-Origin: *
                         this.pdl = (hexData.length/2).toString(16).padStart(2,"0").toUpperCase();
                         this.pd = hexData.toUpperCase();
                         break;
-                    case "DMX_PERSONALITY":
+                    // IDENTIFY_DEVICE
+                    case "1000":
+                    // DMX_PERSONALITY
+                    case "00E0":
                         hexData = data.toString(16).padStart(2, "0");
                         this.pd = hexData.toUpperCase();
                         break;
@@ -3545,16 +3561,23 @@ Acces-Control-Allow-Origin: *
                         break;
                 }
             } else {
-                this.pdl = this.#pidmap[getSet][param]["controller"]["PDL"];
-                this.pd =  this.#pidmap[getSet][param]["controller"]["PD"];
+                this.pdl = this.#pidmap?.param?.controller?.PDL 
+                this.pdl = this.pdl ? this.pdl : "00";
+                if (!data) {
+                    this.pd = this.#pidmap?.param?.controller?.PD 
+                    this.pd = this.pd ? this.pd : "";
+                } else {
+                    this.pd = data
+                }
+                
             }
-            this.pid = this.#pidmap[getSet][param]["controller"]["PID"];
 
             // calculating the position of the checksum high based of data length and data === this.#pidmap[getSet][param]["controller"]["PDL"].length/2 + 
             let ML = 24 + this.pd.length/2
             ML = ML.toString(16).padStart(2, "0").toUpperCase();
             let payload = 
-    `CC01${ML}${destinationUID}033A87654321${installation.rdmCounter.padStart(2, "0")}00000000${getSet === "GET"? 20 : 30}${this.pid}${this.pdl}${this.pd}`
+    `CC01${ML}${destinationUID}033A87654321${installation.rdmCounter.padStart(2, "0")}00000000${getSet === "GET"? 20 : 30}${param}${this.pdl}${this.pd}`
+            console.log(payload);
             let finalCS;
             let CS = (function () {
                 let byteArr = []
@@ -3597,29 +3620,35 @@ Acces-Control-Allow-Origin: *
         }
 
         decodeRdmPacket(packet, param, getSet) {
+            if (!packet) return;
             let parameters = [];
             let startBit = "<rdmX>".length + 48;
             let eop = packet.indexOf("</rdm") - 4;
             let payload = packet.slice(startBit,eop);
-            switch (this.#pidmap[getSet][param]["response"]["PDL"]) {
-                case "Variable":
-                    return hexToAscii(payload);
+            switch (this.#pidmap[param]["response"]["PDL"]) {
+                case "variable":
+                    // DEVICE_LABEL
+                    if (param === "0082") return hexToAscii(payload);
+                    // SUPPORTED_PARAMETERS
+                    else if (param === "0050") return hexToArr(payload, this.#pidmap[param]["response"]["PD"]);
+                    // DMX_PERSONALITY_DESCRIPTION
+                    else if (param === "00E1") return hexToPersonality(payload);              
                     break;
                 case "01": 
                     return payload === "01" ? true : false;
                     break;
                 default:
-                    if (typeof this.#pidmap[getSet][param]["response"]["PD"] === "object") {
+                    if (typeof this.#pidmap[param]["response"]["PD"] === "object") {
                         let paramCounter = 0;
                         let subCounter = 0;
                         let isArr = false;
-                        if (typeof this.#pidmap[getSet][param]["response"]["PD"][paramCounter] === "object") isArr = true;
+                        if (typeof this.#pidmap[param]["response"]["PD"][paramCounter] === "object") isArr = true;
                         let subParams = [];
                         paramCounter = 0;
-                        for (let i = 0; i < this.#pidmap[getSet][param]["response"]["PD"].length; i++) {
-                            if (typeof this.#pidmap[getSet][param]["response"]["PD"][i] === "object") {
-                                for (let j=0; j < this.#pidmap[getSet][param]["response"]["PD"][i].length; j++) {
-                                    let dataLength = this.#pidmap[getSet][param]["response"]["PD"][i][j]/4;
+                        for (let i = 0; i < this.#pidmap[param]["response"]["PD"].length; i++) {
+                            if (typeof this.#pidmap[param]["response"]["PD"][i] === "object") {
+                                for (let j=0; j < this.#pidmap[param]["response"]["PD"][i].length; j++) {
+                                    let dataLength = this.#pidmap[param]["response"]["PD"][i][j]/4;
                                     subParams.push(parseInt(payload.slice(paramCounter, paramCounter + dataLength), 16));
                                     paramCounter+=dataLength;
                                 }
@@ -3627,7 +3656,7 @@ Acces-Control-Allow-Origin: *
                                 subParams=[];
                                 continue;
                             }
-                            let dataLength = this.#pidmap[getSet][param]["response"]["PD"][i]/4;
+                            let dataLength = this.#pidmap[param]["response"]["PD"][i]/4;
                             parameters.push(parseInt(payload.slice(paramCounter, paramCounter + dataLength), 16));
                             paramCounter+=dataLength;
                         }
@@ -3807,7 +3836,6 @@ Acces-Control-Allow-Origin: *
                 if (!response.ok) {
                     throw new Error(`Response status: ${response.status}`);
                 }
-
             }
             
             catch (error) {
@@ -3956,7 +3984,7 @@ Acces-Control-Allow-Origin: *
                 this.lampOnTemplate = document.querySelector("#lamp-on-template");
                 this.lampOffTemplate = document.querySelector("#lamp-off-template");
                 rdmDevices.forEach(dev => {
-                    this.rdmInfo[dev.UUID] = dev.UIObject[dev.UUID]
+                    this.rdmInfo[dev.UUID] = dev.UIObject
                 })
                 this.parentNode = parentNode;
                 try {
@@ -3980,6 +4008,53 @@ Acces-Control-Allow-Origin: *
                     }
                 }
             }
+        }
+
+        addLampIcon = async (UUID, target) => {
+            let res = await installation.rdm.sendRdmPacket(installation.activeNode.ip, this.#fieldbus, UUID, "GET", "1000");
+            let lampOn = installation.rdm.decodeRdmPacket(res, "1000", "GET");
+            let lampClone = lampOn? this.lampOnTemplate.content.cloneNode(true) : this.lampOffTemplate.content.cloneNode(true);
+            const svg = lampClone.querySelector("svg");
+            let lampContainer = document.createElement("div");
+            lampContainer.id = lampOn? "lamp-icon-on" : "lamp-icon-off";
+            lampContainer.classList.add("lamp-container");
+            lampContainer.appendChild(svg)
+            target.appendChild(lampContainer);
+        }
+
+        setValueField = (param, paramDescription, targetElement, targetDevice) => {
+            let inputField = document.createElement("input");
+            let dropDown;
+            let p = document.createElement("p");
+            p.id = "personality-paragraph";
+            console.log(param)
+            if (param['Type'] === "Integer") {
+                targetDevice.personalityDescriptionSet? p.innerHTML = param["Value"] : p.innerHTML = param["Value"].substr(-1);
+                if(paramDescription === "Personality") {
+                    dropDown = generateDomTree("select", null, {name: "personality"});
+                    for (let i = 1; i <= p.innerHTML.slice(-1); i++) {
+                        const OPTION = document.createElement("option", {value: i});
+                        if (parseInt(param["Value"].split(" ").at(-3)) === i) {
+                            OPTION.selected = true;
+                        }
+                        const CONTENT = document.createTextNode(targetDevice.getPersonalityDescription(i)? `${targetDevice.getPersonalityDescription(i)[2]} ${targetDevice.getPersonalityDescription(i)[0]}` : i);
+                        OPTION.appendChild(CONTENT);
+                        dropDown.appendChild(OPTION);
+                    }
+                } else {
+                    inputField.type = "number";
+                    inputField.value = parseInt(param["Value"]);         
+                }  
+            } else inputField.value = param["Value"]      
+            targetElement.innerHTML = "";   
+            if (paramDescription === "Personality") {
+                targetElement.appendChild(dropDown);
+                if (targetDevice.personalityDescriptionSet) {
+                    p.innerHTML = ` of ${p.innerHTML.slice(-1)}`
+                    targetElement.appendChild(p);
+                    dropDown.style.width = "63%";
+                } 
+            } else targetElement.appendChild(inputField);
         }
 
         generateBaseTable = async (init) => {
@@ -4018,20 +4093,13 @@ Acces-Control-Allow-Origin: *
 
             for (const DEVID of Object.keys(this.rdmInfo)) {
                 let dataRow = document.createElement("tr");
+                dataRow.openedRow = false;
                 dataRow.dataset.devid = DEVID;
                 for (let i = 0; i < this.rdmHeader.length; i++) {
                     let dTd = document.createElement("td");
                     if (i == 0) {
                         dTd.innerHTML = DEVID;
-                        dTd.openedRow = false;
-                        // adding the lamp icons
-                        let res = await installation.rdm.sendRdmPacket(installation.activeNode.ip, this.#fieldbus, DEVID, "GET", "IDENTIFY_DEVICE");
-                        let lampOn = installation.rdm.decodeRdmPacket(res, "IDENTIFY_DEVICE", "GET");
-                        let lampClone = lampOn? this.lampOnTemplate.content.cloneNode(true) : this.lampOffTemplate.content.cloneNode(true);
-                        const svg = lampClone.querySelector("svg");
-                        console.log(svg);
-                        svg.id = "lamp-icon";
-                        dTd.appendChild(svg);
+                        await this.addLampIcon(DEVID, dTd);
                     } else dTd.innerHTML = null;
                     dataRow.appendChild(dTd);
                 }
@@ -4043,24 +4111,28 @@ Acces-Control-Allow-Origin: *
         }
 
         toggleParameters = async (e) => {
-            if (e.target.tagName === "svg") return;
+            if (e.target.classList.contains("lamp-container")) return;
             let targetRow = e.target.closest("tr");
             let parentNode = targetRow.parentNode;
             let targetDevice = this.#rows.find(dev => dev.UUID == targetRow.dataset.devid);
             if (!targetDevice.deviceLabel) {
                 await targetDevice.fetchLabel();
             }
-            if (e.target.openedRow === false) {
+            if (targetRow.openedRow === false) {
                 let counter = 0;
-                for (const [KEY, VAL] of Object.entries(this.rdmInfo[targetRow.dataset.devid])) {
+                let openedRowIsSet = false;
+                for (const [KEY, PARAM] of Object.entries(this.rdmInfo[targetRow.dataset.devid])) {
                     let dataRow = document.createElement("tr");
+                    if (!openedRowIsSet) {
+                        openedRowIsSet = !openedRowIsSet;
+                        dataRow.openedRow = true;
+                    }
                     dataRow.dataset.devid = e.target.closest("tr").dataset.devid;
 
                     // ========== UUID  ============
                     let data = document.createElement("td");
                     if (counter == 0) {
                             data.innerHTML = e.target.innerHTML
-                            data.openedRow = true;
                         } else {
                             data.innerHTML = "";
                     };
@@ -4077,32 +4149,10 @@ Acces-Control-Allow-Origin: *
                     data = document.createElement("td");
                     data.classList.add("parameter-values");
                     if (installation.config) {
-                        let inputField = document.createElement("input");
-                        let dropDown;
-                        if (VAL["Type"] === "Integer") {
-                            if (typeof VAL["Value"] === "string") p.innerHTML = VAL["Value"].substr(1);
-                            if (KEY === "Personality") {
-                                dropDown = generateDomTree("select", null, {name: "personality"});
-                                for (let i = 1; i <= p.innerHTML.slice(-1); i++) {
-                                    const OPTION = document.createElement("option", {value: i});
-                                    if (parseInt(VAL["Value"][0]) === i) {
-                                        OPTION.selected = true;
-                                    }
-                                    const CONTENT = document.createTextNode(i);
-                                    OPTION.appendChild(CONTENT);
-                                    dropDown.appendChild(OPTION);
-                                }
-                            } else {
-                                inputField.type = "number";
-                                inputField.value = parseInt(VAL["Value"]);
-                            }
-                        } else inputField.value = VAL["Value"];        
-                        if (KEY === "Personality") {
-                            data.appendChild(dropDown);
-                            data.appendChild(p);
-                        } else data.appendChild(inputField);
+                        this.setValueField(PARAM, KEY, data, targetDevice);
                     } else {
-                        data.innerHTML = VAL["Value"];
+                        if (PARAM)
+                        data.innerHTML = PARAM["Value"];
                     }            
                     dataRow.appendChild(data);
                     installation.rdm.table.insertBefore(dataRow, targetRow);
@@ -4118,19 +4168,21 @@ Acces-Control-Allow-Origin: *
                 for (const DATA of dataWithoutUID) {
                     DATA.innerHTML = "";
                 }
-                targetRow.querySelector("td:first-child").openedRow = false;
+                targetRow.openedRow = false;
                 targetRow.querySelector("td:last-child").classList.remove("parameter-values")
             }
 
             // setting scroll classes
             setClasses(this.parentNode);
+            this.personalityDescription = undefined;
         }
 
         applyFilter = async (e) => {
             let oldTable = document.querySelector("#rdm-table");
             let dataWithoudHeader = installation.rdm.table.querySelectorAll("tr:not(:first-child)");
-            console.log("changed filter to " + e.target.value);
-            if (e.target.value === "Name") {
+            const PARAM = e.target.value;
+            console.log("changed filter to " + PARAM);
+            if (PARAM === "Name") {
                 // fetching all the names
                 for (const rdmDevice of installation.targetFb.rdmDevices) {
                     if (!rdmDevice.deviceLabel) {
@@ -4139,7 +4191,7 @@ Acces-Control-Allow-Origin: *
                     }
                 }
             } 
-            if (e.target.value === "--No filter--") {  
+            if (PARAM === "--No filter--") {  
                 for (const row of dataWithoudHeader) {
                     oldTable.removeChild(row);
                 }
@@ -4148,23 +4200,26 @@ Acces-Control-Allow-Origin: *
                     dataRow.dataset.devid = DEVID;
                     for (let i = 0; i < this.rdmHeader.length; i++) {
                         let dTd = document.createElement("td");
-                        if (i == 0) {
+                        if (i === 0) {
                             dTd.innerHTML = DEVID;
-                            dTd.openedRow = false;
+                            dataRow.openedRow = false;
                             // adding the lamp icons
-                            let res = await installation.rdm.sendRdmPacket(installation.activeNode.ip, this.#fieldbus, DEVID, "GET", "IDENTIFY_DEVICE");
-                            let lampOn = installation.rdm.decodeRdmPacket(res, "IDENTIFY_DEVICE", "GET");
+                            let res = await installation.rdm.sendRdmPacket(installation.activeNode.ip, this.#fieldbus, DEVID, "GET", "1000");
+                            let lampOn = installation.rdm.decodeRdmPacket(res, "1000", "GET");
                             let lampClone = lampOn? this.lampOnTemplate.content.cloneNode(true) : this.lampOffTemplate.content.cloneNode(true);
                             const svg = lampClone.querySelector("svg");
                             console.log(svg);
-                            svg.id = "lamp-icon";
-                            dTd.appendChild(svg);
+                            let lampContainer = document.createElement("div");
+                            lampContainer.id = lampOn? "lamp-icon-on" : "lamp-icon-off";
+                            lampContainer.classList.add("lamp-container");
+                            lampContainer.appendChild(svg)
+                            dTd.appendChild(lampContainer);
                         } else dTd.innerHTML = null;
                         dataRow.appendChild(dTd);
                     }
                     oldTable.appendChild(dataRow);
                 }
-                installation.rdmConfig.addEventListener("click", installation.handleRdmEvents);
+                installation.rdm.filtered = false;
             } 
             else {
                 for (const row of dataWithoudHeader) {
@@ -4174,123 +4229,98 @@ Acces-Control-Allow-Origin: *
                 for (const [KEY, VALUE] of Object.entries(this.rdmInfo)) {
                     let row = document.createElement("tr");
                     row.dataset.devid = KEY;
+                    let targetDevice = this.#rows.find(dev => dev.UUID == KEY);
                     let p = document.createElement("p");
                     p.id = "personality-paragraph"
-                    if (Object.hasOwn(VALUE, e.target.value)) {
+                    if (Object.hasOwn(VALUE, PARAM)) {
                         let nData = document.createElement("td");
                         let pData = document.createElement("td");
                         let vData = document.createElement("td");
                         vData.classList.add("parameter-values")
                         nData.innerHTML = KEY;
                         // adding the lamp icons
-                        let res = await installation.rdm.sendRdmPacket(installation.activeNode.ip, this.#fieldbus, KEY, "GET", "IDENTIFY_DEVICE");
-                        let lampOn = installation.rdm.decodeRdmPacket(res, "IDENTIFY_DEVICE", "GET");
-                        let lampClone = lampOn? this.lampOnTemplate.content.cloneNode(true) : this.lampOffTemplate.content.cloneNode(true);
-                        const svg = lampClone.querySelector("svg");
-                        console.log(svg);
-                        svg.id = "lamp-icon";
-                        nData.appendChild(svg);
+                        await this.addLampIcon(KEY, nData)
+                        
 
-                        pData.innerHTML = e.target.value;
-                        if (installation.config && e.target.value !== "Footprint") {
-                            let dropDown;
-                            let inputField = document.createElement("input");
-                            if (VALUE[e.target.value]["Type"] === "Integer") {
-                                if (typeof VALUE[e.target.value]["Value"] === "string") p.innerHTML = VALUE[e.target.value]["Value"].substr(1);
-                                if (e.target.value === "Personality") {
-                                    dropDown = generateDomTree("select", null, {name: "personality"});
-                                    for (let i = 1; i <= p.innerHTML.slice(-1); i++) {
-                                        const OPTION = document.createElement("option", {value: i});
-                                        if (parseInt(VALUE[e.target.value]["Value"][0]) === i) {
-                                            OPTION.selected = true;
-                                        }
-                                        const CONTENT = document.createTextNode(i);
-                                        OPTION.appendChild(CONTENT);
-                                        dropDown.appendChild(OPTION);
-                                    }
-                                } else {
-                                    inputField.type = "number";
-                                    inputField.value = parseInt(VALUE[e.target.value]["Value"]);
-                                }
-                            } else inputField.value = VALUE[e.target.value]["Value"];       
-                            e.target.value === "Personality"? vData.appendChild(dropDown) : vData.appendChild(inputField);
-                            if (e.target.value === "Personality") {
-                                vData.appendChild(p);
-                            }
+                        pData.innerHTML = PARAM;
+                        if (installation.config && PARAM !== "Footprint") {
+                            this.setValueField(VALUE[PARAM], e.target.value, vData, targetDevice);
                         } else {
-                            vData.innerHTML = VALUE[e.target.value]["Value"];
+                            vData.innerHTML = VALUE[PARAM]["Value"];
                         }
+
                         row.appendChild(nData);
                         row.appendChild(pData);
                         row.appendChild(vData);
                         installation.rdm.table.appendChild(row);
                     }
                 }
-                installation.rdmConfig.removeEventListener("click", installation.handleRdmEvents);
+                installation.rdm.filtered = true;
             }
         }
 
-        toggleInput() {
+        toggleInput = () => {
             let values = installation.rdm.table.querySelectorAll(".parameter-values");
-            let rdmDevice;
+            let targetDevice;
             let prevRdmDevice;
             let prevRowId;
             if (installation.config) {
                 for (const VAL of values) {
                     if (VAL.previousSibling.innerHTML === "Footprint") continue;
-                    let parentRow = VAL.parentElement;
-                    rdmDevice = this.#rows.find(dev => dev.UUID == parentRow.dataset.devid);
-                    if ((prevRdmDevice !== rdmDevice) && rdmDevice) {
-                        prevRdmDevice = rdmDevice; 
-                        prevRowId = parentRow.dataset.devid  
+                    let targetRow = VAL.parentElement;
+                    targetDevice = this.#rows.find(dev => dev.UUID == targetRow.dataset.devid);
+                    if ((prevRdmDevice !== targetDevice) && targetDevice) {
+                        prevRdmDevice = targetDevice; 
                     }
-                    const PARAM = prevRdmDevice.UIObject[prevRowId][parentRow.children[1].innerHTML];
-                    console.log(PARAM);
-                    let targetElement = parentRow.children[2];
+                    const PARAM = prevRdmDevice.UIObject[targetRow.children[1].innerHTML];
+                    let targetElement = targetRow.children[2];
                     if (targetElement.innerHTML !== undefined) {
-                        let inputField = document.createElement("input");
-                        let dropDown;
-                        let p = document.createElement("p");
-                        p.id = "personality-paragraph";
-                        if (PARAM['Type'] === "Integer") {
-                            if (typeof PARAM["Value"] === "string") p.innerHTML = PARAM["Value"].substr(1);
-                            if(parentRow.children[1].innerHTML === "Personality") {
-                                dropDown = generateDomTree("select", null, {name: "personality"});
-                                for (let i = 1; i <= p.innerHTML.slice(-1); i++) {
-                                    const OPTION = document.createElement("option", {value: i});
-                                    if (parseInt(PARAM["Value"][0]) === i) {
-                                        OPTION.selected = true;
-                                    }
-                                    const CONTENT = document.createTextNode(i);
-                                    OPTION.appendChild(CONTENT);
-                                    dropDown.appendChild(OPTION);
-                                }
-                            } else {
-                                inputField.type = "number";
-                                inputField.value = parseInt(PARAM["Value"]);         
-                            }  
-                        } else inputField.value = PARAM["Value"]         
-                        targetElement.innerHTML = "";
-                        if (parentRow.children[1].innerHTML === "Personality") {
-                            targetElement.appendChild(dropDown);
-                            targetElement.appendChild(p);
-                        } else targetElement.appendChild(inputField);
+                        this.setValueField(PARAM, targetRow.children[1].innerHTML, targetElement, targetDevice)
                     }   
                 }
             } else {
                 for (const VAL of values) {
-                    let parentRow = VAL.parentElement;
-                    rdmDevice = this.#rows.find(dev => dev.UUID == parentRow.dataset.devid);
-                    if ((prevRdmDevice !== rdmDevice) && rdmDevice) {
-                        prevRdmDevice = rdmDevice; 
-                        prevRowId = parentRow.dataset.devid  
+                    let targetRow = VAL.parentElement;
+                    targetDevice = this.#rows.find(dev => dev.UUID == targetRow.dataset.devid);
+                    if ((prevRdmDevice !== targetDevice) && targetDevice) {
+                        prevRdmDevice = targetDevice; 
+                        prevRowId = targetRow.dataset.devid  
                     }
-                    let targetElement = parentRow.children[2];
+                    let targetElement = targetRow.children[2];
                     if (targetElement.innerHTML !== "") {
-                        targetElement.innerHTML = this.rdmInfo[prevRowId][parentRow.children[1].innerHTML]["Value"]
+                        targetElement.innerHTML = this.rdmInfo[prevRowId][targetRow.children[1].innerHTML]["Value"]
                     }    
                 }
             }
+        }
+
+        updateLamp = async (targetRow) => {
+            let oldLamp = targetRow.children[0].querySelector(".lamp-container");
+            let lampOn;
+            let lampClone;
+            let lampContainer;
+            if (oldLamp.id === "lamp-icon-on") {
+                lampOn = false;
+            } else lampOn = true;
+            lampClone = lampOn? this.lampOnTemplate.content.cloneNode(true) : this.lampOffTemplate.content.cloneNode(true);
+            let svg = lampClone.querySelector("svg");
+            lampContainer = document.createElement("div");
+            lampContainer.id = lampOn? "lamp-icon-on" : "lamp-icon-off";
+            lampContainer.classList.add("lamp-container");
+            lampContainer.appendChild(svg)
+            targetRow.children[0].replaceChild(lampContainer, oldLamp);
+
+            // getting the real value and updating it
+            let res = await installation.rdm.sendRdmPacket(installation.activeNode.ip, this.#fieldbus, targetRow.dataset.devid, "GET", "1000");
+            if (res) lampOn = installation.rdm.decodeRdmPacket(res, "1000", "GET");
+            lampClone = lampOn? this.lampOnTemplate.content.cloneNode(true) : this.lampOffTemplate.content.cloneNode(true);
+            svg = lampClone.querySelector("svg");
+            lampContainer = document.createElement("div");
+            lampContainer.id = lampOn? "lamp-icon-on" : "lamp-icon-off";
+            lampContainer.classList.add("lamp-container");
+            lampContainer.appendChild(svg)
+            oldLamp = targetRow.children[0].querySelector(".lamp-container");
+            targetRow.children[0].replaceChild(lampContainer, oldLamp);
         }
     }
 
@@ -4390,6 +4420,27 @@ Acces-Control-Allow-Origin: *
         return rString;
     }
 
+    function hexToArr(payload, bits) {
+        let arr = [];
+        for (let i=0; i < payload.length; i+=(bits/4)) {
+            arr.push(payload.slice(i, i+(bits/4)));
+        }
+        return arr;
+    }
+
+    function hexToPersonality(payload) {
+        let arr = [];
+        arr.push(parseInt(payload.slice(0,2), 16));
+        arr.push(parseInt(payload.slice(2,6), 16))
+        let personalityString = payload.slice(6).toString();
+        let newString = "";
+        for(let i = 0; i < personalityString.length; i+=2) {
+            newString += String.fromCharCode(parseInt(personalityString.substr(i,2), 16));
+        };
+        arr.push(newString);
+        return arr;      
+    }
+
     function generateDomTree(tag, value=null, attributes=null, children=null, listeners=null) {
         let root = document.createElement(tag);
         value? root.innerHTML = value : root.textContent = "";
@@ -4432,6 +4483,26 @@ Acces-Control-Allow-Origin: *
                 patch.classList.add("extreme");
             } else patch.classList.remove("extreme");
         }
+    }
+
+    function setCurvePosition() {
+        let circleDiameter = 60;
+        let nodeSelected = document.querySelector(".node.selected");
+        let topCurve = nodeSelected.querySelector("#top-curve");
+        let bottomCurve = nodeSelected.querySelector("#bottom-curve");
+        let cs = getComputedStyle(nodeSelected)
+        let paddingX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+        let borderX = parseFloat(cs.borderLeftWidth) + parseFloat(cs.borderRightWidth);
+        
+        // Element width and height minus padding and border
+        let elementWidth = nodeSelected.offsetWidth - paddingX - borderX;
+        let beforeLeft= Math.round(elementWidth-(circleDiameter/2)) + "px";
+        let afterLeft = Math.round(elementWidth-circleDiameter) + "px";
+        
+        topCurve.style.setProperty("--beforeLeft", beforeLeft);
+        topCurve.style.setProperty("--afterLeft", afterLeft);
+        bottomCurve.style.setProperty("--beforeLeft", beforeLeft);
+        bottomCurve.style.setProperty("--afterLeft", afterLeft);
     }
 
     function isDemo(demoMac) {
@@ -4481,7 +4552,9 @@ Acces-Control-Allow-Origin: *
                 setClasses(el);
             });
             setClasses(CONT);
-        }    
+        }
+        
+        setCurvePosition();     
     })
     
 </script>
