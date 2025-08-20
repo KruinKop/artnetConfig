@@ -109,6 +109,7 @@ Acces-Control-Allow-Origin: *
         display: grid;
         grid-template-columns: var(--grid-nav-width) 1fr;
         grid-template-rows: var(--banner-height) calc(100vh - var(--banner-height) - var(--padding-small));
+        /* used so that dragging the mouse over the screen doesn't cause selecting of elements */
         -webkit-user-select: none; /* Safari */
         -ms-user-select: none; /* IE 10 and IE 11 */
         user-select: none; /* Standard syntax */ 
@@ -1300,7 +1301,7 @@ Acces-Control-Allow-Origin: *
         display: inline-block;
     }
 
-    select:has(#personality-paragraph) {
+    select:has(+ #personality-paragraph) {
         width: 20%;
         margin-right: .56rem;
     }
@@ -1396,12 +1397,11 @@ Acces-Control-Allow-Origin: *
     const ARTNETPARAMS = ["universe", "keep", "framecounter"];
     const FIELDBUSPARAMS = ["codec", "startAddress", "streamLength", "finetuningParams"];
 
-    const REFRESHINTERVAL = 20000000;  
+    const REFRESHINTERVAL = 1200000;  
 
     class Installation {
         #customer;
         #nodes = [];
-        #prevNodes = [];
         #lightMode = false;
         // activeNode and activeNodeElement public property is available
 
@@ -1428,28 +1428,30 @@ Acces-Control-Allow-Origin: *
                 // }
                 // this.#prevNodes.push(this.#nodes);
                 
-                let demoNode = this.#nodes.find(n => n.mac === "7B:A6:80:7F:EC:01");
+                let demoNode = this.#nodes.find(n => n.mac.slice(0,13) === "7B:A6:80:7F:EC");
                 if (!demoNode) this.addDemo(this.#demoNumber.toString(16).padStart(2, "0"));
 
                 if (localStorage.getItem("configuration") === "enabled") {
-                    this.config = true;
-                } else this.config = false;
-                this.configElement = document.querySelector("body");
-                this.universesContainer = document.querySelector("#universe-container");
-                this.textConfigElement = document.querySelector("#text-config-container");
-                this.textConfig = false;
+                    this.config         = true;
+                } else this.config      = false;
+                this.configElement      = document.getElementById("main-config");
+                this.rdmConfigElement   = document.getElementById("rdm-config");
+                this.universesContainer = document.getElementById("universe-container");
+                this.accoladesElement   = document.getElementById("accolades");  
+                this.fieldbussesElement = document.getElementById("fieldbusses")
+                this.textConfigElement  = document.getElementById("text-config-container");
+                this.textConfig         = false;
+                this.rdmConfig          = false;
                 this.rdm = new Rdm();
-                this.rdmConfig = false;
+                this.fetchConfigInterval ??= setInterval(async () => {
+                    await this.refreshPage();
+                }, REFRESHINTERVAL);
                 return this;
             })();
         }
 
         get nodes(){
             return this.#nodes;
-        }
-
-        get prevNodes() {
-            return this.#prevNodes;
         }
 
         get shownUniverses() {
@@ -1483,12 +1485,9 @@ Acces-Control-Allow-Origin: *
             up? this.#shownUniverses++ : this.#shownUniverses--;
         }
 
-        pushPrevNodes(pn) {
-            this.#prevNodes.unshift(pn);
-            if (this.#prevNodes.length > 2) this.#prevNodes.pop();
-        }
-
         async fetchNodes(init) {
+            this.activeNode = undefined;
+            this.#nodes = [];
             try {
                 //      `${init? "" : "http://" + this.activeNode.ip}/xdev`
                 const response = await fetch(`${nodeIp}/xdev`, {signal: AbortSignal.timeout(2000)});
@@ -1500,32 +1499,30 @@ Acces-Control-Allow-Origin: *
                 const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
                 let foundNodes = [];
                 let devices = xmlDoc.getElementsByTagName("dev")[0].innerHTML.split(" ");
+                let ip, node;
                 for (let device of devices) {
-                    let ip = hexToIP(device);
-                    let oldNodes = [];
-                    let node;
+                    ip = hexToIP(device);
                     try {
-                        node = await new Node(ip, false, [...this.#prevNodes] );    
+                        node = await new Node(ip, false);    
                     } catch(error) {
                         console.error(`there was an error fetching node with ip ${ip}\n ${error}`)
                         continue;
                     };
                     if (node !== undefined) foundNodes.push(node);
                 }
-                
-                if (init && !localStorage.getItem("activeNode")) {
+                let prevActiveNode = foundNodes.find(node => node.mac === localStorage.getItem("activeNode"));
+                if (init && !localStorage.getItem("activeNode") || !prevActiveNode) {
                     foundNodes[0].active = true;
                     this.activeNode = foundNodes[0];
                     localStorage.setItem("activeNode", this.activeNode.mac);
+                } else {
+                    this.activeNode = prevActiveNode;
                 }
-
-                this.pushPrevNodes(foundNodes);
 
                 if (init) {
                     this.nodeOrder = foundNodes;
                     this.#nodes = foundNodes;
                 } else {
-                    this.#nodes = [];
                     this.nodeOrder.forEach((n) => {
                         let newNode = foundNodes.find((fn) => fn.ip === n.ip)
                         if (newNode) this.#nodes.push(newNode);
@@ -1565,7 +1562,7 @@ Acces-Control-Allow-Origin: *
             this.#nodes.push(demoNode);           
         }
 
-        updateNav(init){
+        updateNav(){
             let generateNode = (node, lm) => {
                 let nodeElement = document.createElement("li");
                 nodeElement.classList.add("node");
@@ -1605,74 +1602,49 @@ Acces-Control-Allow-Origin: *
             }
 
             let navBar = document.getElementById("node-list");
+            let nodeElement;
             navBar.innerHTML="";
-            this.#nodes.forEach(node => {
-                let activeNode;
-                if (node.mac === localStorage.getItem("activeNode")) activeNode = true;
-                let nodeElement = generateNode(node, this.lm);
-                if (!node.online) nodeElement.classList.add("disconnected");
+            for (const NODE of this.#nodes) {
+                nodeElement = generateNode(NODE, this.lm);
+                if (!NODE.online) nodeElement.classList.add("disconnected");
                 if (this.lm) nodeElement.classList.add("light");
-                if (init) {
-                    if (node.active || activeNode) {
-                        nodeElement.classList.add("selected");
-                        node.active = true;
-                        this.activeNode = node;
-                        if (this.config) nodeElement.children[2].hidden = true;
-                    }
+                // if (init) {
+                if (NODE.active) {
+                    nodeElement.classList.add("selected");
+                    console.log("setting node " + NODE.name + " to active;")
+                    localStorage.setItem("activeNode", NODE.mac);
+                    this.shownUniverses = this.activeNode.universes.length < this.shownUniverses ? this.activeNode.universes.length : this.shownUniverses; 
+                    if (this.config) nodeElement.children[2].hidden = true;
+                    NODE.setFpsInterval();
                 } else {
-                    if (node.active) {
-                        nodeElement.classList.add("selected");
-                        this.activeNode = node;
-                        if (this.config) nodeElement.children[2].hidden = true;
-                    }
-                    else {
-                        nodeElement.children[3].hidden = true;
-                    }
+                    NODE.setStatusInterval();
                 }
-                navBar.appendChild(nodeElement);
-            });
-
-            if (init) {
-                const fpsInterval = setInterval(() => this.activeNode.updateFps(), 1000);
-                const statusInterval = setInterval(async () => {
-                    for (const node of this.nodes) {
-                        if (!isDemo(node.mac) && node.active === false) {
-                            try {
-                                const response = await fetch(`http://${node.ip}/xart`, {signal: AbortSignal.timeout(2000)});
-                                if (!response.ok) {
-                                    throw new Error(`Response status: ${response.status}`);
-                                }
-                                node.setStatus(true);               
-                            } 
-                            catch (error) {
-                                if (error.name === "TimeoutError") {
-                                    console.error("Request timed out");
-                                    node.setStatus(false);     
-                                } else if (error.name === "AbortError") {
-                                    console.error("Fetch aborted by user");
-                                } else if (error.name === "TypeError") {
-                                    console.error("AbortSignal.timeout() method is not supported");
-                                } else {
-                                    console.error("Failed to update fps:", error.message);
-                                }
-                            }
-                        }
-                    }      
-                }, 5000);
+                // } else {
+                //     if (node.active) {
+                //         nodeElement.classList.add("selected");
+                //         this.activeNode = node;
+                //         if (this.config) nodeElement.children[2].hidden = true;
+                //     }
+                //     else {
+                //         nodeElement.children[3].hidden = true;
+                //     }
+                // }
                 
-                // this.initaliseConfig();
-            } // else this.showActiveNode();
+                navBar.appendChild(nodeElement);
+            };
+            
             this.initialiseConfig();
         }
 
         initialiseConfig() {
-            this.fieldbussesElement = document.getElementById("fieldbusses");
-            this.fieldbussesElement.setAttribute('style', `grid-template-columns: repeat(${this.activeNode.fieldbusses.length}, 2fr)` )
-            this.fieldbussesElement.innerHTML = '';
+            let fieldbussesElement = document.getElementById("fieldbusses");
+            fieldbussesElement.setAttribute('style', `grid-template-columns: repeat(${this.activeNode.fieldbusses.length}, 2fr)` )
+            fieldbussesElement.innerHTML = '';
+            let fbElement;
             
             let counter = 1;
-            this.activeNode.fieldbusses.forEach(fb => {
-                fb.fbElement =  generateDomTree("div", null, { id: `fb-${counter}`, class: "fieldbus card" }, [
+            for (const FB of this.activeNode.fieldbusses) {
+                fbElement =  generateDomTree("div", null, { id: `fb-${counter}`, class: "fieldbus card" }, [
                                     generateDomTree("div", null, { class: "address range" }, [
                                         generateDomTree("h1", `FIELDBUS ${counter}`),
                                         generateDomTree("div", null, { id: `address-block-${counter}`, class: "patch" }, [
@@ -1687,15 +1659,11 @@ Acces-Control-Allow-Origin: *
                                 ]), 
                                 generateDomTree("div", null, { class: "fb-protocol info" }),
                                 generateDomTree("div", "i", {class: "rdm-button e-button", style: "visibility: hidden"}, null, {"click": installation.toggleRdmConfig})])
-                this.fieldbussesElement.appendChild(fb.fbElement);
+                fieldbussesElement.appendChild(fbElement);
                 counter++;    
-            })
+            }
 
             this.showActiveNode();
-            
-            this.fetchConfigInterval ??= setInterval(async () => {
-                await this.refreshPage();
-            }, REFRESHINTERVAL);
         }
 
         showActiveNode() {
@@ -1707,10 +1675,10 @@ Acces-Control-Allow-Origin: *
             let firmwareVersion     = document.querySelector("#firmware span");
             let configVersion       = document.querySelector("#config span");
             
-            this.activeNodeElement  = document.getElementById(`${this.activeNode.UID}`);  
-            this.universesElement   = document.getElementById("universes");
+            let activeNodeElement  = document.getElementById(`${this.activeNode.UID}`);  
+            let universesElement   = document.getElementById("universes");
 
-            let ePort2 = document.querySelector("#eth2");
+            let ePort2 = document.getElementById("eth2");
             if (Object.keys(this.activeNode.switch).length === 0) {
                 ePort2.hidden = true;
             } else {
@@ -1727,12 +1695,12 @@ Acces-Control-Allow-Origin: *
                 installation.shownUniverses = requiredUniverses;
             }
 
-            this.universesElement.innerHTML = '';
+            universesElement.innerHTML = '';
             main.style.gridTemplateRows     = `repeat(${installation.shownUniverses}, 1fr) 25px 75px`; 
             firmwareVersion.innerHTML       = this.activeNode.firmware;
 
             let counter = 1;
-            this.activeNode.universes.forEach((uni) => {
+            for (const UNI of this.activeNode.universes) {
                 if (counter <= installation.shownUniverses) {
                     let u = document.createElement("li");
                     u.style.padding = "0px"
@@ -1740,18 +1708,18 @@ Acces-Control-Allow-Origin: *
                     if (this.lm) u.classList.add("light");
                     if (this.config) {
                         // let inputU = document.createElement("input");
-                        let inputU = generateDomTree("input", null, {id: `universe-${counter}`, universe: uni.id, type: "number", value: uni.universe, min: 1, max: 32468 });
-                        let inputK = generateDomTree("input", null, {id: `keep-${counter}`, universe: uni.id, type: "number", value: uni.keep, min: 1, max: 512});
+                        let inputU = generateDomTree("input", null, {id: `universe-${counter}`, universe: UNI.id, type: "number", value: UNI.universe, min: 1, max: 32468 });
+                        let inputK = generateDomTree("input", null, {id: `keep-${counter}`, universe: UNI.id, type: "number", value: UNI.keep, min: 1, max: 512});
                         u.appendChild(inputU);
                         u.appendChild(inputK);
                     } else {
-                        u.innerHTML = `${uni.universe}<span class="range ${this.lm}">${uni.keep}</span>`
+                        u.innerHTML = `${UNI.universe}<span class="range ${this.lm}">${UNI.keep}</span>`
                         u.style.padding = "0.5rem"
                     }
-                    this.universesElement.appendChild(u);
+                    universesElement.appendChild(u);
                 }        
                 counter++;
-            })
+            }
 
             uniC.style.gridRow          = `1/${installation.shownUniverses+2}`;
             uni.style.gridRow           = fieldbusses.style.gridRow = `1/${installation.shownUniverses+3}`;
@@ -1765,43 +1733,47 @@ Acces-Control-Allow-Origin: *
             }
 
             counter = 1;
-            this.activeNode.fieldbusses.forEach((fb) => {
-                fb.fieldbusElement  = document.querySelector(`#fb-${counter}`);
-                fb.addressRange     = document.querySelector(`#fb-${counter} .address.range`);
-                fb.addressBlock     = document.querySelector(`#address-block-${counter}`);
-                fb.startElement     = document.querySelector(`#fb-${counter} .address-container h2.start`);
-                fb.streamElement    = document.querySelector(`#fb-${counter} .address-container h2.stream`);
-                fb.codecElement     = document.querySelector(`#fb-${counter} .fb-protocol`);
+            let fieldbusElement, addressRange, addressBlock, startElement, streamElement, codecElement;
+            let start, newStartElement, stream, newStreamElement;
+            let rj45, labelElement, selectElement;
+
+            for (const FB of this.activeNode.fieldbusses) {
+                fieldbusElement  = document.getElementById(`fb-${counter}`);
+                addressRange     = document.querySelector(`#fb-${counter} .address.range`);
+                addressBlock     = document.querySelector(`#address-block-${counter}`);
+                startElement     = document.querySelector(`#fb-${counter} .address-container h2.start`);
+                streamElement    = document.querySelector(`#fb-${counter} .address-container h2.stream`);
+                codecElement     = document.querySelector(`#fb-${counter} .fb-protocol`);
                 // fb.patch = document.querySelector(".patch");
 
-                if (fb.codec === 0) {
-                    fb.addressBlock.hidden = true;
-                } else fb.addressBlock.hidden = false;
+                if (FB.codec === 0) {
+                    addressBlock.hidden = true;
+                } else addressBlock.hidden = false;
 
-                if (this.activeNode.codecs[fb.codec].toLowerCase().includes("rdm")) {
-                    fb.fieldbusElement.querySelector(".rdm-button").style.visibility = "visible";
+                if (this.activeNode.codecs[FB.codec].toLowerCase().includes("rdm")) {
+                    fieldbusElement.querySelector(".rdm-button").style.visibility = "visible";
                 } else {
-                    fb.fieldbusElement.querySelector(".rdm-button").style.visibility = "hidden";
+                    fieldbusElement.querySelector(".rdm-button").style.visibility = "hidden";
                 }
 
                 if (this.textConfig) {
-                    fb.fieldbusElement.style.position = "relative";
-                    fb.fieldbusElement.style.zIndex = `${1000 + this.activeNode.fieldbusses.length-(counter-1)}`;
-                    fb.fieldbusElement.style.gridColumn = "1";
-                    fb.fieldbusElement.style.justifySelf = "center";
-                    fb.fieldbusElement.style.left = `${(counter-2)*(this.fieldbussesElement.clientWidth/7.5)}px`;
-                    fb.fieldbusElement.style.marginRight = `${10/this.activeNode.fieldbusses.length}px`;
+                    fieldbusElement.style.position = "relative";
+                    fieldbusElement.style.zIndex = `${1000 + this.activeNode.fieldbusses.length-(counter-1)}`;
+                    fieldbusElement.style.gridColumn = "1";
+                    fieldbusElement.style.justifySelf = "center";
+                    fieldbusElement.style.left = `${(counter-2)*(this.fieldbussesElement.clientWidth/7.5)}px`;
+                    fieldbusElement.style.marginRight = `${10/this.activeNode.fieldbusses.length}px`;
                 }
 
                 // setting all the gridRows
-                fb.fieldbusElement.style.gridRow = `1/${installation.shownUniverses+3}`
-                if (fb.codec === 1) {
-                    fb.fieldbusElement.style.gridRow = `${installation.shownUniverses+1}/${installation.shownUniverses+3}`
-                    fb.addressRange.hidden = true;
+                fieldbusElement.style.gridRow = `1/${installation.shownUniverses+3}`
+                if (FB.codec === 1) {
+                    fieldbusElement.style.gridRow = `${installation.shownUniverses+1}/${installation.shownUniverses+3}`
+                    FB.addressRange.hidden = true;
                     // adding arrow pointing to the previous channel
                     // check if the arrow hasn't been added before
-                    if (!document.querySelector(`#fb-${counter} #arrowSvg`)) {
-                        const arrowTemplate = document.querySelector("#arrow-template");
+                    if (!document.getElementById("arrowSvg")) {
+                        const arrowTemplate = document.getElementById("arrow-template");
 
                         const clone = arrowTemplate.content.cloneNode(true);
                         const svg = clone.querySelector("svg");
@@ -1809,7 +1781,7 @@ Acces-Control-Allow-Origin: *
                         let arrow = document.createElement("div");
                         arrow.id = "arrowSvg"
                         arrow.appendChild(svg);
-                        fb.fieldbusElement.appendChild(arrow);
+                        FB.fieldbusElement.appendChild(arrow);
                         arrow.style.width = "55%"
                         arrow.style.alignSelf = "end";
                         arrow.style.justifySelf = "center"
@@ -1822,105 +1794,101 @@ Acces-Control-Allow-Origin: *
                     if (arrow) {
                         arrow.parentNode.removeChild(arrow);
                     }
-                    fb.fieldbusElement.style.gridRow = `1/${installation.shownUniverses+3}`
-                    fb.addressRange.hidden = false;
+                    fieldbusElement.style.gridRow = `1/${installation.shownUniverses+3}`
+                    addressRange.hidden = false;
                 }
 
-                fb.addressRange.style.gridRow   = `1/${installation.shownUniverses+1}`;
-                fb.codecElement.style.gridRow   = `${installation.shownUniverses+1}/${installation.shownUniverses +3}`;
-
-                // Config elements for start and streamlength
-                let startElement;
-                let streamElement;
+                addressRange.style.gridRow   = `1/${installation.shownUniverses+1}`;
+                codecElement.style.gridRow   = `${installation.shownUniverses+1}/${installation.shownUniverses +3}`;
 
                 if (this.config) {
-                    fb.addressBlock.classList.add("config");
-                    startElement    =   generateDomTree("h2", null, {class: "configurable start"}, [
+                    addressBlock.classList.add("config");
+                    newStartElement    =   generateDomTree("h2", null, {class: "configurable start"}, [
                                             generateDomTree("label", "start: <br>", {for: `startAddress-fb${counter}`, class: "draggable"}, [
-                                                generateDomTree("input", null, {id: `startAddress-fb${counter}`, fieldbus: fb.id, type: "number", min: "1", max: `${(this.shownUniverses*512)-1}`, value: `${fb.startAddress}`}, null)])]);
-                    streamElement   =   generateDomTree("h2", null, {class: "configurable stream"}, [
+                                                generateDomTree("input", null, {id: `startAddress-fb${counter}`, fieldbus: FB.id, type: "number", min: "1", max: `${(this.shownUniverses*512)-1}`, value: `${FB.startAddress}`}, null)])]);
+                    newStreamElement   =   generateDomTree("h2", null, {class: "configurable stream"}, [
                                             generateDomTree("label", "length: <br>", {for: `streamLength-fb${counter}`, class: "draggable"}, [
-                                                generateDomTree("input", null, {id: `streamLength-fb${counter}`, fieldbus: fb.id, type: "number", min: "1", max: `${(this.shownUniverses*512)-1}`, value: `${fb.streamLength}`}, null)])]);
+                                                generateDomTree("input", null, {id: `streamLength-fb${counter}`, fieldbus: FB.id, type: "number", min: "1", max: `${(this.shownUniverses*512)-1}`, value: `${FB.streamLength}`}, null)])]);
                 } else {
-                    fb.addressBlock.classList.remove("config");
-                    startElement    =   generateDomTree("h2", "start: ", { class: "draggable non-configurable start" }, [
-                                            generateDomTree("span", fb.startAddress)]);
-                    streamElement   =   generateDomTree("h2", "length: <br>", { class: "draggable non-configurable stream" }, [
-                                            generateDomTree("span", fb.streamLength, {class: "draggable"})]);
+                    addressBlock.classList.remove("config");
+                    newStartElement    =   generateDomTree("h2", "start: ", { class: "draggable non-configurable start" }, [
+                                            generateDomTree("span", FB.startAddress)]);
+                    newStreamElement   =   generateDomTree("h2", "length: <br>", { class: "draggable non-configurable stream" }, [
+                                            generateDomTree("span", FB.streamLength, {class: "draggable"})]);
                 }
 
-                fb.addressHeight = fb.addressRange.getBoundingClientRect()["height"]*(fb.streamLength/(512*installation.shownUniverses));
+                FB.addressHeight = addressRange.getBoundingClientRect()["height"]*(FB.streamLength/(512*installation.shownUniverses));
 
-                fb.startElement.replaceWith(startElement);
-                fb.streamElement.replaceWith(streamElement);
+                startElement.replaceWith(newStartElement);
+                streamElement.replaceWith(newStreamElement);
 
                 // Updating all the fb.addressblock heights and startpositions
                 // Height = streamlength, top = startaddres
-                let start   = String((fb.startAddress/(512*installation.shownUniverses))*100)+"%";
-                let stream  = String((fb.streamLength/(512*installation.shownUniverses))*100)+"%";
+                start   = String((FB.startAddress/(512*installation.shownUniverses))*100)+"%";
+                stream  = String((FB.streamLength/(512*installation.shownUniverses))*100)+"%";
                 
-                fb.addressBlock.style.height = stream;
-                fb.addressBlock.style.top = start;
+                addressBlock.style.height = stream;
+                addressBlock.style.top = start;
                 
-                fb.startElement = document.querySelector(`#fb-${counter} .address-container h2.start`);
-                fb.streamElement = document.querySelector(`#fb-${counter} .address-container h2.stream`);
+                startElement    = document.querySelector(`#fb-${counter} .address-container h2.start`);
+                streamElement   = document.querySelector(`#fb-${counter} .address-container h2.stream`);
                 
-                if (fb.codec !== 0 && fb.codec !== 1) checkOverflow(fb.addressBlock, !this.config, fb.addressHeight);
+                if (FB.codec !== 0 && FB.codec !== 1) checkOverflow(addressBlock, !this.config, FB.addressHeight);
 
                 // if (counter > installation.shownUniverses) {
                 //     fb.addressBlock.hidden = "true";
                 // }
 
-                const ACTIVECODEC = this.activeNode.codecs[fb.codec].split(" ")[0];
+                const ACTIVECODEC = this.activeNode.codecs[FB.codec].split(" ")[0];
 
-                const LABEL = generateDomTree("label", null,  {for: `fb-${counter}-codec`});
-                    LABEL.innerHTML = "Codec: "
-                    const SELECT = generateDomTree("select", null, {name: "codec", id: `fb-${counter}-codec`});
+                labelElement = generateDomTree("label", null,  {for: `fb-${counter}-codec`});
+                    labelElement.innerHTML = "Codec: "
+                    const selectElement = generateDomTree("select", null, {name: "codec", id: `fb-${counter}-codec`});
+                    let option, content;
                     for (let i=0; i<this.activeNode.codecs.length; i++) {
-                        const OPTION = document.createElement("option", {value: `${this.activeNode.codecs[i].split(" ")[0]}`});
-                        const CONTENT = document.createTextNode(`${this.activeNode.codecs[i].split(" ")[0]}`);
+                        option = document.createElement("option", {value: `${this.activeNode.codecs[i].split(" ")[0]}`});
+                        content = document.createTextNode(`${this.activeNode.codecs[i].split(" ")[0]}`);
                         if (this.activeNode.codecs[i].split(" ")[0] === ACTIVECODEC) {
-                            OPTION.selected = true;
+                            option.selected = true;
                         }
-                        OPTION.appendChild(CONTENT);
-                        SELECT.appendChild(OPTION);
+                        option.appendChild(content);
+                        selectElement.appendChild(option);
                     }
-                LABEL.appendChild(SELECT);
+                labelElement.appendChild(selectElement);
                 
-                let rj45 = generateDomTree("div", `<svg width="60%" viewBox="0 0 512 490.43">  
+                rj45 = generateDomTree("div", `<svg width="60%" viewBox="0 0 512 490.43">  
                                             <use href="#ethernet-port"/>
                                         </svg>`, { id: "ethernet" })
                 
             
-                fb.codecElement.innerHTML = '';
+                codecElement.innerHTML = '';
                 if (this.config) {
-                    fb.codecElement.appendChild(LABEL);
+                    codecElement.appendChild(labelElement);
                 } else {
                     let h2 = generateDomTree("h2", "Codec: ");
                     let h3 = generateDomTree("h3", ACTIVECODEC);
-                    fb.codecElement.appendChild(h2);
-                    fb.codecElement.appendChild(h3);
+                    codecElement.appendChild(h2);
+                    codecElement.appendChild(h3);
                 }
-                if (fb.codec !== 1) fb.codecElement.appendChild(rj45);
+                if (FB.codec !== 1) codecElement.appendChild(rj45);
                 
                 counter++;
-            });
+            };
 
-            this.accoladesElement           = document.getElementById("accolades");   
-            this.accoladesElement.innerHTML = '';   
-
-            const template = document.getElementById("brace-template");
-
+            this.accoladesElement.innerHTML = "";
+       
             counter = 1;
-            this.activeNode.universes.forEach(un => {
+            const braceColor = this.lm ? "rgb(77,77,77)" : "#FFF200";
+            const template = document.getElementById("brace-template");
+            const className = this.lm;
+            let vb, clone, svg;
+
+            for (const UNI of this.activeNode.universes) {
                 if (counter <= installation.shownUniverses) {
-                    const braceColor = this.lm ? "rgb(77,77,77)" : "#FFF200";
-                    const className = this.lm;
-                
                     // Clone the template content
-                    const clone = template.content.cloneNode(true);
-                    const svg = clone.querySelector("svg");
-                    let vb = Math.round(55 - this.shownUniverses * Math.pow(2, 0.8));
+                    clone = template.content.cloneNode(true);
+                    svg = clone.querySelector("svg");
+                    vb = Math.round(55 - this.shownUniverses * Math.pow(2, 0.8));
                     svg.setAttribute("viewBox", `${vb} 0 2000 72`);
                 
                     // Replace color placeholders
@@ -1938,7 +1906,7 @@ Acces-Control-Allow-Origin: *
                     this.accoladesElement.appendChild(svg);
                 }
                 counter++;
-            });
+            };
 
             // this.setAccHeight()
             
@@ -1952,7 +1920,7 @@ Acces-Control-Allow-Origin: *
             if (this.config) {
                 // setting the event listener for the form
                 let forms = document.getElementsByClassName("node-form");
-                let form = this.activeNodeElement.children[3];
+                let form = activeNodeElement.children[3];
                 Array.from(forms).forEach((form) => {
                     form.removeEventListener("submit", this.activeNode.processForm);
                 })
@@ -1965,8 +1933,7 @@ Acces-Control-Allow-Origin: *
 
             if (this.activeNode.online) {
                 this.addEventHandlers();
-                installation.configElement.classList.remove("loading");
-                
+                installation.configElement.classList.remove("loading");               
             } else {
                 this.removeEventHandlers();
                 installation.configElement.classList.add("loading");
@@ -2035,13 +2002,15 @@ Acces-Control-Allow-Origin: *
                 }
 
                 this.activeNode.fieldbusses.forEach((fb) => {
-                    fb.addressHeight = fb.addressRange.getBoundingClientRect()["height"]*(fb.streamLength/(512*installation.shownUniverses));
-                    if (fb.codec !== 0 && fb.codec !== 1) checkOverflow(fb.addressBlock, !this.config, fb.addressHeight);
+                    if (fb.addressRange) {
+                        fb.addressHeight = fb.addressRange.getBoundingClientRect()["height"]*(fb.streamLength/(512*installation.shownUniverses));
+                        if (fb.codec !== 0 && fb.codec !== 1) checkOverflow(fb.addressBlock, !this.config, fb.addressHeight);
+                    }
                 })
             }
             
             const dmSwitch          = document.querySelector("#dark-mode-switch input");
-            const configSwitch      = document.querySelector("#edit-switch");
+            const configSwitch      = document.getElementById("edit-switch");
             const savedDarkMode     = localStorage.getItem("darkMode");
 
             if (this.config) {
@@ -2057,10 +2026,10 @@ Acces-Control-Allow-Origin: *
                 this.switchDarkMode(dmSwitch)
             });
 
-            const uniButtons = document.querySelectorAll("#universe-filter .e-button");
+            const uniButtons    = document.querySelectorAll("#universe-filter .e-button");
+            const accolades     = document.querySelectorAll("#accolades div");
             for (const button of uniButtons) {
                 button.addEventListener("click", () => {
-                    const accolades = document.querySelectorAll("#accolades div");
                     if (button.id === "increment") {
                         if (this.shownUniverses < this.activeNode.universes.length) {
                             this.changeShownUni(true);
@@ -2082,17 +2051,17 @@ Acces-Control-Allow-Origin: *
                 })
             }
 
-            let editButton = document.querySelector("#edit-switch");
+            let editButton = document.getElementById("edit-switch");
             editButton.addEventListener("change", (e) => {
-                const checkBox = document.querySelector("#edit-switch");
+                const checkBox = document.getElementById("edit-switch");
                 if (checkBox.checked) {
                     this.config = true;
                     localStorage.setItem("configuration", "enabled");
-                    this.updateNav(false);
+                    this.updateNav();
                 } else {
                     this.config = false;
                     localStorage.setItem("configuration", "disabled");
-                    this.updateNav(false);
+                    this.updateNav();
                 }
 
                 if (this.rdmConfig) {
@@ -2105,10 +2074,10 @@ Acces-Control-Allow-Origin: *
                 this.navSwitcher();    
             })
 
-            this.textConfigButton = document.querySelector("#text-config");
+            this.textConfigButton = document.getElementById("text-config");
             this.textConfigButton.addEventListener("click", this.switchTextConfig);
+            document.querySelector("#rdm-config .rdm-button").addEventListener(("click"), this.toggleRdmConfig);
             this.addEventHandlers();
-            this.configElement.querySelector("#rdm-config .rdm-button").addEventListener(("click"), this.toggleRdmConfig);
         }
         
         // TODO add touch input
@@ -2155,7 +2124,7 @@ Acces-Control-Allow-Origin: *
                 }
                 this.textConfigElement.classList.add("card");
                 this.textConfigElement.style.gridRow = `1/${installation.shownUniverses+3}`
-                this.textArea = document.querySelector("#xml-text-area");
+                this.textArea = document.getElementById("xml-text-area");
                 if (isDemo(this.activeNode.mac)) {
                     this.activeNode.configuration.setXmlConfig(this.activeNode);
                     this.textArea.value = this.activeNode.configuration.textConfig;
@@ -2191,7 +2160,7 @@ Acces-Control-Allow-Origin: *
 
             // adding event listeners for the buttons
             this.textConfigElement.addEventListener("click", this.handleTextConfig);
-            this.fileInput = document.querySelector("#upload");
+            this.fileInput = document.getElementById("upload");
             this.fileInput.addEventListener("change", this.handleUpload);
             this.textArea.addEventListener("input", this.handleTextInput);
         }
@@ -2227,7 +2196,7 @@ Acces-Control-Allow-Origin: *
                         console.log("generating config object");
                         this.activeNode.configuration.generateConfigObject(this.textArea.value);
                         this.activeNode.initialiseNode(true);
-                        this.updateNav(false);
+                        this.updateNav();
                         this.navSwitcher();
                     }
                     break;
@@ -2388,90 +2357,96 @@ Acces-Control-Allow-Origin: *
 
         handleNavClick = (e) => {
             let nodeElement = e.currentTarget;
-            // resetting the nodes to their inactive state
-            this.#nodes.map((node) => {node.active = false});
+            // resetting the nodes to their inactive state and resetting their intervals
+            this.#nodes.map((node) => {
+                node.active = false;
+                node.clearFpsInterval();
+                node.clearIntervals()     
+            });
 
-            let nodes = document.getElementsByClassName("node");
-            for (let n of nodes) {
-                n.classList.remove("selected");
-            }
+            // let nodes = document.getElementsByClassName("node");
+            // for (let n of nodes) {
+            //     n.classList.remove("selected");
+            // }
 
             if (this.rdmConfig) {
-                this.configElement.querySelector("#rdm-config").style.visibility = "hidden";
-                this.configElement.querySelector("#main-config").style.display = "grid";
+                this.rdmConfigElement.style.visibility = "hidden";
+                this.configElement.style.display = "grid";
                 this.rdmConfig = false;
             }
 
             if (!nodeElement.classList.contains("selected")) {
-                nodeElement.classList.add("selected");
+                // nodeElement.classList.add("selected");
                 let node = this.#nodes.find((n) => n.UID === nodeElement.id);
-                if (this.lm) nodeElement.classList.add("light");
+                // if (this.lm) nodeElement.classList.add("light");
                 node.active = true;
                 this.activeNode = node;
-                localStorage.setItem("activeNode", node.mac);
-                this.shownUniverses = this.activeNode.universes.length < this.shownUniverses ? this.activeNode.universes.length : this.shownUniverses; 
+                node.setFpsInterval();
+                
+                // this.shownUniverses = this.activeNode.universes.length < this.shownUniverses ? this.activeNode.universes.length : this.shownUniverses; 
                 // setting the xml config value and event listeners              
             }
-            this.updateNav(false);
+            this.updateNav();
             if (this.textConfig) {
-                this.textArea.value = this.activeNode.configuration.textConfig;
-                this.textConfigElement.style.gridRow = `1/${this.shownUniverses+3}`
-                let fieldbusContainers = document.querySelectorAll(".fieldbus");
-                this.universesContainer.style.display = "none";
-                this.accoladesElement.style.display = "none";
-                this.fieldbussesElement.style.gridTemplateColumns = "subgrid";
-                this.fieldbussesElement.style.gridColumn = "8/10";
+                let fieldbusContainers                              = document.querySelectorAll(".fieldbus");
+                this.textArea.value                                 = this.activeNode.configuration.textConfig;
+                this.textConfigElement.style.gridRow                = `1/${this.shownUniverses+3}`
+                this.universesContainer.style.display               = "none";
+                this.accoladesElement.style.display                 = "none";
+                this.fieldbussesElement.style.gridTemplateColumns   = "subgrid";
+                this.fieldbussesElement.style.gridColumn            = "8/10";
                 for (let i=0; i < fieldbusContainers.length; i++) {
-                    fieldbusContainers[i].style.position = "relative";
-                    fieldbusContainers[i].style.zIndex = `${1000 + fieldbusContainers.length-i}`;
-                    fieldbusContainers[i].style.gridColumn = "1";
-                    fieldbusContainers[i].style.justifySelf = "center";
-                    fieldbusContainers[i].style.left = `${(i-1)*(this.fieldbussesElement.clientWidth/7.5)}px`;
-                    fieldbusContainers[i].style.marginRight = `${10/fieldbusContainers.length}px`;
+                    fieldbusContainers[i].style.position                = "relative";
+                    fieldbusContainers[i].style.zIndex                  = `${1000 + fieldbusContainers.length-i}`;
+                    fieldbusContainers[i].style.gridColumn              = "1";
+                    fieldbusContainers[i].style.justifySelf             = "center";
+                    fieldbusContainers[i].style.left                    = `${(i-1)*(this.fieldbussesElement.clientWidth/7.5)}px`;
+                    fieldbusContainers[i].style.marginRight             = `${10/fieldbusContainers.length}px`;
                 }
             }
             this.navSwitcher();
-
         }
 
         navSwitcher() {
             let nodes = document.querySelectorAll(".node");
             // removing all the previously attached event Listeners
-            nodes.forEach((node) => node.removeEventListener("click", this.handleNavClick));
-            let inactiveNodes = Array.from(nodes).filter((node) => !node.classList.contains("selected"));
-            
-            inactiveNodes.forEach((nodeElement) => {
-                // Event listener to switch the active node
-                nodeElement.addEventListener("click", this.handleNavClick);
-            })
+            nodes.forEach((node) => {
+                node.removeEventListener("click", this.handleNavClick);
+                if (!node.classList.contains("selected")) {
+                    node.addEventListener("click", this.handleNavClick);
+                }
+            });
             
             setCurvePosition();
         }
 
         toggleRdmConfig = async (e) => {
-            let targetFb = e.target.closest(".fieldbus");
-            this.rdmConfig = !this.rdmConfig;
+            let targetFb    = e.target.closest(".fieldbus");
+            let mainConfig  = document.getElementById("main-config");
+            let rdmConfig   = document.getElementById("rdm-config");
+            this.rdmConfig  = !this.rdmConfig;
             if (this.rdmConfig) {
-                this.configElement.querySelector("#rdm-config h1").innerHTML = "FIELDBUS " + targetFb.id.split("-")[1];
+                document.querySelector("#rdm-config h1").innerHTML = "FIELDBUS " + targetFb.id.split("-")[1];
                 let fieldbusNr = targetFb.id.split("-")[1];
                 this.targetFb = this.activeNode.fieldbusses.find((fb) => fb.id === `out${fieldbusNr-1}`);
                 // fetching all the devices
                 await this.showRdmConfig(fieldbusNr);
-                this.configElement.querySelector("#main-config").style.display = "none";
-                this.configElement.querySelector("#rdm-config").style.visibility = "visible";
+                mainConfig.style.display = "none";
+                rdmConfig.style.visibility = "visible";
 
 
             } else {
                 this.targetFb.rdmDevices = [];
                 this.targetFb = undefined;
-                this.configElement.querySelector("#rdm-config").style.visibility = "hidden";
-                this.configElement.querySelector("#main-config").style.display = "grid";
+                mainConfig.style.display = "grid";
+                rdmConfig.style.visibility = "hidden";
                 this.showActiveNode();
             }      
         }
 
         async showRdmConfig(fieldbus) {
             try {
+                this.rdmTable = await new Table(document.getElementById("rdm-table-container"), this.targetFb.rdmDevices, fieldbus-1);
                 const response = await fetch(`${nodeIp}/xtod`, {signal: AbortSignal.timeout(2000)});
                 if (!response.ok) {
                     throw new Error(`Response status: ${response.status}`);
@@ -2481,22 +2456,18 @@ Acces-Control-Allow-Origin: *
                 const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
                 let rdmConfig = Configuration.parseConfig(xmlDoc);
                 let rdmUUIDs = rdmConfig[`out${fieldbus-1}`].split(" ");
+                this.removeEventHandlers();
+                this.addRdmEvents();
                 for (let i = 0; i < rdmUUIDs.length; i++) {
                     if (rdmUUIDs[i]) {
-                        let rd = await new RdmDevice(rdmUUIDs[i], fieldbus-1);
+                        let rdmDevice = new RdmDevice(rdmUUIDs[i], fieldbus-1)
                         let lastDevice = i === rdmUUIDs.length-1? true : false;
-                        this.targetFb.updateRdmDevices(rd, lastDevice);   
-                    }        
-                }
+                        this.targetFb.updateRdmDevices(rdmDevice, lastDevice);   
+                        await installation.rdmTable.updateRow();
+                    };                  
+                }        
+            }
                 // let devices = xmlDoc.getElementsByTagName("dev")[0].innerHTML.split(" ");               
-                this.rdmTable = await new Table(document.querySelector("#rdm-table-container"), this.targetFb.rdmDevices, fieldbus-1);
-                this.rdmConfig = this.configElement.querySelector("#rdm-config");
-                this.addRdmEvents();
-
-                for(const DEV of this.targetFb.rdmDevices) {
-                    DEV.fetchSupportedParameters();
-                }
-            } 
             catch (error) {
                 if (error.name === "TimeoutError") {
                     console.error("Request timed out");    
@@ -2505,18 +2476,18 @@ Acces-Control-Allow-Origin: *
                 } else if (error.name === "TypeError") {
                     console.error(error);
                 } else {
-                    console.error("Failed to update fps:", error.message);
+                    console.error("Failed to generate table:", error.message);
                 } 
             }
         }
 
         addRdmEvents() {
-            this.rdmConfig.addEventListener("click", this.handleRdmEvents);
-            this.rdmConfig.addEventListener("change", this.handleRdmEvents);
-            this.rdmConfig.addEventListener("input", this.handleRdmEvents);
-            this.rdmConfig.addEventListener("focusin", this.handleRdmEvents);
-            this.rdmConfig.addEventListener("focusout", this.handleRdmEvents);
-            this.rdmConfig.addEventListener("keydown", this.handleRdmEvents);
+            this.rdmConfigElement.addEventListener("click", this.handleRdmEvents);
+            this.rdmConfigElement.addEventListener("change", this.handleRdmEvents);
+            this.rdmConfigElement.addEventListener("input", this.handleRdmEvents);
+            this.rdmConfigElement.addEventListener("focusin", this.handleRdmEvents);
+            this.rdmConfigElement.addEventListener("focusout", this.handleRdmEvents);
+            this.rdmConfigElement.addEventListener("keydown", this.handleRdmEvents);
         }
 
         handleRdmEvents = async (e) => {
@@ -2660,18 +2631,23 @@ Acces-Control-Allow-Origin: *
 
         async refreshPage() {
             let demoNodes = [];
-            for (const n of this.nodes) {
-                if (isDemo(n.mac)) demoNodes.push(n) ;
+            for (const NODE of this.#nodes) {
+                NODE.clearIntervals();
+                if (isDemo(NODE.mac)) demoNodes.push(NODE);
             }
             await this.fetchNodes(false);
-            demoNodes.forEach((node) => this.nodes.push(node))
-            this.updateNav(false);
+            let nodeIps = this.#nodes.map(node => node.ip);
+            demoNodes.forEach((node) => {
+                if(!nodeIps.includes(node.ip)) {
+                    this.#nodes.push(node);
+                }
+            });
+            this.updateNav();
             this.navSwitcher();
         }
     }
 
     class Node {
-        #oldNodes = [];
         #ip;
         #name;
         #mac;
@@ -2690,17 +2666,14 @@ Acces-Control-Allow-Origin: *
         #prevTimestampOff = null;
         #prevTimestampOn = null;
 
-        constructor(ip, skipConfig = false,  oldNodes = null) {
+        constructor(ip, skipConfig = false) {
             this.#ip = ip;
             
             if (!skipConfig) {
                 return (async () => {
                     try {
                         this.#configuration = await new Configuration(ip);
-                        if (this.#configuration) {
-                            if (oldNodes !== null) {
-                                this.#oldNodes = [...oldNodes];
-                            };       
+                        if (this.#configuration) {    
                             this.initialiseNode();
                             console.log("initialisation complete")
                             return this;
@@ -2850,6 +2823,43 @@ Acces-Control-Allow-Origin: *
             this.#configuration = c;
         }
 
+        setFpsInterval() {
+            if (!this.fpsInterval) this.fpsInterval = setInterval(() => this.updateFps(), 1000);       
+        }
+
+        clearFpsInterval() {
+            if (this.fpsInterval) clearInterval(this.fpsInterval);
+            
+        }
+
+        setStatusInterval() {
+            if (!this.statusInterval) {
+                this.statusInterval = setInterval(async () => {
+                if (!isDemo(this.mac) && this.active === false) {
+                    try {
+                        const response = await fetch(`http://${this.ip}/xart`, {signal: AbortSignal.timeout(2000)});
+                        if (!response.ok) {
+                            throw new Error(`Response status: ${response.status}`);
+                        }
+                        this.setStatus(true);               
+                    } 
+                    catch (error) {
+                        if (error.name === "TimeoutError") {
+                            console.error("Request timed out");
+                            this.setStatus(false);     
+                        } else if (error.name === "AbortError") {
+                            console.error("Fetch aborted by user");
+                        } else if (error.name === "TypeError") {
+                            console.error("AbortSignal.timeout() method is not supported");
+                        } else {
+                            console.error("Failed to update fps:", error.message);
+                        }
+                    }
+                }    
+            }, 5000);
+            }
+        }
+
         // setting the status indicator of the disconnected nodes, debounce to make sure there is no
         // flickering
         setStatus(o) {
@@ -2900,14 +2910,9 @@ Acces-Control-Allow-Origin: *
                     console.log("Node found without switch")
                 }
                 
-                
                 this.#netmask = this.#configuration.mask;
                 this.#firmware = this.#configuration.firmware;
 
-                let prevNode;
-                if (this.#oldNodes[0] !== undefined) {
-                    prevNode = this.#oldNodes[0].find((node) => node.mac === this.#mac)
-                }
                 let counter = 0;
                 let fbIndex = 0;
                 let resetFb = false;
@@ -3002,6 +3007,11 @@ Acces-Control-Allow-Origin: *
             this.ip = ip.value;
             console.log(this.name);
             if (!isDemo(this.mac)) this.configuration.handleFormChange(this);
+        }
+
+        clearIntervals() {
+            if (this.fpsInterval) clearInterval(this.fpsInterval);
+            if (this.statusInterval) clearInterval(this.statusInterval);
         }
     }
 
@@ -3325,50 +3335,27 @@ Acces-Control-Allow-Origin: *
         #UIObject = {};
 
         constructor(id, fb) {
-            return( async () => {
                 this.#parentFbId = fb;
                 this.#UUID = id;
-                try {
-                    let deviceInfo = await installation.rdm.sendRdmPacket(installation.activeNode.ip, this.#parentFbId, this.#UUID, "GET", "0060");
-                    if (deviceInfo.includes("<fault>") || deviceInfo === undefined) {
-                        return null
-                    };
-                    let parameters = installation.rdm.decodeRdmPacket(deviceInfo, "0060", "GET");
-                    this.#rdmProtocolVersion    = `v${parameters[0][0]}.${parameters[0][1]}`
-                    this.#deviceModelId         = parameters[1];
-                    this.#productCategory       = parameters[2];
-                    this.#softwareVersion       = parameters[3];
-                    this.#footprint             = parameters[4];
-                    this.#personality           = `${parameters[5][0]} of ${parameters[5][1]}`
-                    this.#startAddress          = parameters[6];
-                    this.#subDevCount           = parameters[7];
-                    this.#sensorCount           = parameters[8];
-                    
-                    // Making an UI object for the table
-                    this.#UIObject = {
-                        "Name": {
-                            "Value": "",
-                            "Type": "String"
-                        },
-                        "DMX address": {
-                            "Value": this.#startAddress,
-                            "Type": "Integer"
-                        },
-                        "Footprint": {
-                            "Value": this.#footprint,
-                            "Type": "Integer"
-                        },
-                        "Personality": {
-                            "Value": this.#personality,
-                            "Type": "Integer"
-                        }
-                    };
-                        
-                } catch (error) {
-                    console.error(error);
-                }
-                return this;
-            })();
+                this.#UIObject = {
+                    "Name": {
+                        "Value": "",
+                        "Type": "String"
+                    },
+                    "DMX address": {
+                        "Value": "",
+                        "Type": "Integer"
+                    },
+                    "Footprint": {
+                        "Value": "",
+                        "Type": "Integer"
+                    },
+                    "Personality": {
+                        "Value": "-/-",
+                        "Type": "Integer"
+                    }
+                };
+                this.infoFetched = false;
         }
 
         // Getters
@@ -3435,45 +3422,135 @@ Acces-Control-Allow-Origin: *
         }
 
         personalityDescriptionSet() {
-            this.#personalityDescription? true : false;
+            return this.#personalityDescription.length? true : false;
+        }
+
+        async fetchDeviceInfo(row) {
+            try {
+                installation.rdm.sendRdmPacket(installation.activeNode.ip, this.#parentFbId, this.#UUID, "GET", "0060").then(res => {
+                    if (res.includes("<fault>") || res === undefined) {
+                        return null
+                    };
+                    let parameters = installation.rdm.decodeRdmPacket(res, "0060", "GET");
+                    let targetFootprint, targetPersonality, targetDmx;
+                    if (installation.config) {
+                        targetFootprint     = installation.rdm.table.querySelector(`.Footprint[data-devid="${this.UUID}"] input`);
+                        targetPersonality   = installation.rdm.table.querySelector(`.Personality[data-devid="${this.UUID}"] select`);
+                        targetDmx           = installation.rdm.table.querySelector(`.DMX-address[data-devid="${this.UUID}"] input`);
+                    } else {
+                        targetFootprint     = installation.rdm.table.querySelector(`.Footprint[data-devid="${this.UUID}"] td:nth-of-type(3)`);
+                        targetPersonality   = installation.rdm.table.querySelector(`.Personality[data-devid="${this.UUID}"] td:nth-of-type(3)`);
+                        targetDmx           = installation.rdm.table.querySelector(`.DMX-address[data-devid="${this.UUID}"] td:nth-of-type(3)`);
+                    }
+                    this.#rdmProtocolVersion                        = `v${parameters[0][0]}.${parameters[0][1]}`
+                    this.#deviceModelId                             = parameters[1];
+                    this.#productCategory                           = parameters[2];
+                    this.#softwareVersion                           = parameters[3];
+                    this.#footprint                                 = parameters[4];
+                    this.#UIObject["Footprint"]["Value"]            = parameters[4];
+                    installation.config? targetFootprint.value = parameters[4] : targetFootprint.innerHTML = parameters[4];
+                    
+                    this.#personality                               = `${parameters[5][0]}/${parameters[5][1]}`
+                    this.#UIObject["Personality"]["Value"]          = `${parameters[5][0]}/${parameters[5][1]}`
+                    if (installation.config) {
+                        installation.rdmTable.fillDropDown(targetPersonality, `${parameters[5][1]}`, this, `${parameters[5][0]}`)
+                        targetPersonality.nextSibling.innerHTML += `${parameters[5][1]}`
+                    }
+                    else targetPersonality.innerHTML = `${parameters[5][0]} of ${parameters[5][1]}`
+                    
+                    this.#startAddress                              = parameters[6];
+                    this.#UIObject["DMX address"]["Value"]          = parameters[6];
+                    installation.config? targetDmx.value = parameters[6] : targetDmx.innerHTML = parameters[6];
+
+                    this.#subDevCount                               = parameters[7];
+                    this.#sensorCount                               = parameters[8];
+
+                    this.infoFetched = true;
+
+                });
+            } catch (error) {
+                console.error(error);
+            }
         }
         
         async fetchLabel() {
             try {
-                let deviceLabel = await installation.rdm.sendRdmPacket(installation.activeNode.ip, this.#parentFbId, this.#UUID, "GET", "0082");
-                this.#deviceLabel = installation.rdm.decodeRdmPacket(deviceLabel, "0082", "GET");
-                console.log("fetching device label");
-                console.log(this.#deviceLabel);
-                this.#UIObject["Name"]["Value"] = this.#deviceLabel;
-                return this.#deviceLabel;
+                installation.rdm.sendRdmPacket(installation.activeNode.ip, this.#parentFbId, this.#UUID, "GET", "0082").then(res => {
+                    if (res && !res.includes("<fault>")) {
+                        this.#deviceLabel = installation.rdm.decodeRdmPacket(res, "0082", "GET");
+                        this.#UIObject["Name"]["Value"] = this.#deviceLabel;
+                        let targetName;
+                        if (installation.config) {      
+                            targetName = document.querySelector(`.Name[data-devid="${this.UUID}"] input`);             
+                            targetName.value = this.#deviceLabel;
+                        } else {
+                            targetName = document.querySelector(`.Name[data-devid="${this.UUID}"] td:nth-of-type(3)`);          
+                            targetName.innerHTML = this.#deviceLabel;
+                        }
+                        return this.#deviceLabel;
+                    }                
+                });         
             } catch (e) {
                 console.error(e)
             }
         }
 
-        async fetchSupportedParameters() {
+        fetchSupportedParameters = async () => {
             // checking for other supported parameters
-            let supportedParameters = await installation.rdm.sendRdmPacket(installation.activeNode.ip, this.#parentFbId, this.#UUID, "GET", "0050");
-            if (!supportedParameters.includes("<fault>") && supportedParameters !== undefined) {
-                supportedParameters = installation.rdm.decodeRdmPacket(supportedParameters, "0050", "GET");
-                if (supportedParameters.includes("00E1")) {
-                    // DMX personality description is supported
-                    for (let i = 1; i < parseInt(this.#personality.slice(-1))+1; i++) {
-                        installation.rdm.sendRdmPacket(installation.activeNode.ip, this.#parentFbId, this.#UUID, "GET", "00E1", i.toString(16).padStart(2,"0")).then(res => {
-                            if (res) this.setResult(res)
-                        });
+            if (!this.supportedParameters) {
+                installation.rdm.sendRdmPacket(installation.activeNode.ip, this.#parentFbId, this.#UUID, "GET", "0050").then(res => {
+                    if (res && !res.includes("<fault>")) {
+                        this.supportedParameters = installation.rdm.decodeRdmPacket(res, "0050", "GET");
+                        this.updatePersonalityDescription();
                     }
+                });
+
+            }           
+        }
+
+        updatePersonalityDescription = () => {
+            // TODO this personality sometimes is undefined
+            if (this.supportedParameters && this.supportedParameters.includes("00E1")) {
+                // DMX personality description is supported
+                for (let i = 1; i < parseInt(this.#personality.slice(-1))+1; i++) {
+                    installation.rdm.sendRdmPacket(installation.activeNode.ip, this.#parentFbId, this.#UUID, "GET", "00E1", i.toString(16).padStart(2,"0")).then(res => {
+                        if (res) this.setResult(res)
+                    });
                 }
             }
         }
 
         setResult(res) {
             let personalityDescription = installation.rdm.decodeRdmPacket(res, "00E1", "GET");
+            console.log(personalityDescription);
+            let selectedPersonality = false;
             if (this.#personality[0] == personalityDescription[0]) {
-                this.#personality = `${personalityDescription[2]} - ${personalityDescription[0]} of ${this.#personality.slice(-1)}`
+                this.#personality = `${this.#personality.split("/")[0]}/${this.#personality.split("/")[1]}/${personalityDescription[2]}`
                 this.#UIObject["Personality"]["Value"] = this.#personality;
+                selectedPersonality = true;
             }
             this.#personalityDescription.push(personalityDescription);
+            // injecting the descripion in the UI
+            if (installation.config) {
+                let dd = installation.rdm.table.querySelector(`.Personality[data-devid="${this.UUID}"] select`);
+                let oldOption = dd.children[personalityDescription[0] -1];
+                let option = document.createElement("option", {value: personalityDescription[0] -1})
+                let pIndex = parseInt(personalityDescription[0]-1);
+                selectedPersonality? option.selected = true : option.selected = false;
+                const CONTENT = document.createTextNode(`${personalityDescription[2]} ${personalityDescription[0]}`);
+                option.appendChild(CONTENT);
+                dd.replaceChild(option, oldOption);
+            } else {
+                // TODO implement the normal fields
+                if (selectedPersonality) {
+                    let data = installation.rdm.table.querySelector(`.Personality[data-devid="${this.UUID}"] td:nth-of-type(3)`);
+                    let p = document.createElement("p");
+                    p.id = "personality-paragraph"
+                    p.innerHTML = `&nbspof ${this.personality.split("/")[1]}`
+                    data.innerHTML = `${personalityDescription[2]} ${personalityDescription[0]}`;
+                    data.appendChild(p);
+                }
+            }
         }
     }
 
@@ -3533,7 +3610,6 @@ Acces-Control-Allow-Origin: *
         // PDL is the amount of bytes being sent in hex format. 
 
         sendRdmPacket = async (nodeIp, fbId, destinationUID, getSet, param, data = null) => {
-            console.log(param)
             if (getSet === "SET") {
                 let hexData = "";
                 switch(param) {
@@ -3577,7 +3653,7 @@ Acces-Control-Allow-Origin: *
             ML = ML.toString(16).padStart(2, "0").toUpperCase();
             let payload = 
     `CC01${ML}${destinationUID}033A87654321${installation.rdmCounter.padStart(2, "0")}00000000${getSet === "GET"? 20 : 30}${param}${this.pdl}${this.pd}`
-            console.log(payload);
+            // console.log(payload);
             let finalCS;
             let CS = (function () {
                 let byteArr = []
@@ -3589,7 +3665,6 @@ Acces-Control-Allow-Origin: *
                 finalCS = intCS.toString(16).padStart(4, '0');
             })();
             payload = `<rdm${fbId}>` + payload + finalCS.toUpperCase() + `</rdm${fbId}>`;
-            console.log(payload);
 
             try {
                 const response = await fetch(`http://${installation.activeNode.ip}/xrdm`, {
@@ -3664,8 +3739,7 @@ Acces-Control-Allow-Origin: *
                         break;
                     } else {
                         return hexToDec(payload);
-                    }
-                    
+                    }   
             }
         }
     }
@@ -3974,40 +4048,67 @@ Acces-Control-Allow-Origin: *
     class Table {
         #rows
         #fieldbus
-
+        
         constructor(parentNode, rdmDevices, fieldbus) {
             return (async () => {
-                this.rdmHeader = ["Device", "Parameters", "Values"]
+                this.rdmHeader = ["Device", "Parameters", "Values"];
+                this.filters = [];
                 this.#rows = rdmDevices;
+                this.rowCount = 0;
                 this.#fieldbus = fieldbus;
                 this.rdmInfo = {};
                 this.lampOnTemplate = document.querySelector("#lamp-on-template");
                 this.lampOffTemplate = document.querySelector("#lamp-off-template");
-                rdmDevices.forEach(dev => {
-                    this.rdmInfo[dev.UUID] = dev.UIObject
-                })
+                // rdmDevices.forEach(dev => {
+                //     this.rdmInfo[dev.UUID] = dev.UIObject;
+                // })
                 this.parentNode = parentNode;
-                try {
-                    this.addFilters();
-                    await this.generateBaseTable(true);
-                    // this.addRowEvents();
-                } catch(e) {
-                    console.error(e);
-                }
+                this.generateBaseTable(true);
+                // this.addRowEvents();
+
                 
                 return this;
             })();
         }
 
-        addFilters() {
-            this.filters = [];
+        updateRow = async () => {
+            let rdmDevice = this.#rows[this.rowCount];
+            this.rdmInfo[rdmDevice.UUID] = rdmDevice.UIObject;
+            let dataRow = document.createElement("tr");
+            dataRow.openedRow = false;
+            dataRow.dataset.devid = rdmDevice.UUID;
+            for (let i = 0; i < this.rdmHeader.length; i++) {
+                let dTd = document.createElement("td");
+                if (i == 0) {
+                    dTd.innerHTML = rdmDevice.UUID
+                    await this.addLampIcon(rdmDevice.UUID, dTd);
+                } else dTd.innerHTML = null;
+                dataRow.appendChild(dTd);
+            }
+            this.table.appendChild(dataRow);
+            this.updateFilters();
+            this.rowCount++;
+        }
+
+        updateFilters = () => {
+            let filterItem;
             for (const KEY of Object.keys(this.rdmInfo)){
                 for(const KEY2 of Object.keys(this.rdmInfo[KEY])){
                     if(!this.filters.includes(KEY2)){
                         this.filters.push(KEY2)
+                        filterItem = document.createElement("option");
+                        filterItem.value = KEY2;
+                        filterItem.innerHTML = KEY2;
+                        this.paramDD.appendChild(filterItem);
                     }
                 }
             }
+                                // for (const FILTER of this.filters) {
+                    //     filterItem = document.createElement("option");
+                    //     filterItem.value = FILTER;
+                    //     filterItem.innerHTML = FILTER;
+                    //     paramDD.appendChild(filterItem);
+                    // }
         }
 
         addLampIcon = async (UUID, target) => {
@@ -4022,47 +4123,53 @@ Acces-Control-Allow-Origin: *
             target.appendChild(lampContainer);
         }
 
+        fillDropDown(dd, options, targetDevice, param) {
+            for (let i = 1; i <= options; i++) {
+                const OPTION = document.createElement("option", {value: i});
+                if (param == i) {
+                    OPTION.selected = true;
+                }
+                const CONTENT = document.createTextNode(targetDevice.getPersonalityDescription(i)? `${targetDevice.getPersonalityDescription(i)[2]} ${targetDevice.getPersonalityDescription(i)[0]}` : i);
+                OPTION.appendChild(CONTENT);
+                dd.appendChild(OPTION);
+            }
+        }
+
         setValueField = (param, paramDescription, targetElement, targetDevice) => {
+            targetElement.innerHTML = "";   
             let inputField = document.createElement("input");
             let dropDown;
             let p = document.createElement("p");
             p.id = "personality-paragraph";
-            console.log(param)
             if (param['Type'] === "Integer") {
                 targetDevice.personalityDescriptionSet? p.innerHTML = param["Value"] : p.innerHTML = param["Value"].substr(-1);
                 if(paramDescription === "Personality") {
                     dropDown = generateDomTree("select", null, {name: "personality"});
-                    for (let i = 1; i <= p.innerHTML.slice(-1); i++) {
-                        const OPTION = document.createElement("option", {value: i});
-                        if (parseInt(param["Value"].split(" ").at(-3)) === i) {
-                            OPTION.selected = true;
-                        }
-                        const CONTENT = document.createTextNode(targetDevice.getPersonalityDescription(i)? `${targetDevice.getPersonalityDescription(i)[2]} ${targetDevice.getPersonalityDescription(i)[0]}` : i);
-                        OPTION.appendChild(CONTENT);
-                        dropDown.appendChild(OPTION);
-                    }
+                    console.log(param["Value"].split("/")[1]);
+                    this.fillDropDown(dropDown, parseInt(param["Value"].split("/")[1]), targetDevice, parseInt(param["Value"].split("/")[0]))
                 } else {
                     inputField.type = "number";
                     inputField.value = parseInt(param["Value"]);         
                 }  
             } else inputField.value = param["Value"]      
-            targetElement.innerHTML = "";   
             if (paramDescription === "Personality") {
                 targetElement.appendChild(dropDown);
                 if (targetDevice.personalityDescriptionSet) {
-                    p.innerHTML = ` of ${p.innerHTML.slice(-1)}`
+                    let pList = param["Value"].split("/")[1];
+                    p.innerHTML = ` of ${pList? pList : ""}`
                     targetElement.appendChild(p);
                     dropDown.style.width = "63%";
-                } 
+                }
+
             } else targetElement.appendChild(inputField);
         }
 
-        generateBaseTable = async (init) => {
+        generateBaseTable(init) {
             if (installation.rdm.table !== undefined && init) {
                 this.parentNode.removeChild(installation.rdm.table);
             }
-            let table = document.createElement("table");
-            table.id = "rdm-table"
+            this.table = document.createElement("table");
+            this.table.id = "rdm-table"
             let headerRow = document.createElement("tr");
             headerRow.id = "headerRow";
             let counter = 0;
@@ -4072,41 +4179,19 @@ Acces-Control-Allow-Origin: *
                 // param filter
                 if (counter == 1) {
                     hTd.innerHTML += "<br>"
-                    let paramDD = document.createElement("select");
-                    paramDD.addEventListener("change", this.applyFilter)
-                    paramDD.id = "param-dropdown";
+                    this.paramDD = document.createElement("select");
+                    this.paramDD.addEventListener("change", this.applyFilter)
+                    this.paramDD.id = "param-dropdown";
                     let filterItem = document.createElement("option");
                     filterItem.innerHTML = "--No filter--"
-                    paramDD.appendChild(filterItem);
-                    for (const FILTER of this.filters) {
-                        filterItem = document.createElement("option");
-                        filterItem.value = FILTER;
-                        filterItem.innerHTML = FILTER;
-                        paramDD.appendChild(filterItem);
-                    }
-                    hTd.appendChild(paramDD);
+                    this.paramDD.appendChild(filterItem);
+                    hTd.appendChild(this.paramDD);
                 }
                 headerRow.appendChild(hTd)
                 counter++;
             }
-            table.appendChild(headerRow);
-
-            for (const DEVID of Object.keys(this.rdmInfo)) {
-                let dataRow = document.createElement("tr");
-                dataRow.openedRow = false;
-                dataRow.dataset.devid = DEVID;
-                for (let i = 0; i < this.rdmHeader.length; i++) {
-                    let dTd = document.createElement("td");
-                    if (i == 0) {
-                        dTd.innerHTML = DEVID;
-                        await this.addLampIcon(DEVID, dTd);
-                    } else dTd.innerHTML = null;
-                    dataRow.appendChild(dTd);
-                }
-                table.appendChild(dataRow);
-                
-            }
-            this.parentNode.appendChild(table);
+            this.table.appendChild(headerRow);
+            this.parentNode.appendChild(this.table);
             installation.rdm.table = document.getElementById("rdm-table");
         }
 
@@ -4115,12 +4200,15 @@ Acces-Control-Allow-Origin: *
             let targetRow = e.target.closest("tr");
             let parentNode = targetRow.parentNode;
             let targetDevice = this.#rows.find(dev => dev.UUID == targetRow.dataset.devid);
-            if (!targetDevice.deviceLabel) {
-                await targetDevice.fetchLabel();
-            }
+            if (!targetDevice.infoFetched) targetDevice.fetchDeviceInfo(targetRow);        
+            if (!targetDevice.deviceLabel) targetDevice.fetchLabel();
+            if (!targetDevice.supportedParameters) targetDevice.fetchSupportedParameters();
+            
+
             if (targetRow.openedRow === false) {
                 let counter = 0;
                 let openedRowIsSet = false;
+                console.log(Object.entries(this.rdmInfo[targetRow.dataset.devid]))
                 for (const [KEY, PARAM] of Object.entries(this.rdmInfo[targetRow.dataset.devid])) {
                     let dataRow = document.createElement("tr");
                     if (!openedRowIsSet) {
@@ -4128,6 +4216,7 @@ Acces-Control-Allow-Origin: *
                         dataRow.openedRow = true;
                     }
                     dataRow.dataset.devid = e.target.closest("tr").dataset.devid;
+                    dataRow.classList.add(KEY.replace(" ", "-"));
 
                     // ========== UUID  ============
                     let data = document.createElement("td");
@@ -4150,9 +4239,13 @@ Acces-Control-Allow-Origin: *
                     data.classList.add("parameter-values");
                     if (installation.config) {
                         this.setValueField(PARAM, KEY, data, targetDevice);
-                    } else {
-                        if (PARAM)
-                        data.innerHTML = PARAM["Value"];
+                    } else if (PARAM) {
+                        if (KEY === "Personality") {
+                            let persArr = PARAM["Value"].split("/");
+                            data.innerHTML = targetDevice.personalityDescriptionSet()? `${persArr[2]} ${persArr[0]}` : `${persArr[0]}`
+                            p.innerHTML = `&nbspof ${persArr[1]}`;
+                            data.appendChild(p);
+                        } else data.innerHTML = PARAM["Value"];
                     }            
                     dataRow.appendChild(data);
                     installation.rdm.table.insertBefore(dataRow, targetRow);
@@ -4184,7 +4277,8 @@ Acces-Control-Allow-Origin: *
             console.log("changed filter to " + PARAM);
             if (PARAM === "Name") {
                 // fetching all the names
-                for (const rdmDevice of installation.targetFb.rdmDevices) {
+                for (const rdmDevice of this.#rows) {
+                    console.log(rdmDevice);
                     if (!rdmDevice.deviceLabel) {
                         let deviceLabel = await rdmDevice.fetchLabel();
                         this.rdmInfo[rdmDevice.UUID]["Name"]["Value"] = deviceLabel;
@@ -4275,7 +4369,7 @@ Acces-Control-Allow-Origin: *
                     const PARAM = prevRdmDevice.UIObject[targetRow.children[1].innerHTML];
                     let targetElement = targetRow.children[2];
                     if (targetElement.innerHTML !== undefined) {
-                        this.setValueField(PARAM, targetRow.children[1].innerHTML, targetElement, targetDevice)
+                        this.setValueField(PARAM, targetRow.children[1].innerHTML, targetElement, targetDevice);
                     }   
                 }
             } else {
@@ -4288,7 +4382,17 @@ Acces-Control-Allow-Origin: *
                     }
                     let targetElement = targetRow.children[2];
                     if (targetElement.innerHTML !== "") {
-                        targetElement.innerHTML = this.rdmInfo[prevRowId][targetRow.children[1].innerHTML]["Value"]
+                        if (targetElement.previousSibling.innerHTML === "Personality") {
+                            let personalityArr = this.rdmInfo[prevRowId][targetRow.children[1].innerHTML]["Value"].split("/");
+                            targetElement.innerHTML = `${personalityArr[2]} ${personalityArr[0]} of ${personalityArr[1]}`;
+                        } else targetElement.innerHTML = this.rdmInfo[prevRowId][targetRow.children[1].innerHTML]["Value"];
+                        //     let p = document.createElement("p");
+                        //     if (targetDevice.personalityDescriptionSet) {
+                        //         p.innerHTML = ` of ${targetDevice.UIObject["Personality"]["Value"].slice(-1)}`
+                        //         targetElement.appendChild(p);
+                        //         dropDown.style.width = "63%";
+                        //     } 
+                        // }
                     }    
                 }
             }
@@ -4536,7 +4640,7 @@ Acces-Control-Allow-Origin: *
                                                                                
     async function intitialise(init) {
         installation = await new Installation("Lux-Lumen");
-        installation.updateNav(init);
+        installation.updateNav();
         installation.navSwitcher();
         if (init) installation.eventInit();  
     }
@@ -4555,6 +4659,15 @@ Acces-Control-Allow-Origin: *
         }
         
         setCurvePosition();     
+
+        // testing
+        // let listItems = document.querySelectorAll("nav li")
+        // for (let i = 0; i < 1000; i++) {
+        //     for (const item of listItems) {
+        //         if
+        //     }
+        // }
+
     })
     
 </script>
